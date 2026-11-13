@@ -31,7 +31,6 @@
 
 /* Gövde */
 .vta-body{padding:18px 20px 20px}
-#authMainMethodTabs{display:none !important}
 
 /* Giriş / Kayıt segmenti */
 .vta-seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:14px;background:#f1f5f9;margin-bottom:14px}
@@ -90,20 +89,9 @@
 .vta-primary:hover{filter:brightness(1.05);box-shadow:0 14px 26px -6px rgba(13,148,136,.6)}
 .vta-primary:active{transform:scale(.98)}
 .vta-primary:disabled{opacity:.7;cursor:wait}
-.vta-primary:focus-visible,.vta-google:focus-visible,.vta-seg button:focus-visible{outline:3px solid #99f6e4;outline-offset:2px}
+.vta-primary:focus-visible,
+.vta-seg button:focus-visible {outline:3px solid #99f6e4;outline-offset:2px}
 
-/* Ayırıcı ve bulut girişi */
-.vta-or{display:flex;align-items:center;gap:12px;margin:12px 0 10px;color:#94a3b8;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
-.vta-or::before,.vta-or::after{content:"";flex:1;height:1px;background:#e2e8f0}
-.vta-google{
-  width:100%;min-height:48px;border-radius:14px;border:1.5px solid #e2e8f0;background:#fff;color:#0f172a;
-  display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;font-weight:800;cursor:pointer;
-  transition:background .15s,border-color .15s,transform .12s;
-}
-.vta-google:hover{background:#f8fafc;border-color:#cbd5e1}
-.vta-google:active{transform:scale(.98)}
-.vta-google i{color:#4285f4;font-size:16px}
-#authCloudSyncStatusBadge{display:none !important}
 .vta-sync{
   display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:4px;padding:6px;border:0;background:transparent;
   color:#0f766e;font-size:12px;font-weight:700;cursor:pointer;border-radius:10px;

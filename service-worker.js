@@ -1,16 +1,16 @@
 /* VitaTakip servis çalışanı — çevrimdışı açılış ve hızlı önbellek.
    Sunucu yoktur; yalnızca bu sitenin kendi dosyaları önbelleğe alınır. Kullanıcı verileri (localStorage/IndexedDB)
    burada tutulmaz. CACHE_VERSION ve CORE_FILES `node tools/build.mjs` ile otomatik güncellenir. */
-const CACHE_VERSION = 'vitatakip-80bd6344b2';
+const CACHE_VERSION = 'vitatakip-ac45aade75';
 const CORE_FILES = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./css/app.css?v=80bd6344b2",
-  "./js/app.1.js?v=80bd6344b2",
-  "./js/app.2.js?v=80bd6344b2",
-  "./js/app.3.js?v=80bd6344b2",
-  "./js/app.4.js?v=80bd6344b2",
+  "./css/app.css?v=ac45aade75",
+  "./js/app.1.js?v=ac45aade75",
+  "./js/app.2.js?v=ac45aade75",
+  "./js/app.3.js?v=ac45aade75",
+  "./js/app.4.js?v=ac45aade75",
   "./icons/apple-touch-icon.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
@@ -18,7 +18,20 @@ const CORE_FILES = [
   "./vendor/fontawesome/webfonts/fa-brands-400.woff2",
   "./vendor/fontawesome/webfonts/fa-regular-400.woff2",
   "./vendor/fontawesome/webfonts/fa-solid-900.woff2",
-  "./vendor/fontawesome/webfonts/fa-v4compatibility.woff2"
+  "./vendor/fontawesome/webfonts/fa-v4compatibility.woff2",
+  "./img/symptoms/brittle_nails.jpg",
+  "./img/symptoms/dark_nail.jpg",
+  "./img/symptoms/hair.jpg",
+  "./img/symptoms/mouth.jpg",
+  "./img/symptoms/nails.jpg",
+  "./img/symptoms/rash.jpg",
+  "./img/symptoms/spoon_nails.jpg",
+  "./img/symptoms/tongue.jpg",
+  "./vendor/chartjs/chart.umd.js",
+  "./vendor/html5-qrcode/html5-qrcode.min.js",
+  "./vendor/pdfjs/pdf.min.js",
+  "./vendor/pdfjs/pdf.worker.min.js",
+  "./vendor/zxing/zxing-browser.min.js"
 ];
 const NAV_TIMEOUT_MS = 2500;
 

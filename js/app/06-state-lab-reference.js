@@ -210,14 +210,6 @@ let currentAuthMode = "login";
       });
     }
 
-    function getLabReferenceCellHtml(record, key) {
-      const facility = String(record?.references?.[key] || "").trim();
-      const appRange = String(record?.applicationReferences?.[key] || getVitaAppLabReference(key, record?.genderAtTest || state.user?.gender || "K"));
-      if (facility) {
-        return `<span class="mt-0.5 block text-[9px] font-sans text-sky-700" title="Hastane raporundan veya elle girilen referans">Lab/PDF: ${escapeHtmlText(facility)}</span><span class="mt-0.5 block text-[9px] font-sans text-slate-400" title="VitaTakip genel uygulama aralığı">Uygulama: ${escapeHtmlText(appRange)}</span>`;
-      }
-      return `<span class="mt-0.5 block text-[9px] font-sans text-teal-700" title="Genel uygulama karşılaştırma aralığı; hastane referansı değildir">Uygulama aralığı: ${escapeHtmlText(appRange)}</span>`;
-    }
 
     function getSupplementTimeLabel(item) {
       if (item?.scheduleTime && /^([01]\d|2[0-3]):[0-5]\d$/.test(String(item.scheduleTime))) return String(item.scheduleTime);

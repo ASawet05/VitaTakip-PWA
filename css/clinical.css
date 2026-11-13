@@ -8,7 +8,6 @@
 #cdssResultsOverview #cdssOverviewSubtitle{display:none !important}
 #cdssResultsOverview h2{margin-top:6px !important}
 
-
 /* Yaşam evresi kartı: bilgi değeri düşük, tekrar eden metin */
 #lifeStageCard{display:none !important}
 
@@ -89,8 +88,7 @@
 #cdssKidneySafetyWarningContainer,
 #aiClinicalSynthesisCardShell,
 #doctorTestsSection,
-#cdssRecallContainer,
-#vitaSimpleFooter{display:none !important}
+#cdssRecallContainer {display:none !important}
 
 #vitaSimpleHost{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
 #vitaSimpleHost.hidden{display:none}
@@ -222,7 +220,6 @@
 
 /* Tahlillerim: trend/“Hekim Danışmanlığı” şeridi kaldırıldı; gelişim bilgisi Klinik Analiz ve gelişim grafiğinde */
 #trendAlertSection{display:none !important}
-#normalityPopupModal{display:none !important}
 .vs-trend{font-size:12.5px;margin:0 0 6px;color:#475569}
 .vs-t-good b{color:#15803d}.vs-t-bad b{color:#c2410c}.vs-t-flat b{color:#64748b}
 

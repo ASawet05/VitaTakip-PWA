@@ -903,9 +903,6 @@ window.VitaAIChat = VitaAIChat;
       setBarcodeCameraStatus("Kamera başlatılmadı. Barkod okutmak için 'Kamerayı Aç ve Barkod / Karekod Oku' düğmesine dokunun veya listeden seçin.");
     }
 
-    function openMedicationScannerModal() {
-      openBarcodeScannerModal("medication");
-    }
 
     function closeBarcodeScannerModal() {
       stopBarcodeCameraScan(false);
@@ -987,10 +984,6 @@ window.VitaAIChat = VitaAIChat;
           setBarcodeCameraStatus("Kamera erişim onayı kapalı veya reddedildi. Ayarlar > İzinler > Kamera Erişim Onayı menüsünden izni etkinleştirin.", true);
           return;
         }
-      } else if (window.AndroidVitaBridge && typeof window.AndroidVitaBridge.requestCameraPermission === "function") {
-        try {
-          window.AndroidVitaBridge.requestCameraPermission();
-        } catch (_) {}
       }
 
       if (!navigator.mediaDevices?.getUserMedia) {
@@ -1191,40 +1184,7 @@ window.VitaAIChat = VitaAIChat;
       box.classList.remove("hidden");
     }
 
-    function collectBarcodeCandidates(payload) {
-      const items = [];
-      const seen = new Set();
-      const walk = (value, depth = 0) => {
-        if (!value || depth > 7) return;
-        if (Array.isArray(value)) { value.forEach(v => walk(v, depth + 1)); return; }
-        if (typeof value !== "object") return;
-        const codeFields = Object.entries(value).filter(([k, v]) => /^(upcsku|upc|sku|barcode|gtin|gtin8|gtin12|gtin13|gtin14|code)$/i.test(k.replace(/[_-]/g, "")) && (typeof v === "string" || typeof v === "number"));
-        if (codeFields.length) {
-          const code = codeFields.map(([,v]) => String(v)).find(v => normalizeBarcodeForMatch(v));
-          if (code) {
-            const key = code + JSON.stringify(value).slice(0, 120);
-            if (!seen.has(key)) { seen.add(key); items.push({ object: value, code }); }
-          }
-        }
-        Object.values(value).forEach(v => walk(v, depth + 1));
-      };
-      walk(payload);
-      return items;
-    }
 
-    function findExactCatalogueProduct(payload, originalCode) {
-      const target = normalizeBarcodeForMatch(originalCode);
-      if (!target) return null;
-      const match = collectBarcodeCandidates(payload).find(entry => normalizeBarcodeForMatch(entry.code) === target);
-      if (!match) return null;
-      const o = match.object;
-      const name = o.fullName || o.full_name || o.product_name_tr || o.product_name || o.productName || o.name || o.labelName || o.label_name || o.title || o.brandName || o.brand_name;
-      const brand = o.brandName || o.brand_name || o.brands || "";
-      const ingredients = o.ingredients_text_tr || o.ingredients_text || o.ingredientRows || o.ingredients || o.ingredient_rows || "";
-      const productType = o.product_type || o.productType || o.categories || o.categories_tags || "";
-      if (!String(name || "").trim()) return null;
-      return { name: String(name).trim(), brand: String(brand || "").trim(), ingredients: typeof ingredients === "string" ? ingredients : "", productType: Array.isArray(productType) ? productType.join(", ") : String(productType || ""), source: "Katalog" };
-    }
 
     function renderMedicationLiveAuditPreview(product) {
       const auditBox = document.getElementById("barcodeMedicationLiveAuditText");
@@ -1786,17 +1746,6 @@ window.VitaAIChat = VitaAIChat;
       const modal = document.getElementById("labReferenceGuideModal");
       if (modal) { modal.classList.add("hidden"); modal.style.display = "none"; modal.setAttribute("aria-hidden", "true"); }
     }
-    function openClinicalReminder() {
-      const modal = document.getElementById("clinicalReminderModal");
-      if (!modal) return;
-      modal.classList.remove("hidden");
-      modal.style.display = "flex";
-      modal.setAttribute("aria-hidden", "false");
-    }
-    function closeClinicalReminder() {
-      const modal = document.getElementById("clinicalReminderModal");
-      if (modal) { modal.classList.add("hidden"); modal.style.display = "none"; modal.setAttribute("aria-hidden", "true"); }
-    }
     function applyCompactMode() {
       // Sade/ayrıntılı görünüm seçeneği kaldırıldı; eski kayıtlı ayarların sayfayı gizlemesini önle.
       document.body.classList.remove("vita-compact");
@@ -1979,14 +1928,6 @@ window.VitaAIChat = VitaAIChat;
           });
 
       const { subject, body } = buildVitaFeedbackEmailPayload(latestEntry);
-
-      if (window.AndroidVitaBridge && typeof window.AndroidVitaBridge.sendFeedbackEmail === "function") {
-        try {
-          window.AndroidVitaBridge.sendFeedbackEmail(subject, body);
-          showToast("E-posta uygulaması açılıyor", "Mesajınız hazır; göndermek için e-posta uygulamanızda onaylayın.", "info");
-          return;
-        } catch (_) {}
-      }
 
       const mailtoUrl = `mailto:${VITA_DEVELOPER_FEEDBACK_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       window.location.href = mailtoUrl;

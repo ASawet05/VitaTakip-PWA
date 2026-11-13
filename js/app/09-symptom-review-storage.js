@@ -1140,7 +1140,7 @@ function checkPendingSymptomReviews() {
       syncCDSSDemographics();
       syncAnamnesisCardsUI();
       renderLabHistoryUI();
-      evaluateTrendAndDecisionSupport(false);
+      evaluateTrendAndDecisionSupport();
       detectSupplementConflicts();
       checkPendingSymptomReviews();
       if (state.activeTab === "view-labs") renderBiomarkerTrendChart();

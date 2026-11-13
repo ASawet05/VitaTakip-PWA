@@ -101,9 +101,6 @@ function openAppDrawer() {
       if (typeof updateApiKeyUI === "function") {
         updateApiKeyUI();
       }
-      if (typeof window.renderPwaNotificationSmartChecklist === "function") {
-        window.renderPwaNotificationSmartChecklist();
-      }
     }
 
     function navigateToView(viewId) {
@@ -177,7 +174,7 @@ function openAppDrawer() {
           restoreLabDraft();
           syncCDSSDemographics();
           renderLabHistoryUI();
-          evaluateTrendAndDecisionSupport(false);
+          evaluateTrendAndDecisionSupport();
           renderBiomarkerTrendChart();
         } else if (viewId === "view-neyim") {
           if (typeof persistCurrentLabInputsToState === "function") {
@@ -354,15 +351,5 @@ function openAppDrawer() {
       }
     }
 
-    function switchTab(tabId) {
-      const map = {
-        "tab-daily": "view-home",
-        "tab-labs": "view-labs",
-        "tab-neyim": "view-neyim",
-        "tab-report": "view-report",
-        "tab-settings": "view-settings"
-      };
-      navigateToView(map[tabId] || tabId);
-    }
 
     /* GLOBAL ARAMA MOTORU */

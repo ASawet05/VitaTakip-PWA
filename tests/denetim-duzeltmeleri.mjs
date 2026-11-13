@@ -68,13 +68,18 @@ const S1 = await p.evaluate(() => {
 log('Geçersiz EAN-13 barkod kalmadı (dahili kimliğe çevrildi)', S1.fakeEan === 0 && S1.internal === 43, JSON.stringify(S1));
 log('Fosamax haftalık doz olarak işaretli', S1.fosWeekly === true);
 
-/* G1 + G7: yedek Android köprüsü üzerinden kaydedilir; son yedek tarihi tutulur */
-const G1 = await p.evaluate(() => {
-  window.AndroidVitaBridge = { saveTextFile: (n, m, t) => { window.__saved = { n, m, len: t.length, app: JSON.parse(t).app }; return true; } };
-  exportDataBackup(); delete window.AndroidVitaBridge;
-  return { saved: window.__saved, stamp: Boolean(localStorage.getItem('vitatakip_last_backup_' + activeUserId)) };
+/* G1 + G7: yedek tarayıcıda .json dosyası olarak indirilir (indirme bağlantısı yakalanır); son yedek tarihi tutulur */
+const G1 = await p.evaluate(async () => {
+  const origClick = HTMLAnchorElement.prototype.click, origCreate = URL.createObjectURL;
+  let blob = null, name = null;
+  URL.createObjectURL = x => { blob = x; return origCreate.call(URL, x); };
+  HTMLAnchorElement.prototype.click = function () { if (this.download) name = this.download; else origClick.call(this); };
+  try { exportDataBackup(); } finally { HTMLAnchorElement.prototype.click = origClick; URL.createObjectURL = origCreate; }
+  const t = blob ? await blob.text() : "";
+  const saved = blob ? { n: name, m: blob.type.split(";")[0], len: t.length, app: JSON.parse(t).app } : null;
+  return { saved, stamp: Boolean(localStorage.getItem('vitatakip_last_backup_' + activeUserId)) };
 });
-log('Yedek Android köprüsüyle dosyaya yazılır', G1.saved && G1.saved.app === 'VitaTakip' && /^VitaTakip_Yedek_/.test(G1.saved.n) && G1.saved.m === 'application/json', JSON.stringify(G1.saved));
+log('Yedek tarayıcıda .json dosyası olarak indirilir', G1.saved && G1.saved.app === 'VitaTakip' && /^VitaTakip_Yedek_/.test(G1.saved.n) && G1.saved.m === 'application/json', JSON.stringify(G1.saved));
 log('Son yedek tarihi kaydedilir (hatırlatma için)', G1.stamp);
 
 /* G4: zararlı/bozuk yedek doğrulanarak içe aktarılır */

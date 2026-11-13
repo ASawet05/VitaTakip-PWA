@@ -97,9 +97,17 @@ swap('js', '<!-- Betikler <head> içinde defer ile yüklenir (yukarıdaki build:
 wr('index.html', html);
 
 /* service-worker.js: önbellek sürümü ve çevrimdışı dosya listesi */
+/* Çevrimdışı tam çalışma: kodda (index.html, kaynak JS, manifest) geçen TÜM yerel dosyalar önbelleğe alınır —
+   ihtiyaç anında yüklenen PDF okuyucu, grafik, barkod kütüphaneleri ve belirti görselleri dahil. */
 const icons = fs.readdirSync(path.join(root, 'icons')).map(f => `./icons/${f}`);
 const fonts = fs.readdirSync(path.join(root, 'vendor/fontawesome/webfonts')).map(f => `./vendor/fontawesome/webfonts/${f}`);
-const core = ['./', './index.html', './manifest.json', `./css/app.css?v=${hash}`, ...jsFiles, ...icons, ...fonts];
+const referenced = new Set();
+for (const f of ['index.html', 'manifest.json', ...JS]) {
+  for (const m of rd(f).matchAll(/["'`(]\.?\/?((?:vendor|img|icons)\/[A-Za-z0-9_./-]+\.(?:js|png|jpe?g|webp|svg|woff2))["'`)]/g)) referenced.add(`./${m[1]}`);
+}
+const core = [...new Set(['./', './index.html', './manifest.json', `./css/app.css?v=${hash}`, ...jsFiles, ...icons, ...fonts, ...[...referenced].sort()])];
+const missing = core.filter(u => u !== './' && !fs.existsSync(path.join(root, u.replace(/^\.\//, '').replace(/\?.*$/, ''))));
+if (missing.length) { console.error('ÖNBELLEK LİSTESİNDE OLUP DİSKTE OLMAYAN DOSYA:', missing.join(', ')); process.exit(1); }
 let sw = rd('service-worker.js');
 sw = sw.replace(/const CACHE_VERSION = '[^']*';/, `const CACHE_VERSION = 'vitatakip-${hash}';`)
        .replace(/const CORE_FILES = \[[\s\S]*?\];/, `const CORE_FILES = ${JSON.stringify(core, null, 2)};`);

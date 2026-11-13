@@ -24,11 +24,11 @@
 <!-- Uses Inter when already available; otherwise falls back immediately to the system UI font. -->
 <!-- Font Awesome 6 CDN -->
 <!-- build:css -->
-<link rel="stylesheet" href="./css/app.css?v=80bd6344b2">
-<script defer src="./js/app.1.js?v=80bd6344b2"></script>
-<script defer src="./js/app.2.js?v=80bd6344b2"></script>
-<script defer src="./js/app.3.js?v=80bd6344b2"></script>
-<script defer src="./js/app.4.js?v=80bd6344b2"></script>
+<link rel="stylesheet" href="./css/app.css?v=ac45aade75">
+<script defer src="./js/app.1.js?v=ac45aade75"></script>
+<script defer src="./js/app.2.js?v=ac45aade75"></script>
+<script defer src="./js/app.3.js?v=ac45aade75"></script>
+<script defer src="./js/app.4.js?v=ac45aade75"></script>
 <!-- /build:css -->
 <!-- Chart.js loads only if a trend chart is needed. -->
 <!-- PDF.js loads only when a user selects a PDF for analysis. -->
@@ -751,7 +751,7 @@
 </div>
 <div class="flex items-center gap-2">
 <span class="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
-<i class="fa-solid fa-rotate text-[9px]"></i> Senkronize
+<i class="fa-solid fa-circle-check text-[9px]"></i> Güncel
               </span>
 <span class="px-2.5 py-1 rounded-lg bg-white border border-teal-200 group-hover:bg-teal-50 text-teal-800 text-[11px] font-bold transition flex items-center gap-1.5 shadow-sm">
 <span id="label-acc-integrated-summary">Göster</span>
@@ -880,7 +880,7 @@
 <p class="text-[10px] text-slate-500 mt-1 font-semibold">B12 / Folat / Demir</p>
 </div>
 <div class="anamnesis-card p-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition cursor-pointer select-none shadow-sm" onclick="if(window.SoundEffects) SoundEffects.playClick(); toggleAnamnesisCard(this, 'brain_fog')">
-<div class="flex items-center justify-between"><i class="fa-solid fa-cloud text-sky-500 text-base"></i><div class="w-4 h-4 rounded-full border border-slate-300 check-dot"></div></div>
+<div class="flex items-center justify-between"><i class="fa-solid fa-brain text-sky-500 text-base"></i><div class="w-4 h-4 rounded-full border border-slate-300 check-dot"></div></div>
 <h4 class="text-xs font-bold text-slate-800 mt-1.5">Cümle kurarken kelime bulmakta zorlanıyor, unutkanlık ve zihinsel sis yaşıyorum</h4>
 <p class="text-[10px] text-slate-500 mt-1 font-semibold">B12 &amp; Omega-3 (DHA)</p>
 </div>
@@ -2117,7 +2117,7 @@ Verileri Sil
 </div>
 </div>
 </div>
-<!-- MODAL 0: VİTATAKİP GİRİŞ EKRANI (yerel hesap + isteğe bağlı bulut girişi). Eleman id'leri JS tarafından kullanılır; değiştirmeyin. -->
+<!-- MODAL 0: VİTATAKİP GİRİŞ EKRANI (yalnızca bu tarayıcıdaki yerel hesap). Eleman id'leri JS tarafından kullanılır; değiştirmeyin. -->
 <div class="vta-auth" id="authModal" style="display:flex">
 <div class="vta-card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
 <header class="vta-hero">
@@ -2234,34 +2234,6 @@ Verileri Sil
 </div>
 </div>
 </div>
-<!-- MODAL: NORMALİTE BİLDİRİM POPUP -->
-<div class="fixed inset-0 z-50 bg-navy-950/80 backdrop-blur-md hidden items-center justify-center p-4" id="normalityPopupModal">
-<div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border-2 border-emerald-400 relative animate-bounce-short" id="normalityPopupBox">
-<button class="absolute right-5 top-5 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition cursor-pointer" onclick="if(window.SoundEffects) SoundEffects.playClick(); closeNormalityPopup()">
-<i class="fa-solid fa-xmark text-sm"></i>
-</button>
-<div class="flex items-center gap-3.5 mb-4">
-<div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl flex-shrink-0 shadow-inner" id="normalityPopupIconBox">
-<i class="fa-solid fa-user-doctor"></i>
-</div>
-<div>
-<span class="text-[10px] font-black tracking-wider uppercase text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200" id="normalityPopupBadge">
-            Klinik İlerleme Bildirimi
-          </span>
-<h3 class="text-base font-black text-navy-900 mt-0.5" id="normalityPopupHeading">Tahlil Değeriniz Normale Ulaştı!</h3>
-</div>
-</div>
-<div class="space-y-3 my-4" id="normalityPopupContent"></div>
-<div class="mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-<span class="text-[11px] text-slate-500 italic">
-<i class="fa-solid fa-circle-info text-teal-600 mr-1"></i> Bu bildirim hekim konsültasyon raporunuza da işlenmiştir. İdame dozu için hekiminize danışınız.
-        </span>
-<button class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 text-white font-bold text-xs shadow-md transition cursor-pointer" onclick="if(window.SoundEffects) SoundEffects.playClick(); closeNormalityPopup()">
-          Anladım, Kapat
-        </button>
-</div>
-</div>
-</div>
 <!-- MODAL: DEPRESCRIBING MODALI -->
 <div class="fixed inset-0 z-50 bg-navy-950/80 backdrop-blur-md hidden items-center justify-center p-4" id="deprescribingModal">
 <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border-2 border-emerald-400 relative animate-bounce-short max-h-[92vh] overflow-y-auto">
@@ -2357,7 +2329,7 @@ Verileri Sil
 <div class="mt-4" id="pdfUploadDropzoneArea">
 <label class="flex flex-col items-center justify-center p-6 border-2 border-dashed border-teal-300 hover:border-teal-500 bg-teal-50/40 hover:bg-teal-50/80 rounded-2xl cursor-pointer transition text-center group" for="eNabizPdfInput">
 <div class="w-14 h-14 rounded-2xl bg-white text-teal-600 flex items-center justify-center text-2xl mb-2.5 shadow-sm group-hover:scale-105 transition-transform">
-<i class="fa-solid fa-cloud-arrow-up text-teal-500"></i>
+<i class="fa-solid fa-file-arrow-up text-teal-500"></i>
 </div>
 <span class="text-xs font-black text-navy-900 block">e-Nabız Tahlil PDF Dosyasını Buraya Bırakın veya Seçin</span>
 <span class="text-[10px] text-slate-500 mt-1 block">Yalnızca resmi .pdf tahlil belgeleri desteklenir</span>

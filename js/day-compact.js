@@ -38,9 +38,6 @@
 
   /* 2b) Günlük "belirtiler hâlâ var mı?" kontrolü (günde bir kez, ana sayfada) */
   function sympKey() { return typeof activeUserId !== "undefined" && activeUserId ? "vitatakip_symptomcheck_" + activeUserId : ""; }
-  function symptomMetas() {
-    try { return (window.VitaClinicalData && VitaClinicalData.selectedSymptomMetas) ? VitaClinicalData.selectedSymptomMetas() : []; } catch (_) { return []; }
-  }
   function symptomName(key) {
     try { var d = ANAMNESIS_DICTIONARY[key]; return (d && (d.symptomName || d.medicalName)) || key; } catch (_) { return key; }
   }

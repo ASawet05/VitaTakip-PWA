@@ -28,11 +28,7 @@ function renderFridgeScheduleSheet() {
       window.addEventListener("afterprint", cleanUp, { once: true });
       window.setTimeout(() => {
         try {
-          if (window.AndroidVitaBridge && typeof window.AndroidVitaBridge.printPageWithTitle === "function") {
-            window.AndroidVitaBridge.printPageWithTitle("VitaTakip_Buzdolabi_Cizelgesi");
-          } else {
-            window.print();
-          }
+          window.print();
         }
         catch (error) { cleanUp(); showToast("Yazdırma açılamadı", "Tarayıcının Yazdır menüsünü kullanarak yeniden deneyin.", "error"); }
         window.setTimeout(cleanUp, 1500);
@@ -238,11 +234,7 @@ function renderFridgeScheduleSheet() {
       showToast("PDF Raporu Hazırlandı", "Kan tahlili geçmişiniz doktor paylaşımı için PDF yazdırma/kaydetme ekranına aktarılıyor.", "info");
       window.setTimeout(() => {
         try {
-          if (window.AndroidVitaBridge && typeof window.AndroidVitaBridge.printPageWithTitle === "function") {
-            window.AndroidVitaBridge.printPageWithTitle("VitaTakip_Kan_Tahlili_Gecmisi");
-          } else {
-            window.print();
-          }
+          window.print();
         } catch (error) {
           cleanUp();
           showToast("PDF oluşturulamadı", "Yazdırma/PDF servisi başlatılamadı.", "error");

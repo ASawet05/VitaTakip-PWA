@@ -57,24 +57,6 @@ function syncNeyimInlineInputsPreview(markUserEdited = true) {
   }
 }
 
-function showNeyimTriageValidationError(title, detail) {
-  const errBanner = document.getElementById("neyimTriageErrorBanner");
-  if (errBanner) {
-    errBanner.classList.remove("hidden");
-    errBanner.innerHTML = `
-      <div class="flex items-start gap-2.5">
-        <i class="fa-solid fa-triangle-exclamation text-rose-600 text-base mt-0.5"></i>
-        <div class="space-y-1">
-          <div class="font-black text-rose-900">${escapeHtmlText(title)}</div>
-          <p class="text-[11px] leading-relaxed text-rose-800">${escapeHtmlText(detail)}</p>
-        </div>
-      </div>`;
-    errBanner.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
-  if (typeof showToast === "function") {
-    showToast(title, detail, "warning");
-  }
-}
 
 function evaluateAnamnesisTriageAndEgfr({ symptomsList, age, gender, creatinine, labs }) {
   const urgentSymptoms = [

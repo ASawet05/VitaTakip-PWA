@@ -95,7 +95,7 @@ function checkMidnightReset(userId) {
             executeCDSSRules();
           }
           renderAllAppViews();
-          showToast("Yerel Arşiv Yüklendi", "Tahlil geçmişi ve semptom kayıtları tarayıcı içi veritabanından eşitlendi.", "info");
+          showToast("Yerel Arşiv Yüklendi", "Tahlil geçmişi ve semptom kayıtları bu tarayıcıdaki yerel arşivden yüklendi.", "info");
         } else {
           renderLabHistoryUI();
         }
@@ -108,15 +108,9 @@ function checkMidnightReset(userId) {
       });
     }
 
-    /* Dosya kaydetme: Android uygulamasında yerel köprü (İndirilenler klasörü), tarayıcıda Blob bağlantısı.
-       WebView data:/blob: indirmelerini kendiliğinden kaydetmediği için köprü zorunludur. */
+    /* Dosya kaydetme: tarayıcıda Blob bağlantısıyla indirilir (sunucu yok). */
     function vitaSaveTextFile(fileName, mimeType, text) {
       const safeFile = String(fileName || "VitaTakip.json").replace(/[\\/:*?"<>|]+/g, "_").slice(0, 120);
-      const bridge = window.AndroidVitaBridge;
-      if (bridge && typeof bridge.saveTextFile === "function") {
-        try { return Boolean(bridge.saveTextFile(safeFile, mimeType || "application/json", String(text))); }
-        catch (error) { console.warn("Android dosya kaydı başarısız:", error); return false; }
-      }
       try {
         const blob = new Blob([String(text)], { type: `${mimeType || "application/json"};charset=utf-8` });
         const url = URL.createObjectURL(blob);
@@ -154,7 +148,7 @@ function checkMidnightReset(userId) {
         return;
       }
       safeLocalStorageSetItem(`vitatakip_last_backup_${activeUserId}`, String(Date.now()));
-      showToast("Yedek Alındı", window.AndroidVitaBridge ? `Yedek İndirilenler klasörüne kaydedildi: ${fileName}` : "Verileriniz JSON dosyası olarak indirildi.", "success");
+      showToast("Yedek Alındı", "Verileriniz JSON dosyası olarak indirildi.", "success");
     }
 
     /* ---------- Yedekten içe aktarma: tür ve aralık doğrulaması ---------- */

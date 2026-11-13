@@ -146,16 +146,8 @@ function getDoctorReportMode() {
 
       window.setTimeout(() => {
         try {
-          if (window.AndroidVitaBridge && typeof window.AndroidVitaBridge.printPageWithTitle === "function") {
-            window.AndroidVitaBridge.printPageWithTitle(jobTitle);
-            doctorReportPrintCleanupTimer = window.setTimeout(cleanupDoctorReportPrintMode, 1400);
-          } else if (window.AndroidVitaBridge && typeof window.AndroidVitaBridge.printPage === "function") {
-            window.AndroidVitaBridge.printPage();
-            doctorReportPrintCleanupTimer = window.setTimeout(cleanupDoctorReportPrintMode, 1400);
-          } else {
-            window.print();
-            doctorReportPrintCleanupTimer = window.setTimeout(cleanupDoctorReportPrintMode, 1200);
-          }
+          window.print();
+          doctorReportPrintCleanupTimer = window.setTimeout(cleanupDoctorReportPrintMode, 1200);
         } catch (err) {
           cleanupDoctorReportPrintMode();
           if (typeof showToast === "function") {
@@ -164,17 +156,6 @@ function getDoctorReportMode() {
         }
       }, 140);
     }
-
-    window.onAndroidPdfSaved = function(fileName) {
-      cleanupDoctorReportPrintMode();
-      if (typeof showToast === "function") {
-        showToast(
-          "PDF Raporu İndirildi",
-          `${fileName || "VitaTakip_Kisa_Doktor_Raporu.pdf"} cihazınızın İndirilenler (Downloads) klasörüne kaydedildi.`,
-          "success"
-        );
-      }
-    };
 
     window.getDoctorReportMode = getDoctorReportMode;
     window.setDoctorReportMode = setDoctorReportMode;
@@ -1200,14 +1181,7 @@ function getDoctorReportMode() {
     let notificationSchedulerInterval = null;
 
     function isNotificationPermissionGranted() {
-      const webGranted = ("Notification" in window) && Notification.permission === "granted";
-      let androidGranted = false;
-      if (window.AndroidVitaBridge && typeof window.AndroidVitaBridge.getNotificationPermissionStatus === "function") {
-        try {
-          androidGranted = window.AndroidVitaBridge.getNotificationPermissionStatus() === "granted";
-        } catch (_) {}
-      }
-      return webGranted || androidGranted;
+      return ("Notification" in window) && Notification.permission === "granted";
     }
 
     function isNotificationEnabled() {
@@ -1287,9 +1261,6 @@ function getDoctorReportMode() {
         }
       }
 
-      if (typeof window.renderPwaNotificationSmartChecklist === "function") {
-        window.renderPwaNotificationSmartChecklist();
-      }
       if (typeof updateCameraPermissionUI === "function") {
         updateCameraPermissionUI();
       }
@@ -1299,7 +1270,6 @@ function getDoctorReportMode() {
     /*   KAMERA ERİŞİM İZNİ YÖNETİMİ (AYARLAR -> İZİNLER & BARKOD / AI KAMERA)    */
     /* ========================================================================= */
     let cachedCameraPermState = safeLocalStorageGetItem("vitatakip_camera_perm_status") || "prompt";
-    let pendingNativeCameraPermResolvers = [];
 
     function isCameraAppConsentEnabled() {
       const val = safeLocalStorageGetItem("vitatakip_camera_app_approved");
@@ -1315,14 +1285,7 @@ function getDoctorReportMode() {
       const appApproved = isCameraAppConsentEnabled();
       let osStatus = cachedCameraPermState || "prompt";
 
-      if (window.AndroidVitaBridge && typeof window.AndroidVitaBridge.getCameraPermissionStatus === "function") {
-        try {
-          const nativeSt = String(window.AndroidVitaBridge.getCameraPermissionStatus() || "").trim().toLowerCase();
-          if (nativeSt === "granted" || nativeSt === "denied" || nativeSt === "prompt") {
-            osStatus = nativeSt;
-          }
-        } catch (_) {}
-      } else if (navigator.permissions && typeof navigator.permissions.query === "function") {
+      if (navigator.permissions && typeof navigator.permissions.query === "function") {
         try {
           const permObj = await navigator.permissions.query({ name: "camera" });
           if (permObj && permObj.state) {
@@ -1352,21 +1315,6 @@ function getDoctorReportMode() {
 
     function isCameraPermissionGranted() {
       if (!isCameraAppConsentEnabled()) return false;
-      if (window.AndroidVitaBridge && typeof window.AndroidVitaBridge.getCameraPermissionStatus === "function") {
-        try {
-          const st = window.AndroidVitaBridge.getCameraPermissionStatus();
-          if (st === "granted") {
-            cachedCameraPermState = "granted";
-            safeLocalStorageSetItem("vitatakip_camera_perm_status", "granted");
-            return true;
-          }
-          if (st === "denied") {
-            cachedCameraPermState = "denied";
-            safeLocalStorageSetItem("vitatakip_camera_perm_status", "denied");
-            return false;
-          }
-        } catch (_) {}
-      }
       return cachedCameraPermState === "granted";
     }
 
@@ -1500,73 +1448,11 @@ function getDoctorReportMode() {
       return info;
     }
 
-    function requestNativeAndroidCameraPermissionPromise(timeoutMs = 6000) {
-      return new Promise(resolve => {
-        if (!window.AndroidVitaBridge || typeof window.AndroidVitaBridge.requestCameraPermission !== "function") {
-          resolve(false);
-          return;
-        }
-        try {
-          if (typeof window.AndroidVitaBridge.getCameraPermissionStatus === "function" &&
-              window.AndroidVitaBridge.getCameraPermissionStatus() === "granted") {
-            cachedCameraPermState = "granted";
-            safeLocalStorageSetItem("vitatakip_camera_perm_status", "granted");
-            resolve(true);
-            return;
-          }
-        } catch (_) {}
-
-        let settled = false;
-        const finish = (granted) => {
-          if (settled) return;
-          settled = true;
-          clearTimeout(timer);
-          resolve(Boolean(granted));
-        };
-        pendingNativeCameraPermResolvers.push(finish);
-
-        const timer = window.setTimeout(() => {
-          let grantedNow = false;
-          try {
-            grantedNow = window.AndroidVitaBridge.getCameraPermissionStatus() === "granted";
-          } catch (_) {}
-          finish(grantedNow);
-        }, timeoutMs);
-
-        try {
-          window.AndroidVitaBridge.requestCameraPermission();
-        } catch (_) {
-          finish(false);
-        }
-      });
-    }
-
     async function requestOrVerifyCameraPermission(fromUserClick = true, featureType = "all") {
       // Kullanıcı onay butonuna bastığında uygulama içi kamera onayını da aktif et
       setCameraAppConsentEnabled(true);
       const consentCheckbox = document.getElementById("settingsCameraAppConsentCheckbox");
       if (consentCheckbox) consentCheckbox.checked = true;
-
-      let nativeGranted = false;
-      if (window.AndroidVitaBridge && typeof window.AndroidVitaBridge.requestCameraPermission === "function") {
-        nativeGranted = await requestNativeAndroidCameraPermissionPromise(5500);
-        if (nativeGranted) {
-          cachedCameraPermState = "granted";
-          safeLocalStorageSetItem("vitatakip_camera_perm_status", "granted");
-          await updateCameraPermissionUI();
-          if (typeof window.renderPwaNotificationSmartChecklist === "function") {
-            window.renderPwaNotificationSmartChecklist();
-          }
-          if (fromUserClick && typeof showToast === "function") {
-            showToast(
-              "Kamera Erişim İzni Onaylandı",
-              "Barkod okuyucu ve Yapay Zeka (AI) fotoğraf analizi için kamera erişimi aktif.",
-              "success"
-            );
-          }
-          return true;
-        }
-      }
 
       if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === "function") {
         try {
@@ -1578,9 +1464,6 @@ function getDoctorReportMode() {
           cachedCameraPermState = "granted";
           safeLocalStorageSetItem("vitatakip_camera_perm_status", "granted");
           await updateCameraPermissionUI();
-          if (typeof window.renderPwaNotificationSmartChecklist === "function") {
-            window.renderPwaNotificationSmartChecklist();
-          }
           if (fromUserClick && typeof showToast === "function") {
             showToast(
               "Kamera Erişim İzni Onaylandı",
@@ -1590,28 +1473,9 @@ function getDoctorReportMode() {
           }
           return true;
         } catch (err) {
-          if (window.AndroidVitaBridge && typeof window.AndroidVitaBridge.getCameraPermissionStatus === "function") {
-            try {
-              if (window.AndroidVitaBridge.getCameraPermissionStatus() === "granted") {
-                cachedCameraPermState = "granted";
-                safeLocalStorageSetItem("vitatakip_camera_perm_status", "granted");
-                await updateCameraPermissionUI();
-                if (typeof window.renderPwaNotificationSmartChecklist === "function") {
-                  window.renderPwaNotificationSmartChecklist();
-                }
-                if (fromUserClick && typeof showToast === "function") {
-                  showToast("Kamera İzni Onaylandı", "Cihaz kamera izni aktif.", "success");
-                }
-                return true;
-              }
-            } catch (_) {}
-          }
           cachedCameraPermState = err?.name === "NotAllowedError" ? "denied" : "prompt";
           safeLocalStorageSetItem("vitatakip_camera_perm_status", cachedCameraPermState);
           await updateCameraPermissionUI();
-          if (typeof window.renderPwaNotificationSmartChecklist === "function") {
-            window.renderPwaNotificationSmartChecklist();
-          }
           if (fromUserClick && typeof showToast === "function") {
             const featureLabel = featureType === "ai_photo"
               ? "Yapay Zeka Fotoğraf Analizi"
@@ -1629,9 +1493,6 @@ function getDoctorReportMode() {
       }
 
       await updateCameraPermissionUI();
-      if (typeof window.renderPwaNotificationSmartChecklist === "function") {
-        window.renderPwaNotificationSmartChecklist();
-      }
       return isCameraPermissionGranted();
     }
 
@@ -1648,9 +1509,6 @@ function getDoctorReportMode() {
           try { window.stopBarcodeCameraScan(false); } catch (_) {}
         }
         await updateCameraPermissionUI();
-        if (typeof window.renderPwaNotificationSmartChecklist === "function") {
-          window.renderPwaNotificationSmartChecklist();
-        }
         if (typeof showToast === "function") {
           showToast(
             "Kamera Erişim Onayı Kapatıldı",
@@ -1743,9 +1601,8 @@ function getDoctorReportMode() {
         return true;
       }
 
-      // Web ortamında (Android köprüsü yokken) kullanıcı dosya seçici üzerinden mevcut bir kutu görseli yüklüyorsa:
-      const hasAndroidBridge = Boolean(window.AndroidVitaBridge && typeof window.AndroidVitaBridge.getCameraPermissionStatus === "function");
-      if (featureType === "ai_photo" && !hasAndroidBridge && afterInfo.appApproved && afterInfo.osStatus !== "denied") {
+      // Kullanıcı dosya seçici üzerinden mevcut bir kutu görseli yüklüyorsa kamera izni gerekmez:
+      if (featureType === "ai_photo" && afterInfo.appApproved && afterInfo.osStatus !== "denied") {
         return true;
       }
 
@@ -1760,34 +1617,9 @@ function getDoctorReportMode() {
     }
 
     function openNativeAppPermissionSettings() {
-      if (window.AndroidVitaBridge && typeof window.AndroidVitaBridge.openAppPermissionSettings === "function") {
-        try {
-          window.AndroidVitaBridge.openAppPermissionSettings();
-          return;
-        } catch (_) {}
-      }
-      showToast("İzin Ayarları", "Tarayıcı adres çubuğundaki kilit simgesinden veya telefonunuzun Ayarlar > Uygulamalar > VitaTakip > İzinler menüsünden Kamera iznini açabilirsiniz.", "info");
+      showToast("İzin Ayarları", "Tarayıcı adres çubuğundaki kilit/ayar simgesinden bu site için Kamera iznini açabilirsiniz.", "info");
     }
 
-    window.onAndroidCameraPermissionResult = function(status) {
-      const isGranted = status === "granted";
-      cachedCameraPermState = isGranted ? "granted" : "denied";
-      safeLocalStorageSetItem("vitatakip_camera_perm_status", cachedCameraPermState);
-      if (isGranted) {
-        setCameraAppConsentEnabled(true);
-      }
-      while (pendingNativeCameraPermResolvers.length > 0) {
-        const resolver = pendingNativeCameraPermResolvers.shift();
-        try { resolver(isGranted); } catch (_) {}
-      }
-      updateCameraPermissionUI();
-      if (typeof window.renderPwaNotificationSmartChecklist === "function") {
-        window.renderPwaNotificationSmartChecklist();
-      }
-      if (isGranted && typeof showToast === "function") {
-        showToast("Kamera İzni Onaylandı", "Barkod okuyucu ve AI kutu tanıma kamerası aktif edildi.", "success");
-      }
-    };
 
     window.queryCameraPermissionStatus = queryCameraPermissionStatus;
     window.isCameraPermissionGranted = isCameraPermissionGranted;
@@ -1800,8 +1632,7 @@ function getDoctorReportMode() {
     window.openNativeAppPermissionSettings = openNativeAppPermissionSettings;
 
     async function toggleBrowserNotifications() {
-      const hasAndroid = Boolean(window.AndroidVitaBridge && typeof window.AndroidVitaBridge.requestNotificationPermission === "function");
-      if (!("Notification" in window) && !hasAndroid) {
+      if (!("Notification" in window)) {
         showToast("Desteklenmiyor", "Tarayıcınız masaüstü bildirimlerini desteklemiyor.", "warning");
         return;
       }
@@ -1813,13 +1644,7 @@ function getDoctorReportMode() {
         return;
       }
 
-      if (hasAndroid) {
-        try {
-          window.AndroidVitaBridge.requestNotificationPermission();
-        } catch (_) {}
-      }
-
-      let permission = hasAndroid && isNotificationPermissionGranted() ? "granted" : "default";
+      let permission = "default";
       if ("Notification" in window && typeof Notification.requestPermission === "function") {
         try {
           permission = await Notification.requestPermission();
@@ -1836,11 +1661,6 @@ function getDoctorReportMode() {
             new Notification("VitaTakip Dozaj Hatırlatıcı Aktif", {
               body: "Çizelgenizde kayıtlı takviye saatlerinde bildirim alacaksınız."
             });
-          } else if (hasAndroid && typeof window.AndroidVitaBridge.sendNativeNotification === "function") {
-            window.AndroidVitaBridge.sendNativeNotification(
-              "VitaTakip Dozaj Hatırlatıcı Aktif",
-              "Çizelgenizde kayıtlı takviye saatlerinde bildirim alacaksınız."
-            );
           }
         } catch (e) {}
       } else {
@@ -1873,9 +1693,6 @@ function getDoctorReportMode() {
           new Notification(notifTitle, {
             body: notifBody
           });
-        }
-        if (window.AndroidVitaBridge && typeof window.AndroidVitaBridge.sendNativeNotification === "function") {
-          window.AndroidVitaBridge.sendNativeNotification(notifTitle, notifBody);
         }
       } catch (e) {}
     }

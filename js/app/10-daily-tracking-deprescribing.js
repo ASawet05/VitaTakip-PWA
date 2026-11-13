@@ -525,10 +525,6 @@ function renderDailyTab() {
           );
           return;
         }
-      } else if (window.AndroidVitaBridge && typeof window.AndroidVitaBridge.requestCameraPermission === "function") {
-        try {
-          window.AndroidVitaBridge.requestCameraPermission();
-        } catch (_) {}
       }
 
       if (wrapper) wrapper.classList.remove("hidden");
@@ -1419,7 +1415,7 @@ function renderDailyTab() {
       }
       renderLabHistoryUI();
       renderBiomarkerTrendChart();
-      evaluateTrendAndDecisionSupport(true);
+      evaluateTrendAndDecisionSupport();
       checkDeprescribingOpportunities();
       renderDailyTab();
       renderReportTab();
@@ -1619,13 +1615,6 @@ function renderDailyTab() {
       return num < range.min || num > range.max ? "outside" : "within";
     }
 
-    function getProvidedLabRangeBadge(value, reference, key) {
-      const status = getProvidedLabRangeStatus(value, reference, key);
-      if (!status) return "";
-      const label = status === "within" ? "Lab/PDF aralığında" : "Lab/PDF aralığı dışında";
-      const classes = status === "within" ? "border-sky-200 bg-sky-50 text-sky-800" : "border-amber-300 bg-amber-50 text-amber-900";
-      return `<span class="inline-flex rounded-lg border ${classes} px-1.5 py-0.5 text-[9px] font-bold" title="Girilen laboratuvar referans aralığıyla sayısal karşılaştırma; tanı değildir">${label}</span>`;
-    }
 
     function parseLabNumericValue(value) {
       if (value === null || value === undefined || value === "") return null;
@@ -1707,7 +1696,7 @@ function renderDailyTab() {
       if (!container) return;
       updateLabHistoryFilterButtons();
 
-      if (badge) badge.textContent = `${state.labHistory.length} Tahlil${labHistoryRestorePending ? " · Eşitleniyor" : " Kayıtlı"}`;
+      if (badge) badge.textContent = `${state.labHistory.length} Tahlil${labHistoryRestorePending ? " · Yerel arşivden yükleniyor" : " Kayıtlı"}`;
       const selectedDate = dateFilter?.value || "all";
       if (dateFilter) {
         const dates = [...new Set(state.labHistory.map(item => item.date).filter(Boolean))]
@@ -1762,7 +1751,7 @@ function renderDailyTab() {
       if (summary) {
         const statusLabel = labHistoryFilterMode === "all" ? "Tüm sonuçlar" : labHistoryFilterMode === "normal" ? "Normal sonuçlar" : "Referans dışı sonuçlar";
         const dateLabel = activeDate === "all" ? "Tüm tarihler" : new Date(`${activeDate}T00:00:00`).toLocaleDateString(displayLocale);
-        const restoreStatus = labHistoryRestorePending ? " · Yerel arşiv eşitleniyor…" : "";
+        const restoreStatus = labHistoryRestorePending ? " · Yerel arşivden yükleniyor…" : "";
         summary.textContent = `${recordCount} kayıt · ${normalCount} normal · ${outCount} referans dışı ölçüm · ${statusLabel} · ${dateLabel}${restoreStatus}`;
       }
       if (!filteredRecords.length) {
@@ -1902,7 +1891,7 @@ function renderDailyTab() {
       syncCDSSDemographics();
       renderLabHistoryUI();
       renderBiomarkerTrendChart();
-      evaluateTrendAndDecisionSupport(false);
+      evaluateTrendAndDecisionSupport();
       renderDailyTab();
       renderReportTab();
       if (typeof renderSettingsView === "function") renderSettingsView();
@@ -2015,7 +2004,7 @@ function renderDailyTab() {
     }
 
         /* BOYLAMSAL TREND KARŞILAŞTIRMASI VE NORMALİTE POPUP TETİKLEYİCİSİ */
-    function evaluateTrendAndDecisionSupport(triggerPopup = false) {
+    function evaluateTrendAndDecisionSupport() {
       const alertSection = document.getElementById("trendAlertSection");
       if (!alertSection) return;
 
@@ -2045,7 +2034,6 @@ function renderDailyTab() {
       ];
 
       const trendMessages = [];
-      const popupAlerts = [];
 
       params.forEach(p => {
         const cVal = curr[p.key];
@@ -2057,14 +2045,12 @@ function renderDailyTab() {
           if (pEval.isLow && cEval.tier === 'optimal') {
             const msg = `🎉 ${p.name} değeriniz ${pVal} ${p.unit} seviyesinden ${cVal} ${p.unit} referans aralığına yükseldi. Takviyeyi sürdürme, azaltma veya bırakma kararını hekiminizle verin.`;
             trendMessages.push({ type: 'optimal', text: msg });
-            popupAlerts.push({ message: msg });
           } else if (p.inverseMarker && pEval.isHigh && cEval.tier === 'optimal') {
             const msg = `🎉 ${p.name} değeriniz ${pVal} ${p.unit} seviyesinden ${cVal} ${p.unit} normal referans aralığına geriledi.`;
             trendMessages.push({ type: 'optimal', text: msg });
           } else if (cEval.isToxic) {
             const msg = `⛔ ${p.name} değeriniz ${cVal} ${p.unit} ile kritik yüksek aralıkta olabilir. Sonucu gecikmeden hekiminizle görüşün; reçeteli tedavinizi veya takviyelerinizi kendi kendinize kesmeyin ya da değiştirmeyin.`;
             trendMessages.push({ type: 'toxic', text: msg });
-            popupAlerts.push({ message: msg });
           } else if (p.inverseMarker && !pEval.isHigh && cEval.isHigh) {
             const msg = `⚠️ ${p.name} değeriniz ${pVal} ➔ ${cVal} ${p.unit} yönünde yükselerek referans üst sınırını aştı; hekiminizle değerlendirmeniz önerilir.`;
             trendMessages.push({ type: 'toxic', text: msg });
@@ -2097,18 +2083,6 @@ function renderDailyTab() {
         `;
       }
 
-      if (triggerPopup && popupAlerts.length > 0) {
-        openNormalityPopup(popupAlerts);
-      }
-    }
-
-    function openNormalityPopup() {
-      return; // Tahlillerim sayfasında bildirim penceresi gösterilmez; yorumlar Klinik Analiz sayfasındadır.
-    }
-
-    function closeNormalityPopup() {
-      const modal = document.getElementById("normalityPopupModal");
-      if (modal) { modal.classList.add("hidden"); modal.style.display = "none"; }
     }
 
     /* AKILLI DEPRESCRIBING MOTORU */
