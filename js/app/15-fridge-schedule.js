@@ -268,7 +268,9 @@ function renderFridgeScheduleSheet() {
         check("Geri bildirim formu mevcut", Boolean(document.getElementById("vitaFeedbackForm")));
         check("İlk kullanım spotlight turunun 6 adımı tanımlı", Array.isArray(VITA_SPOTLIGHT_STEPS) && VITA_SPOTLIGHT_STEPS.length === 6);
         check("Spotlight turu manuel başlatma ve tamamlama işlevleri mevcut", typeof startVitaSpotlightTour === "function" && typeof moveVitaSpotlightTour === "function" && typeof finishVitaSpotlightTour === "function");
-        check("Tur hedefleri DOM'da mevcut", ["#headerProfileButton", "#guideLabsTarget", "#guideNeyimTarget", "#mobile-nav-view-clinical-results", "#guideDailyProtocolTarget", "#btnPrintFridgeReport"].every(selector => Boolean(document.querySelector(selector))));
+        check("Tur hedefleri DOM'da mevcut", VITA_GUIDE_STEPS.every(step => step.targets.some(selector => Boolean(document.querySelector(selector)))));
+        check("Rehber penceresi ve tur aynı adım listesini kullanıyor", VITA_SPOTLIGHT_STEPS === VITA_GUIDE_STEPS && Boolean(document.getElementById("vitaGuideSteps")) && typeof renderVitaGuideModal === "function" && /renderVitaGuideModal/.test(openOnboardingModal.toString()));
+        check("Rehber ilerlemesi her adım için hesaplanıyor", VITA_GUIDE_STEPS.every(step => typeof step.done === "function" && typeof step.open === "function" && step.title && step.text && step.detail));
         check("A4 buzdolabı çizelgesi ve yazdırma işlevi mevcut", typeof renderFridgeScheduleSheet === "function" && typeof printFridgeSchedule === "function" && Boolean(document.getElementById("fridgeMorningList")) && Boolean(document.getElementById("fridgeNoonList")) && Boolean(document.getElementById("fridgeEveningList")));
         check("Sekiz su bardağı işaret kutusu mevcut", document.querySelectorAll(".fridge-water-cup").length === 8);
         check("IndexedDB yerel veritabanı ve PDF tarama logu mevcut", typeof openVitaIndexedDB === "function" && typeof persistVitaExtendedData === "function" && typeof logVitaPdfScan === "function" && typeof getVitaPdfScanLogs === "function");

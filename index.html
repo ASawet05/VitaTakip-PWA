@@ -24,11 +24,11 @@
 <!-- Uses Inter when already available; otherwise falls back immediately to the system UI font. -->
 <!-- Font Awesome 6 CDN -->
 <!-- build:css -->
-<link rel="stylesheet" href="./css/app.css?v=ac45aade75">
-<script defer src="./js/app.1.js?v=ac45aade75"></script>
-<script defer src="./js/app.2.js?v=ac45aade75"></script>
-<script defer src="./js/app.3.js?v=ac45aade75"></script>
-<script defer src="./js/app.4.js?v=ac45aade75"></script>
+<link rel="stylesheet" href="./css/app.css?v=eeaf474613">
+<script defer src="./js/app.1.js?v=eeaf474613"></script>
+<script defer src="./js/app.2.js?v=eeaf474613"></script>
+<script defer src="./js/app.3.js?v=eeaf474613"></script>
+<script defer src="./js/app.4.js?v=eeaf474613"></script>
 <!-- /build:css -->
 <!-- Chart.js loads only if a trend chart is needed. -->
 <!-- PDF.js loads only when a user selects a PDF for analysis. -->
@@ -2215,22 +2215,19 @@ Verileri Sil
 <h3 class="text-base sm:text-lg font-black text-navy-900 mt-0.5">VitaTakip Nasıl Kullanılır?</h3>
 </div>
 </div>
-<p class="text-xs leading-relaxed text-slate-600">Tahlil sonuçlarınızı ve belirtilerinizi birlikte değerlendirip doktor görüşmesine hazırlar, günlük vitamin/su takibini kolaylaştırır. <strong>5 adımda</strong> kullanın:</p>
-<ol class="vg-steps my-3">
-  <li><button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); closeOnboardingModal(); openProfileModal(true)"><b>1</b><span><strong>Profilinizi girin</strong><em>Yaş, boy, kilo ve kullandığınız ilaçlar. Su hedefi ve böbrek hesabı buna göre ayarlanır.</em></span></button></li>
-  <li><button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); closeOnboardingModal(); navigateToView('view-labs')"><b>2</b><span><strong>Tahlillerim</strong><em>e-Nabız PDF'ini yükleyin ya da değerleri elle yazın. Tarihler ve referanslar otomatik gelir.</em></span></button></li>
-  <li><button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); closeOnboardingModal(); navigateToView('view-neyim')"><b>3</b><span><strong>NeyimVar?</strong><em>Yaşadığınız belirtileri seçin. Kartlardaki (?) düğmesi örnek görseli gösterir.</em></span></button></li>
-  <li><button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); closeOnboardingModal(); navigateToView('view-clinical-results')"><b>4</b><span><strong>Klinik Analiz</strong><em>Değerleriniz ve belirtileriniz tek ekranda: neye dikkat etmeli, hangi besinler ve hangi testler konuşulabilir.</em></span></button></li>
-  <li><button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); closeOnboardingModal(); navigateToView('view-report')"><b>5</b><span><strong>Doktor Raporu</strong><em>Tek sayfalık özeti yazdırın veya PDF olarak kaydedin; doktora gösterin.</em></span></button></li>
-</ol>
+<p class="text-xs leading-relaxed text-slate-600">Tahlil sonuçlarınızı ve belirtilerinizi birlikte değerlendirip doktor görüşmesine hazırlar, günlük vitamin/su takibini kolaylaştırır. <strong><span id="vitaGuideStepTotal">6</span> adımda</strong> kullanın. Tamamladığınız adımlar otomatik işaretlenir:</p>
+<div class="vg-progress" id="vitaGuideProgress" role="progressbar" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" aria-labelledby="vitaGuideProgressLabel">
+  <div class="vg-progress-head"><span id="vitaGuideProgressLabel">0 / 6 adım tamamlandı</span><span class="vg-progress-hint">Bir adıma dokunarak o ekrana gidin</span></div>
+  <div class="vg-progress-track"><div class="vg-progress-bar" id="vitaGuideProgressBar"></div></div>
+</div>
+<ol class="vg-steps my-3" id="vitaGuideSteps"></ol>
 <div class="vg-tips">
-  <div><i class="fa-solid fa-house text-emerald-700"></i><span><strong>Ana Sayfa:</strong> bugünkü vitaminlerinizi işaretleyin, su ekleyin, barkodla yeni takviye ekleyin. Her gün 00:00'da liste ve su sayacı yenilenir.</span></div>
   <div><i class="fa-solid fa-robot text-indigo-700"></i><span><strong>Vita AI:</strong> kısa sorular sorun. Ayarlar'dan Gemini API anahtarı ekler ve paylaşım onayı verirseniz Gemini, aksi hâlde cihazdaki yerel motor yanıtlar. Anahtarınız yalnızca bu tarayıcıda, kendi hesabınızda saklanır.</span></div>
   <div><i class="fa-solid fa-shield-halved text-teal-700"></i><span><strong>Gizlilik:</strong> verileriniz yalnızca bu tarayıcıda tutulur; başka cihaza taşımak için Ayarlar &gt; "Yedek İndir"i kullanın. Uygulama tanı koymaz, karar için hekime danışın.</span></div>
 </div>
 <div class="mt-4 flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
   <button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); closeOnboardingModal()" class="min-h-10 rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200">Kapat</button>
-  <button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); closeOnboardingModal(); startVitaSpotlightTour(true)" class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-medTeal-600 to-teal-500 px-4 py-2 text-xs font-black text-white shadow-md hover:from-medTeal-700"><i class="fa-solid fa-wand-magic-sparkles"></i>Ekranları sırayla göster</button>
+  <button type="button" id="vitaGuideStartTour" data-start-index="0" onclick="closeOnboardingModal(); startVitaSpotlightTour(true, Number(this.dataset.startIndex) || 0)" class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-medTeal-600 to-teal-500 px-4 py-2 text-xs font-black text-white shadow-md hover:from-medTeal-700"><i class="fa-solid fa-wand-magic-sparkles"></i><span id="vitaGuideStartLabel">Turu başlat</span></button>
 </div>
 </div>
 </div>
@@ -2867,10 +2864,10 @@ Verileri Sil
 <!-- İnteraktif Spotlight Tur Katmanı -->
 <div aria-label="VitaTakip adım adım kullanım turu" aria-live="polite" class="hidden no-print" id="vitaSpotlightLayer">
 <div aria-hidden="true" id="vitaSpotlightHole"></div>
-<section aria-labelledby="vitaTourTitle" aria-modal="true" class="rounded-2xl border border-teal-300 bg-white p-4 shadow-2xl" id="vitaTourTooltip" role="dialog">
-<div class="flex items-center justify-between gap-3 mb-2"><span class="text-[10px] uppercase tracking-wider font-black rounded-full bg-teal-50 text-teal-800 border border-teal-200 px-2.5 py-1" id="vitaTourCount">1 / 5</span><button aria-label="Turu kapat" class="min-h-9 px-2 text-[11px] font-bold text-slate-500 hover:text-rose-600" onclick="if(window.SoundEffects) SoundEffects.playClick(); finishVitaSpotlightTour(true)" type="button">Turu Bitir <i class="fa-solid fa-xmark ml-1"></i></button></div>
-<h2 class="text-sm font-black text-navy-900" id="vitaTourTitle">VitaTakip Rehberi</h2><p class="mt-1.5 text-xs leading-relaxed text-slate-600" id="vitaTourDescription"></p>
-<div class="mt-4 flex items-center justify-between gap-2"><button class="vita-tour-control rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 disabled:opacity-40" id="vitaTourPrevious" onclick="if(window.SoundEffects) SoundEffects.playClick(); moveVitaSpotlightTour(-1)" type="button">Geri</button><button class="vita-tour-control rounded-xl bg-gradient-to-r from-medTeal-600 to-teal-500 px-4 py-2 text-xs font-black text-white shadow" id="vitaTourNext" onclick="if(window.SoundEffects) SoundEffects.playClick(); moveVitaSpotlightTour(1)" type="button">İleri <i class="fa-solid fa-arrow-right ml-1"></i></button></div>
+<section aria-labelledby="vitaTourTitle" aria-modal="true" aria-describedby="vitaTourDescription" class="rounded-2xl border border-teal-300 bg-white p-4 shadow-2xl" id="vitaTourTooltip" role="dialog">
+<div class="flex items-center justify-between gap-3 mb-2"><span class="text-[10px] uppercase tracking-wider font-black rounded-full bg-teal-50 text-teal-800 border border-teal-200 px-2.5 py-1" id="vitaTourCount">1 / 6</span><button aria-label="Turu kapat" class="min-h-9 px-2 text-[11px] font-bold text-slate-500 hover:text-rose-600" onclick="if(window.SoundEffects) SoundEffects.playClick(); finishVitaSpotlightTour(true, { quiet: true })" type="button">Kapat <i class="fa-solid fa-xmark ml-1"></i></button></div>
+<h2 class="text-sm font-black text-navy-900" id="vitaTourTitle">VitaTakip Rehberi</h2><p class="mt-1.5 text-xs leading-relaxed text-slate-600" id="vitaTourDescription"></p><div class="mt-2.5 flex flex-wrap items-center gap-2"><span class="vita-tour-status" id="vitaTourStatus" hidden></span><button class="vita-tour-action" id="vitaTourAction" onclick="runVitaTourStepAction()" type="button" hidden></button></div>
+<div class="mt-4 flex items-center justify-between gap-2"><button class="vita-tour-control rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 disabled:opacity-40" id="vitaTourPrevious" onclick="if(window.SoundEffects) SoundEffects.playClick(); moveVitaSpotlightTour(-1)" type="button">Geri</button><div aria-hidden="true" class="vita-tour-dots" id="vitaTourDots"></div><button class="vita-tour-control rounded-xl bg-gradient-to-r from-medTeal-600 to-teal-500 px-4 py-2 text-xs font-black text-white shadow" id="vitaTourNext" onclick="if(window.SoundEffects) SoundEffects.playClick(); moveVitaSpotlightTour(1)" type="button">İleri <i class="fa-solid fa-arrow-right ml-1"></i></button></div>
 </section>
 </div>
 

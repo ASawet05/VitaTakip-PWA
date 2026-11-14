@@ -97,6 +97,10 @@
         if (typeof window.navigateToView === "function") {
           try { window.navigateToView("view-home"); } catch (_) {}
         }
+        // Onay ekranı açıkken ertelenen ilk kullanım turunu şimdi başlat.
+        if (typeof window.startVitaSpotlightIfFirstVisit === "function") {
+          try { window.startVitaSpotlightIfFirstVisit(); } catch (_) {}
+        }
       }, 380);
     });
 

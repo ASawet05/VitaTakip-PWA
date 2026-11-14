@@ -63,6 +63,7 @@ function applyParsedPdfValues() {
 
     function openOnboardingModal() {
       const modal = document.getElementById("onboardingModal");
+      if (typeof renderVitaGuideModal === "function") renderVitaGuideModal();
       if (modal) { modal.classList.remove("hidden"); modal.style.display = "flex"; }
     }
 

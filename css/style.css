@@ -255,11 +255,25 @@ footer,
     }
 
     /* Adım adım VitaTakip rehberi: mevcut navy/teal kimliği korunur. */
-    #vitaSpotlightLayer { position: fixed; inset: 0; z-index: 9990; pointer-events: none; }
-    #vitaSpotlightHole { position: fixed; border: 3px solid #14b8a6; border-radius: 16px; box-shadow: 0 0 0 9999px rgba(2,6,23,.78), 0 0 22px rgba(20,184,166,.45); pointer-events: none; transition: top .22s ease, left .22s ease, width .22s ease, height .22s ease; }
+    /* Tur açıkken arka plandaki uygulamaya tıklanmaz; tur ve uygulama aynı ekranda kalır. */
+    #vitaSpotlightLayer { position: fixed; inset: 0; z-index: 9990; pointer-events: auto; background: transparent; }
+    #vitaSpotlightLayer.is-centered { background: rgba(2,6,23,.78); }
+    #vitaSpotlightLayer.is-centered #vitaSpotlightHole { display: none !important; }
+    #vitaSpotlightHole { position: fixed; border: 3px solid #14b8a6; border-radius: 16px; box-shadow: 0 0 0 9999px rgba(2,6,23,.78), 0 0 22px rgba(20,184,166,.45); pointer-events: none; transition: top .22s ease, left .22s ease, width .22s ease, height .22s ease, opacity .18s ease; }
+    #vitaTourTooltip { transition: top .22s ease, left .22s ease; }
+    .vita-tour-dots { display: flex; gap: 5px; align-items: center; justify-content: center; flex: 1; }
+    .vita-tour-dots span { width: 7px; height: 7px; border-radius: 999px; background: #cbd5e1; transition: width .2s ease, background .2s ease; }
+    .vita-tour-dots span.is-done { background: #86efac; }
+    .vita-tour-dots span.is-active { width: 18px; background: #0f766e; }
+    .vita-tour-status { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 10px; font-weight: 800; }
+    .vita-tour-status[hidden], .vita-tour-action[hidden], .vita-tour-control[hidden] { display: none !important; }
+    .vita-tour-status.is-done { background: #dcfce7; color: #166534; }
+    .vita-tour-status.is-todo { background: #fef3c7; color: #92400e; }
+    .vita-tour-action { min-height: 32px; padding: 4px 11px; border-radius: 10px; border: 1px solid #14b8a6; background: #f0fdfa; color: #115e59; font-size: 11px; font-weight: 800; cursor: pointer; }
+    .vita-tour-action:hover { background: #ccfbf1; }
     #vitaTourTooltip { position: fixed; z-index: 9992; width: min(390px, calc(100vw - 28px)); pointer-events: auto; }
     .vita-tour-control { min-height: 40px; }
-    @media (prefers-reduced-motion: reduce) { #vitaSpotlightHole { transition: none !important; } }
+    @media (prefers-reduced-motion: reduce) { #vitaSpotlightHole, #vitaTourTooltip, .vita-tour-dots span { transition: none !important; } }
     .vita-lab-live-status { min-height: 17px; margin-top: 4px; font-size: 10px; line-height: 1.35; font-weight: 700; }
     .vita-lab-live-status.vita-neutral { color: #64748b; }
     .vita-lab-live-status.vita-good { color: #047857; }

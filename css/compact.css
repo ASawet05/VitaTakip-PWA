@@ -53,3 +53,17 @@
 .vs-age{font-size:11.5px;color:#075985;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:5px 8px;margin:4px 0 0}
 .set-more{margin-top:6px}
 .set-more>summary{cursor:pointer;font-size:11px;font-weight:700;color:#0369a1;padding:4px 2px}
+/* Kullanım rehberi: ilerleme ve tamamlanan adımlar */
+.vg-progress{margin:12px 0 0;padding:10px 12px;border:1px solid #ccfbf1;border-radius:14px;background:#f0fdfa}
+.vg-progress-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 10px;font-size:11px;font-weight:800;color:#115e59}
+.vg-progress-hint{font-weight:600;color:#64748b}
+.vg-progress-track{margin-top:7px;height:6px;border-radius:999px;background:#ccfbf1;overflow:hidden}
+.vg-progress-bar{width:0;height:100%;border-radius:999px;background:linear-gradient(90deg,#0f766e,#14b8a6);transition:width .4s ease}
+.vg-steps li.is-done button{background:#f0fdf4;border-color:#bbf7d0}
+.vg-steps li.is-done b{background:#16a34a}
+.vg-steps li.is-next button{border-color:#14b8a6;box-shadow:0 0 0 2px rgba(20,184,166,.18)}
+.vg-steps b .fa-check{font-size:10px}
+.vg-tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:9px;font-weight:900;letter-spacing:.02em;vertical-align:1px}
+.vg-tag-done{background:#dcfce7;color:#166534}
+.vg-tag-next{background:#ccfbf1;color:#115e59}
+@media (prefers-reduced-motion:reduce){.vg-progress-bar{transition:none}}

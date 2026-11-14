@@ -109,6 +109,7 @@ function openAppDrawer() {
       closeAppDrawer();
       closeHeaderProfileMenu();
       state.activeTab = viewId;
+      if (typeof markVitaGuideVisit === "function") markVitaGuideVisit(viewId);
 
       const allViews = ["view-home", "view-labs", "view-neyim", "view-clinical-results", "view-report", "view-settings"];
       allViews.forEach(v => {
