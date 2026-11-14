@@ -37,7 +37,7 @@ const home = await p.evaluate(() => {
     visible: !card.classList.contains('hidden') && cr.height > 0, title: t.innerText.trim(), btnTopRight: br.right > cr.right - 40 && Math.abs(br.top - tr.top) < 30, empty: /Henüz ilaç yok/.test(card.innerText) };
 });
 log('"Bugünkü takviyelerim" içinde "İlaç Kalkanı" düğmesi yok', !home.shieldBtn);
-log('"İlaç kontrolü" kartı "Bugünkü ilaçlarım" oldu: sağ üstte "+ İlaç Ekle", ilaç yokken boş durum', home.visible && home.title === 'Bugünkü ilaçlarım' && home.btnTopRight && home.empty && !home.oldDrawer, JSON.stringify(home));
+log('"İlaç kontrolü" kartı "Bugünkü ilaçlarım" oldu: sağ üstte "+ İlaç Ekle", ilaç yokken boş durum', home.visible && /^Bugünkü ilaçlarım\s+\S+/.test(home.title) && home.btnTopRight && home.empty && !home.oldDrawer, JSON.stringify(home));
 
 /* 3) İlaç ekle: ad + sıklık + alım saati → "Aldım" işaretlenir; etkileşim denetimi sürer */
 await p.evaluate(() => document.getElementById('btnOpenAddMedication').click()); await sleep(300);

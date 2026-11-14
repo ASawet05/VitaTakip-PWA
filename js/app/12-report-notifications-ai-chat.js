@@ -1645,6 +1645,15 @@ function getDoctorReportMode() {
         return;
       }
 
+      // Tarayıcıda engellenmişse yeniden sormak işe yaramaz: kilit simgesinden açma adımları + "İzni Yeniden Doğrula"
+      if (Notification.permission === "denied") {
+        safeLocalStorageSetItem("vitatakip_notifications_enabled", "false");
+        updateNotificationToggleUI();
+        if (window.VitaPermissions) window.VitaPermissions.showBlockedHelp("notifications", true);
+        showToast("Bildirim izni engellenmiş", "Tarayıcı bildirimleri engelliyor. Ayarlar'daki adımlarla izni açıp \"İzni Yeniden Doğrula\"ya dokunun.", "warning");
+        return;
+      }
+
       let permission = "default";
       if ("Notification" in window && typeof Notification.requestPermission === "function") {
         try {
@@ -1667,6 +1676,7 @@ function getDoctorReportMode() {
       } else {
         safeLocalStorageSetItem("vitatakip_notifications_enabled", "false");
         updateNotificationToggleUI();
+        if (Notification.permission === "denied" && window.VitaPermissions) window.VitaPermissions.showBlockedHelp("notifications", true);
         showToast("İzin Verilmedi", "Bildirim gönderebilmek için tarayıcı veya cihaz izni gereklidir.", "warning");
       }
     }

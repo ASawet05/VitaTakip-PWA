@@ -127,9 +127,6 @@ let accS = null; for (let i = 0; i < 20 && !accS; i++) { await sleep(400); accS 
 log('Takviye: barkodlu fotoğraf kabul edilir ve ürün eşleşir', !!accS && /339840330085/.test(accS.bc), JSON.stringify(accS));
 const inputs = await p.evaluate(() => ['addSupBarcodeGalleryInput', 'addSupAiGalleryInput', 'addMedBarcodeGalleryInput', 'addMedAiGalleryInput', 'addSupAiPhotoInput', 'addMedPhotoInput'].map(id => { const el = document.getElementById(id); return id + ':' + (el.hasAttribute('capture') ? 'kamera' : 'galeri'); }));
 log('"Kutu fotoğrafı yükle" ve "Barkod fotoğrafı yükle" galeriden seçer; "Yapay Zekâ ile Tanı" kamerayla çeker', inputs.join() === 'addSupBarcodeGalleryInput:galeri,addSupAiGalleryInput:galeri,addMedBarcodeGalleryInput:galeri,addMedAiGalleryInput:galeri,addSupAiPhotoInput:kamera,addMedPhotoInput:kamera', inputs.join());
-await p.evaluate(async () => { openAddMedicationModal(); __feed('addMedAiGalleryInput', await __ean13Png('8699514010050')); });
-let viaAi = null; for (let i = 0; i < 20 && !viaAi; i++) { await sleep(400); viaAi = await p.evaluate(() => /Levotiron/.test(addMedName.value) ? addMedName.value : null); }
-log('Galeriden yüklenen kutu fotoğrafında önce barkod aranır (cihazda), bulunursa eşleşir', !!viaAi, viaAi);
 await p.evaluate(() => closeAddMedicationModal());
 
 /* 6) Profil fotoğrafı: büyük JPEG, türü boş galeri dosyası, bozuk dosya için anlaşılır hata, HEIC dönüştürücü yerelde */

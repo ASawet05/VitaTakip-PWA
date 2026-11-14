@@ -47,6 +47,7 @@
       const todayName = new Date().toLocaleDateString("tr-TR", { weekday: "long" });
       const heroDay = document.querySelector("#homeDayBadge span"); if (heroDay) heroDay.textContent = todayName;
       const supDay = document.getElementById("supDayBadge"); if (supDay) supDay.textContent = todayName;
+      const medDay = document.getElementById("medDayBadge"); if (medDay) medDay.textContent = todayName;
       const todayScheduled = state.supplements.filter(s => isSupplementScheduledToday(s));
       // "Bugün atla" ile atlananlar listede kalır ama günlük ilerleme/sayaçlara katılmaz.
       const todaySupplements = todayScheduled.filter(s => !isSupplementSkippedToday(s));
@@ -512,7 +513,7 @@
         const inst = addSupHtml5QrInstance;
         addSupHtml5QrInstance = null;
         try {
-          Promise.resolve(inst.stop()).catch(() => {}).finally(() => {
+          addSupStopping = Promise.race([Promise.resolve().then(() => inst.stop()), new Promise(r => setTimeout(r, 2500))]).catch(() => {}).finally(() => {
             try { inst.clear(); } catch (e) {}
           });
         } catch (e) {}
@@ -569,8 +570,17 @@
       });
     }
 
+    /* Canlı okuma doğrulaması: GS1 kontrol hanesi tutmayan barkod (yanlış okuma) kabul edilmez; karekoddan GTIN çıkarılır. */
+    function acceptAddSupScan(text) {
+      if (typeof window.vitaAcceptScannedCode === "function") return window.vitaAcceptScannedCode(text);
+      return String(text || "").trim();
+    }
+
+    var addSupStopping = null;
     async function startAddSupModalScanner() {
       stopScanner();
+      // Önceki okuyucu tamamen kapanmadan yenisi başlatılmaz (gecikmeli clear() yeni görüntüyü silmesin).
+      if (addSupStopping) { const pending = addSupStopping; addSupStopping = null; await pending; }
       const wrapper = document.getElementById("addSupCameraViewportWrapper");
       const readerEl = document.getElementById("addSupQrReader");
       const videoEl = document.getElementById("addSupCameraVideo");
@@ -610,14 +620,16 @@
       if (typeof Html5QrClass === "function" && readerEl) {
         try {
           readerEl.classList.remove("hidden");
-          addSupHtml5QrInstance = new Html5QrClass("addSupQrReader");
+          const inst = new Html5QrClass("addSupQrReader", typeof vitaHtml5ReaderConfig === "function" ? vitaHtml5ReaderConfig() : undefined);
+          addSupHtml5QrInstance = inst;
           await addSupHtml5QrInstance.start(
             { facingMode: "environment" },
-            { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+            { fps: 10, qrbox: (w, h) => { const side = Math.max(120, Math.floor(Math.min(w, h) * 0.75)); return { width: side, height: side }; }, aspectRatio: 1.0 },
             (decodedText) => {
-              if (decodedText) {
-                handleAddSupBarcodeDecoded(decodedText);
-              }
+              // Kamera kapatıldıktan sonra gelen gecikmeli okuma ve kontrol hanesi tutmayan yanlış okuma yok sayılır.
+              if (!decodedText || addSupHtml5QrInstance !== inst) return;
+              const key = acceptAddSupScan(decodedText);
+              if (key) handleAddSupBarcodeDecoded(key);
             },
             () => {}
           );
@@ -662,8 +674,9 @@
             if (!addSupScanLoopActive || !videoEl) return;
             try {
               const codes = await detector.detect(videoEl);
-              if (codes && codes.length > 0 && codes[0].rawValue) {
-                handleAddSupBarcodeDecoded(codes[0].rawValue);
+              const key = codes && codes.length > 0 && codes[0].rawValue ? acceptAddSupScan(codes[0].rawValue) : "";
+              if (key && addSupScanLoopActive) {
+                handleAddSupBarcodeDecoded(key);
                 return;
               }
             } catch (e) {}
@@ -677,9 +690,8 @@
             addSupScanLoopActive = true;
             if (statusEl) statusEl.textContent = "Kamera aktif (ZXing). Barkodu çerçeveye hizalayın...";
             await reader.decodeFromVideoDevice(undefined, videoEl, (res) => {
-              if (res && res.getText && addSupScanLoopActive) {
-                handleAddSupBarcodeDecoded(res.getText());
-              }
+              const key = res && res.getText && addSupScanLoopActive ? acceptAddSupScan(res.getText()) : "";
+              if (key) handleAddSupBarcodeDecoded(key);
             });
           } catch (_) {
             if (statusEl) {
@@ -858,6 +870,14 @@
         const guessText = result.guess && result.guess.text ? ` ${result.guess.text}` : "";
         showAddSupFeedback(`⚠️ Bu barkod takviye listesinde bulunamadı (${barcodeKey}).${guessText} Ürün adını yazıp eklediğinizde bu barkod bir dahaki sefere otomatik tanınır.`, "warning");
         if (fallbackBox) fallbackBox.classList.remove("hidden");
+        // Yapay zekâ hazır değilse (anahtar / onay yok) ipucu + doğrudan Ayarlar bağlantısı
+        const aiHint = document.getElementById("addSupFallbackAiHint");
+        if (aiHint) {
+          const hasKey = typeof getGeminiApiKey === "function" && Boolean(getGeminiApiKey());
+          const hasConsent = typeof vitaHasAiHealthConsent === "function" ? vitaHasAiHealthConsent() : true;
+          aiHint.innerHTML = hasKey && hasConsent ? "" : `${hasKey ? "Yapay zekâ için veri paylaşım onayı gerekir." : "Yapay zekâ için Gemini API anahtarı gerekir."} ${typeof vitaAiSettingsLinkHtml === "function" ? vitaAiSettingsLinkHtml() : ""}`;
+          aiHint.classList.toggle("hidden", hasKey && hasConsent);
+        }
         return result;
       });
     }
@@ -934,47 +954,16 @@
       const fallbackBox = document.getElementById("addSupFallbackConfirmBox");
       if (fallbackBox) fallbackBox.classList.add("hidden");
       hideAddSupAiResultCard();
-      addSupLastLookup = null;
+      /* "Yapay Zekâ ile Tanı" / "Kutu fotoğrafı yükle": barkod okuma modülünden AYRIDIR — fotoğraf doğrudan yapay zekâya gider.
+         Hemen önce taranıp listede BULUNAMAYAN barkod hatırlanır; ürün tanınınca bu barkod o ürüne öğretilir. */
+      const pendingBarcode = addSupLastLookup && addSupLastLookup.source === "none" && addSupLastLookup.barcode ? addSupLastLookup.barcode : "";
+      addSupLastLookup = pendingBarcode ? { barcode: pendingBarcode, source: "none" } : null;
+      addSupAiPendingBarcode = pendingBarcode;
 
-      showAddSupFeedback("⏳ Fotoğraftaki barkod okunuyor...", "info");
+      showAddSupFeedback("⏳ Kutu fotoğrafı yapay zekâ ile tanınıyor...", "info");
 
       if (event?.target) event.target.value = "";
       try {
-        // 0. Ortak görsel çözücü: HEIC / büyük / türü boş galeri fotoğrafları da okunur, birkaç ölçekte barkod aranır.
-        if (window.VitaImage) {
-          const code = await window.VitaImage.readBarcode(file);
-          if (code) { handleAddSupBarcodeDecoded(code); return; }
-        } else
-        // 1. Önce fotoğraftaki barkodu doğrudan okumayı dene (BarcodeDetector varsa)
-        if ("BarcodeDetector" in window) {
-          try {
-            const bitmap = await createImageBitmap(file);
-            const detector = new window.BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "qr_code", "data_matrix"] });
-            const codes = await detector.detect(bitmap);
-            if (codes && codes.length > 0 && codes[0].rawValue) {
-              handleAddSupBarcodeDecoded(codes[0].rawValue);
-              return;
-            }
-          } catch (_) {}
-        }
-
-        // 2. Tarayıcıda BarcodeDetector yoksa (ör. masaüstü Chrome, iOS Safari) cihaz içi ZXing okuyucusu kullanılır.
-        if (!window.VitaImage && typeof loadZXingBrowser === "function") {
-          const imageUrl = URL.createObjectURL(file);
-          try {
-            const img = new Image();
-            img.src = imageUrl;
-            await img.decode();
-            const zxing = await loadZXingBrowser();
-            const decoded = await new zxing.BrowserMultiFormatReader().decodeFromImageElement(img);
-            if (decoded && typeof decoded.getText === "function" && decoded.getText()) {
-              handleAddSupBarcodeDecoded(decoded.getText());
-              return;
-            }
-          } catch (_) { /* fotoğrafta barkod yok veya okunamadı */ }
-          finally { URL.revokeObjectURL(imageUrl); }
-        }
-
         let base64Data, mimeType = file.type || "image/jpeg";
         if (window.VitaImage) { const jpg = await window.VitaImage.toJpegBase64(file, 1600); base64Data = jpg.base64; mimeType = jpg.mimeType; }
         else base64Data = await convertAddSupFileToBase64(file);
@@ -986,7 +975,7 @@
         let aiInfo = {};
 
         if (typeof window.callGeminiWithFallback === "function") {
-          if (typeof getGeminiApiKey === "function" && getGeminiApiKey()) showAddSupFeedback("⏳ Barkod bulunamadı; kutu fotoğrafı Gemini yapay zekâ ile tanınıyor...", "info");
+          if (typeof getGeminiApiKey === "function" && getGeminiApiKey()) showAddSupFeedback("⏳ Kutu fotoğrafı Gemini yapay zekâ ile tanınıyor...", "info");
           const aiResp = await window.callGeminiWithFallback(promptText, base64Data, mimeType, {
             expectBoxJson: true,
             fileName: file.name || "",
@@ -1012,17 +1001,25 @@
           throw new Error(aiInfo.consentDeclined
             ? "Fotoğraf gönderimi onaylanmadı; fotoğraf hiçbir yere gönderilmedi. Ürün adını yazarak ekleyebilirsiniz."
             : aiInfo.noApiKey
-              ? "Fotoğrafta barkod bulunamadı. Ürünü fotoğraftan tanımak için Ayarlar > Yapay zekâ bölümüne Gemini API anahtarı ekleyin ya da ürün adını yazın."
+              ? "Ürünü fotoğraftan tanımak için Ayarlar > Yapay zekâ bölümüne Gemini API anahtarı ekleyin ya da ürün adını yazın."
               : "Fotoğraftaki ürün tanınamadı. Kutunun ön yüzünü yakından ve net çekin ya da ürün adını yazın.");
         }
 
         const engineLabel = usedLocalEngine ? "Yerel ürün listesi eşleşmesi" : "Gemini yapay zekâ";
         const category = typeof window.getVitaBoxCategory === "function" ? window.getVitaBoxCategory(parsedJson) : "supplement";
         applyAiBoxResultToSupplementForm(parsedJson, engineLabel, category);
+        /* Hemen önce okutulup bulunamayan barkod: tanınan ürüne otomatik eşlenir ve bu cihazda saklanır (bir dahaki sefere doğrudan tanınır). */
+        if (pendingBarcode && category !== "medication" && !usedLocalEngine && typeof learnVitaBarcode === "function") {
+          learnVitaBarcode("supplement", pendingBarcode, parsedJson);
+          const bcInput = document.getElementById("addSupBarcodeInput"); if (bcInput) bcInput.value = pendingBarcode;
+          addSupLastLookup = { barcode: pendingBarcode, source: "learned" };
+          if (typeof showToast === "function") showToast("Barkod eşlendi", `${pendingBarcode} barkodu artık "${parsedJson.urunAdi}" olarak tanınacak (yalnızca bu cihazda).`, "success");
+        }
         if (window.SoundEffects) SoundEffects.playSuccess();
       } catch (err) {
         hideAddSupAiResultCard();
-        showAddSupFeedback(`Kutu görseli işlenirken uyarı: ${err?.message || "Lütfen yukarıdaki 30 popüler takviye listesinden seçin veya ürün adını girin."}`, "warning");
+        const needsSettings = /Ayarlar/.test(err?.message || "");
+        showAddSupFeedback(`Kutu görseli işlenirken uyarı: ${escapeHtmlText(err?.message || "Ürün adını yazarak ekleyebilirsiniz.")}${needsSettings && typeof vitaAiSettingsLinkHtml === "function" ? " " + vitaAiSettingsLinkHtml() : ""}`, "warning", true);
       }
     }
 
@@ -1030,6 +1027,7 @@
        düğmesiyle birlikte bir özet kartı gösterir. Kutuda yazmayan bilgi uydurulmaz; zaman yalnızca
        hatırlatma taslağı olarak önerilir. "İlaç ekle" penceresinden aktarılan sonuç da buradan geçer. */
     let lastAddSupAiItem = null;
+    var addSupAiPendingBarcode = "";
     function applyAiBoxResultToSupplementForm(raw, engineLabel = "Gemini yapay zekâ", category = "supplement") {
       if (!raw || !raw.urunAdi) return;
       const nameForTiming = `${raw.urunAdi} ${raw.etkenMadde || ""}`;

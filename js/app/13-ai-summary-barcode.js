@@ -1133,10 +1133,22 @@ window.VitaAIChat = VitaAIChat;
       if (updateStatus && wasScanning) setBarcodeCameraStatus("Barkod taraması ve kamera akışı tamamen durduruldu.");
     }
 
+    /* İlaç karekodu (GS1 DataMatrix) ham metni: "]d2" sembol öneki, FNC1/GS (\x1d) ayıracı ve AI 01 (GTIN, sabit 14 hane)
+       ardından seri no (21), son kullanma (17), parti (10) gelir: "01086995140100502112345..." → GTIN 08699514010050.
+       Eski çözüm GTIN'den sonra rakamla devam eden seri numarasında GTIN'i bulamıyordu. */
+    function extractGs1Gtin(value) {
+      const raw = String(value || "").replace(/^\](?:d2|Q3|C1|e0)/, "").replace(/^[\x1dè]+/, "");
+      let m = raw.match(/^01(\d{14})/);                       // ham GS1 dizisi
+      if (!m) m = raw.match(/\(01\)\s*(\d{14})/);            // insan okunur biçim: (01)08699...
+      if (!m) m = raw.match(/[\x1d]01(\d{14})/);             // GTIN ortada (GS ayracından sonra)
+      if (!m) m = raw.match(/(?:^|\D)01(\d{14})(?:\D|$)/);   // eski biçim
+      return m ? m[1] : "";
+    }
+    window.extractGs1Gtin = extractGs1Gtin;
     function normalizeBarcodeForMatch(value) {
       const digits = String(value || "").replace(/\D/g, "");
-      const gs1 = String(value || "").match(/(?:^|\D)01(\d{14})(?:\D|$)/);
-      const candidate = gs1 ? gs1[1] : digits;
+      const gs1 = extractGs1Gtin(value);
+      const candidate = gs1 || digits;
       if (![8, 12, 13, 14].includes(candidate.length)) return "";
       return candidate.replace(/^0+/, "") || "0";
     }

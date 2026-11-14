@@ -31,6 +31,26 @@
       const digits = String(value || "").replace(/\D/g, "");
       return [8, 12, 13, 14].includes(digits.length) ? (digits.replace(/^0+/, "") || "0") : "";
     }
+    /* GS1 kontrol hanesi (EAN-8 / UPC-A / EAN-13 / GTIN-14). Kamera ve fotoğraf okumalarında yanlış okunan
+       (ör. bir çizgisi kaçırılmış) barkodlar başka bir ürünle eşleşmesin diye kullanılır. */
+    function vitaIsValidGtin(value) {
+      const d = String(value || "").replace(/\D/g, "");
+      if (![8, 12, 13, 14].includes(d.length)) return false;
+      const nums = d.split("").map(Number), check = nums.pop();
+      const sum = nums.reverse().reduce((s, x, i) => s + x * (i % 2 === 0 ? 3 : 1), 0);
+      return (10 - (sum % 10)) % 10 === check;
+    }
+    /* Okuyucudan gelen ham metin → doğrulanmış barkod anahtarı ("" = geçersiz / ürün barkodu değil). Karekoddaki GTIN de çıkarılır. */
+    function vitaAcceptScannedCode(text) {
+      const raw = String(text || "");
+      const gtin = typeof window.extractGs1Gtin === "function" ? window.extractGs1Gtin(raw) : "";
+      const digits = gtin || raw.replace(/\D/g, "");
+      if (!vitaIsValidGtin(digits.length === 13 || digits.length === 14 || digits.length === 12 || digits.length === 8 ? digits : "")) return "";
+      return vitaBarcodeKey(digits);
+    }
+    window.vitaIsValidGtin = vitaIsValidGtin;
+    window.vitaAcceptScannedCode = vitaAcceptScannedCode;
+
     /* Dış kataloglara sorgu için 13 haneli EAN (12 haneli UPC-A başına 0 eklenir, 14 haneli GTIN'in baştaki 0'ı atılır). */
     function vitaBarcodeForQuery(value) {
       const key = vitaBarcodeKey(value);
@@ -255,7 +275,9 @@
       steps.push("prefix");
       const guess = guessVitaManufacturer(mode, key);
       // 5) Gemini (yalnızca anahtar varsa)
-      if (options.ai !== false && canUseVitaGeminiForBarcode(mode)) {
+      // Yalnızca açıkça istenirse (options.ai === true). Numaradan ürün tahmini güvenilmez (ör. Arveles kutusu "Concerta" çıkıyordu);
+      // bulunamayan barkodda kullanıcıya "Yapay Zekâ ile Bul" (kutu fotoğrafı) önerilir.
+      if (options.ai === true && canUseVitaGeminiForBarcode(mode)) {
         steps.push("gemini");
         const ai = await identifyVitaBarcodeWithGemini(mode, key);
         if (ai) return { found: true, mode, barcode: key, item: ai, source: "gemini", sourceLabel: ai.sourceLabel, verifyHint: true, guess, steps };
@@ -751,11 +773,13 @@
         return result;
       }
       const esc = v => escapeHtmlText(v);
+      const aiReady = typeof getGeminiApiKey === "function" && getGeminiApiKey() && vitaHasAiHealthConsent();
       setAddMedStatus(
-        `<b>Bu barkod ilaç listesinde yok (${esc(key)}).</b>${result.guess?.text ? `<span class="vam-src">${esc(result.guess.text)}</span>` : ""}<span>İlacın adını aşağıya yazıp kaydedin; bu barkod bir dahaki sefere otomatik tanınır.</span>${result.aiSkipped && typeof getGeminiApiKey === "function" && getGeminiApiKey() ? `<span class="vam-src">Yapay zekâ ile barkod tanıma için Ayarlar'dan veri paylaşım onayı gerekir.</span>` : ""}`,
+        `<b>Bu barkod ilaç listesinde yok (${esc(key)}).</b>${result.guess?.text ? `<span class="vam-src">${esc(result.guess.text)}</span>` : ""}<span>Kutunun fotoğrafıyla yapay zekâya buldurabilir ya da adını elle yazabilirsiniz; bu barkod seçtiğiniz ilaçla eşlenip bir dahaki sefere doğrudan tanınır.</span>` +
+        `<span class="vam-acts"><button type="button" class="vam-act vam-act-ai" onclick="triggerAddMedPhoto()"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Yapay Zekâ ile Bul</button><button type="button" class="vam-act" onclick="document.getElementById('addMedName').focus()"><i class="fa-solid fa-pen" aria-hidden="true"></i> Elle yaz</button></span>` +
+        (aiReady ? "" : `<span class="vam-src">${typeof getGeminiApiKey === "function" && getGeminiApiKey() ? "Yapay zekâ için veri paylaşım onayı gerekir." : "Yapay zekâ için Gemini API anahtarı gerekir."} ${typeof vitaAiSettingsLinkHtml === "function" ? vitaAiSettingsLinkHtml() : ""}</span>`),
         "warn"
       );
-      vitaMedEl("addMedName")?.focus();
       return result;
     }
     window.lookupAddMedBarcode = lookupAddMedBarcode;
@@ -845,6 +869,15 @@
        - Başlatma 9 sn içinde tamamlanmazsa doğrudan kamera akışı + BarcodeDetector / ZXing yedeğine geçilir.
        - Takviye Ekle'deki kamera ile aynı akış ve aynı ayarlar. */
     let vitaMedCam = { html5: null, stream: null, loop: false, zxing: null, stopping: null, session: 0 };
+    /* Okuyucu biçimleri: 1D (EAN-13/8, UPC, Code128) + ilaç karekodu (DataMatrix) + QR. Cihazın yerel
+       BarcodeDetector'ı varsa o kullanılır (Android Chrome'da daha hızlı ve DataMatrix'te daha başarılı). */
+    function vitaHtml5ReaderConfig() {
+      const F = window.Html5QrcodeSupportedFormats;
+      const cfg = { verbose: false, experimentalFeatures: { useBarCodeDetectorIfSupported: true } };
+      if (F) cfg.formatsToSupport = [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E, F.CODE_128, F.DATA_MATRIX, F.QR_CODE].filter(v => v !== undefined);
+      return cfg;
+    }
+    window.vitaHtml5ReaderConfig = vitaHtml5ReaderConfig;
     function vitaWithTimeout(promise, ms) {
       return Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms))]);
     }
@@ -863,13 +896,19 @@
       vitaMedEl("btnAddMedStopCamera")?.classList.remove("hidden");
       if (status) status.textContent = "Kamera hazırlanıyor (EAN-13 / Karekod)…";
       let handled = false;
-      const onCode = text => { if (!text || handled) return; handled = true; stopVitaMedCamera(); lookupAddMedBarcode(text); };
+      // Kamera kapatıldıktan sonra gelen gecikmeli okuma yok sayılır; kontrol hanesi tutmayan (yanlış okunmuş) barkod atlanır, tarama sürer.
+      const onCode = text => {
+        if (!text || handled || session !== vitaMedCam.session) return;
+        const key = vitaAcceptScannedCode(text);
+        if (!key) { if (status) status.textContent = "Barkod net okunamadı; kutuyu sabit tutun ve barkodu çerçeveye hizalayın."; return; }
+        handled = true; stopVitaMedCamera(); lookupAddMedBarcode(key);
+      };
       const inline = () => wrap?.querySelectorAll("video").forEach(v => { v.setAttribute("playsinline", "true"); v.setAttribute("webkit-playsinline", "true"); v.muted = true; v.playsInline = true; v.style.width = "100%"; v.style.objectFit = "cover"; });
 
       let Html5 = window.Html5Qrcode;
       if (typeof Html5 !== "function" && typeof loadHtml5QrCodeLibrary === "function") { try { Html5 = await loadHtml5QrCodeLibrary(); } catch (_) {} }
       if (typeof Html5 === "function" && reader && session === vitaMedCam.session) {
-        const inst = new Html5("addMedQrReader");
+        const inst = new Html5("addMedQrReader", vitaHtml5ReaderConfig());
         vitaMedCam.html5 = inst;
         try {
           await vitaWithTimeout(inst.start(
@@ -956,33 +995,16 @@
     async function handleAddMedPhoto(event) {
       const file = event?.target?.files?.[0];
       if (!file) return;
-      setAddMedStatus(`<i class="fa-solid fa-circle-notch fa-spin"></i> Fotoğraftaki barkod okunuyor…`, "info");
+      /* "Yapay Zekâ ile Tanı" / "Kutu fotoğrafı yükle": barkod okuma modülünden ayrı — fotoğraf doğrudan yapay zekâya gider. */
       stopVitaMedCamera();
       if (event?.target) event.target.value = "";
-      try {
-        if (window.VitaImage) {
-          const code = await window.VitaImage.readBarcode(file);
-          if (code && vitaBarcodeKey(code)) { await lookupAddMedBarcode(code); return; }
-        } else if ("BarcodeDetector" in window) {
-          const bitmap = await createImageBitmap(file);
-          const codes = await new window.BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "code_128", "data_matrix"] }).detect(bitmap);
-          if (codes && codes[0]?.rawValue) { await lookupAddMedBarcode(codes[0].rawValue); return; }
-        } else if (typeof loadZXingBrowser === "function") {
-          const url = URL.createObjectURL(file);
-          try {
-            const img = new Image(); img.src = url; await img.decode();
-            const zxing = await loadZXingBrowser();
-            const decoded = await new zxing.BrowserMultiFormatReader().decodeFromImageElement(img);
-            if (decoded && decoded.getText && decoded.getText()) { await lookupAddMedBarcode(decoded.getText()); return; }
-          } catch (_) { /* barkod yok */ } finally { URL.revokeObjectURL(url); }
-        }
-      } catch (_) { /* barkod okunamadı → yapay zekâ */ }
+      const pendingBarcode = vitaMedLookup && vitaMedLookup.found === false && vitaMedLookup.barcode ? vitaMedLookup.barcode : "";
       if (!(typeof getGeminiApiKey === "function" && getGeminiApiKey())) {
-        setAddMedStatus("Fotoğrafta barkod bulunamadı. Kutunun yazısından tanımak için Ayarlar > Yapay zekâ bölümüne Gemini anahtarı ekleyin ya da ilacın adını yazın.", "warn");
+        setAddMedStatus(`Kutuyu yapay zekâyla tanımak için Ayarlar > Yapay zekâ bölümüne Gemini API anahtarı ekleyin ya da ilacın adını yazın. ${typeof vitaAiSettingsLinkHtml === "function" ? vitaAiSettingsLinkHtml() : ""}`, "warn");
         return;
       }
       if (!vitaHasAiHealthConsent()) {
-        setAddMedStatus("Fotoğrafta barkod bulunamadı. İlaç kutusunu yapay zekâyla tanımak için Ayarlar > Yapay zekâ bölümünden veri paylaşım onayı verin ya da ilacın adını yazın.", "warn");
+        setAddMedStatus(`İlaç kutusunu yapay zekâyla tanımak için Ayarlar > Yapay zekâ bölümünden veri paylaşım onayı verin ya da ilacın adını yazın. ${typeof vitaAiSettingsLinkHtml === "function" ? vitaAiSettingsLinkHtml() : ""}`, "warn");
         return;
       }
       setAddMedStatus(`<i class="fa-solid fa-circle-notch fa-spin"></i> Kutu yapay zekâ ile tanınıyor…`, "info");
@@ -999,8 +1021,13 @@
         const res = await window.callGeminiWithFallback(window.VITA_BOX_PHOTO_PROMPT || "", base64, mimeType, { expectBoxJson: true, mode: "medication", fileName: file.name || "", showFallbackToast: true });
         const box = typeof window.parseGeminiBoxJsonResponse === "function" ? window.parseGeminiBoxJsonResponse(res?.text) : null;
         if (!res || res.usedLocalFallback || !box?.urunAdi) throw new Error(res?.consentDeclined ? "Fotoğraf gönderimi onaylanmadı; fotoğraf gönderilmedi." : "Kutudaki ilaç okunamadı. Ön yüzü yakından ve net çekin ya da adını yazın.");
-        vitaMedLookup = null;
-        applyAddMedItem({ urunAdi: box.urunAdi, etkenMadde: box.etkenMadde, form: box.form, aclikDurumu: box.aclikDurumu }, { sourceLabel: "Gemini yapay zekâ (kutu fotoğrafı)", verifyHint: true });
+        applyAddMedItem({ urunAdi: box.urunAdi, etkenMadde: box.etkenMadde, form: box.form, aclikDurumu: box.aclikDurumu }, { sourceLabel: "Gemini yapay zekâ (kutu fotoğrafı)", verifyHint: true, barcode: pendingBarcode });
+        // Hemen önce okutulup bulunamayan barkod tanınan ilaçla eşlenir ve bu cihazda saklanır.
+        if (pendingBarcode && box.tur !== "takviye") {
+          learnVitaBarcode("medication", pendingBarcode, { urunAdi: box.urunAdi, etkenMadde: box.etkenMadde, form: box.form });
+          vitaMedLookup = { found: true, source: "learned", barcode: pendingBarcode };
+          setAddMedStatus(`${vitaMedEl("addMedStatus")?.innerHTML || ""}<span class="vam-src"><i class="fa-solid fa-link" aria-hidden="true"></i> ${escapeHtmlText(pendingBarcode)} barkodu artık bu ilaç olarak tanınacak (yalnızca bu cihazda).</span>`, "warn");
+        } else vitaMedLookup = null;
         if (box.tur === "takviye") setAddMedStatus(`${vitaMedEl("addMedStatus")?.innerHTML || ""}<span class="vam-warn">Bu ürün bir takviye gibi görünüyor; takviyeler Ana Sayfa'daki "Takviye ekle" bölümünden eklenir.</span>`, "warn");
       } catch (error) {
         setAddMedStatus(escapeHtmlText(error?.message || "Kutu tanınamadı."), "warn");

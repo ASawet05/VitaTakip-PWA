@@ -30,9 +30,9 @@ const supCode = await p.evaluate(() => {
 });
 await makeFile(supCode);
 await p.evaluate(() => openAddSupplementModal()); await sleep(400);
-await feed('addSupAiPhotoInput'); await sleep(3500);
+await feed('addSupBarcodeGalleryInput'); await sleep(3500);
 const r1 = await p.evaluate(() => ({ fb: (document.getElementById('addSupBarcodeFeedbackBox')?.innerText || '').replace(/\s+/g, ' ').slice(0, 160), name: document.getElementById('manualSupName')?.value || document.getElementById('vsAddName')?.value || '' }));
-log('Takviye ekle: fotoğraftaki barkod okunur ve ürün bulunur (BarcodeDetector yokken ZXing)', /Tanındı|okundu|bulundu|eşleşti/i.test(r1.fb) && r1.name.length > 0 && !/bulunamadı|okunamadı/i.test(r1.fb), `kod=${supCode} | ${r1.fb} | ad=${r1.name}`);
+log('Takviye ekle > "Barkod fotoğrafı yükle": fotoğraftaki barkod okunur ve ürün bulunur (BarcodeDetector yokken ZXing)', /Tanındı|okundu|bulundu|eşleşti/i.test(r1.fb) && r1.name.length > 0 && !/bulunamadı|okunamadı/i.test(r1.fb), `kod=${supCode} | ${r1.fb} | ad=${r1.name}`);
 await p.evaluate(() => closeAddSupplementModal());
 
 /* 2) Barkod penceresi → fotoğraf seçilince otomatik okuma */
@@ -46,8 +46,10 @@ log('Barkod penceresi: fotoğraf seçilince barkod otomatik okunur', r2.manual =
 await p.evaluate(async () => { const c = document.createElement('canvas'); c.width = 400; c.height = 300; const x = c.getContext('2d'); x.fillStyle = '#c33'; x.fillRect(0, 0, 400, 300); const blob = await new Promise(r => c.toBlob(r, 'image/png')); window.__testFile = new File([blob], 'IMG_kutu.png', { type: 'image/png' }); });
 await p.evaluate(() => { closeBarcodeScannerModal(); openAddSupplementModal(); }); await sleep(400);
 await feed('addSupAiPhotoInput'); await sleep(3500);
+const r3b = await p.evaluate(() => (document.getElementById('addSupBarcodeFeedbackBox')?.innerText || '').replace(/\s+/g, ' '));
+await feed('addSupBarcodeGalleryInput'); await sleep(3500);
 const r3 = await p.evaluate(() => ({ fb: (document.getElementById('addSupBarcodeFeedbackBox')?.innerText || '').replace(/\s+/g, ' ').slice(0, 200), name: document.getElementById('manualSupName')?.value || '' }));
-log('Barkodsuz fotoğrafta ürün uydurulmaz, açık mesaj verilir', /barkod bulunamadı/i.test(r3.fb) && !r3.name, JSON.stringify(r3));
+log('Barkodsuz fotoğrafta ürün uydurulmaz: barkod yüklemesi reddedilir; yapay zekâ (anahtarsız) Ayarlar\'a yönlendirir', /Geçersiz görsel: Barkod tespit edilemedi/.test(r3.fb) && /Gemini API anahtarı/.test(r3b) && /Ayarlar/.test(r3b) && !r3.name, JSON.stringify({ r3, r3b }));
 
 log('Anahtar yokken fotoğraf için Gemini onayı sorulmaz (hiçbir şey gönderilmez)', dialogs === 0, String(dialogs));
 

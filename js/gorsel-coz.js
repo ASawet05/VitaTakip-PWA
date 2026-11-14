@@ -150,13 +150,14 @@
       if (!med && typeof window.stopScanner === "function") window.stopScanner();
       say("⏳ Fotoğrafta barkod aranıyor…", "info");
       var code = await readBarcode(file);
-      var key = code && typeof window.vitaBarcodeKey === "function" ? window.vitaBarcodeKey(code) : (code || "");
+      // Kontrol hanesi tutmayan (yanlış okunmuş) barkod veya ürün barkodu olmayan kod kabul edilmez; karekoddan GTIN çıkarılır.
+      var key = !code ? "" : (typeof window.vitaAcceptScannedCode === "function" ? window.vitaAcceptScannedCode(code) : (typeof window.vitaBarcodeKey === "function" ? window.vitaBarcodeKey(code) : code));
       if (!code || !key) {
         say("Geçersiz görsel: Barkod tespit edilemedi. Ürünün barkodunun (EAN-13) veya karekodunun net göründüğü bir fotoğraf seçin.", "warn");
         if (typeof window.showToast === "function") window.showToast("Geçersiz görsel", "Barkod tespit edilemedi. Fotoğraf kabul edilmedi.", "warning");
         return;
       }
-      if (med && typeof window.lookupAddMedBarcode === "function") await window.lookupAddMedBarcode(code);
+      if (med && typeof window.lookupAddMedBarcode === "function") await window.lookupAddMedBarcode(key);
       else if (!med && typeof window.handleAddSupBarcodeDecoded === "function") await window.handleAddSupBarcodeDecoded(key);
     } catch (e) {
       say((e && e.message) || "Fotoğraf okunamadı.", "warn");
