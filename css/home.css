@@ -465,3 +465,14 @@
 .vsc-hunger--full{background:#dcfce7;color:#166534}
 .vsc-hunger--any{background:#f1f5f9;color:#475569}
 #settingsTimeModeRow .vsp-seg{grid-template-columns:1fr 1fr}
+
+/* Galeriden fotoğraf yükleme (Takviye Ekle / İlaç Ekle) */
+.vsa-uploads{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.vsa-upbtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:4px 8px;border-radius:11px;border:1.5px dashed #94a3b8;background:#f8fafc;color:#334155;font-size:11.5px;font-weight:800;cursor:pointer;line-height:1.2}
+.vsa-upbtn:hover{border-color:#0d9488;color:#0f766e;background:#f0fdfa}
+.vsa-upbtn i{color:#0d9488}
+/* İlaç Ekle tam ekran sayfası */
+.vam-seg3{grid-template-columns:1fr 1.15fr 1.15fr}
+.vsp-field.hidden{display:none}
+.vam-page .vsa-dose-preview{margin:0}
+.vam-page .vam-foot{margin:0 4px}

@@ -10,3 +10,4 @@ Sürüm yükseltirken ilgili npm paketinden yeniden kopyalayın ve `sw.js` için
 | `chartjs/` | chart.js 4.4.7 | MIT | Tekil trend grafiği |
 | `html5-qrcode/` | html5-qrcode 2.3.8 | Apache-2.0 | Kamerayla barkod/karekod |
 | `zxing/` | @zxing/browser 0.1.5 (@zxing/library içerir) | MIT/Apache-2.0 | Yedek barkod okuyucu |
+| `heic2any/` | heic2any 0.0.4 (dist/heic2any.min.js, sha256 CWPPpQ6eHn5q+SmkCoHj6Jimc/EnDq+mkX3RN+SWgWQ=) | MIT (`LICENSE`) | HEIC/HEIF fotoğrafları cihazda JPEG'e çevirme (yalnızca HEIC seçilince yüklenir) |

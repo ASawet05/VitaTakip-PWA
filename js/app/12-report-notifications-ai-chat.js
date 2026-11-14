@@ -1734,7 +1734,10 @@ function getDoctorReportMode() {
         const dueMeds = getTodayVitaMedicationDoses().filter(r => r.dose === currentHM && !r.taken);
         if (!dueMeds.length) return;
         safeLocalStorageSetItem(medKey, "true");
-        dueMeds.forEach(r => vitaShowNotification(`💊 İlaç Vakti: ${r.med.name}`, `İlaç Vakti: ${r.med.name} alma zamanınız geldi (${currentHM}).`, `vita-med-${r.med.id}-${currentHM}`));
+        dueMeds.forEach(r => {
+          const howTo = typeof describeVitaMedicationHowTo === "function" ? describeVitaMedicationHowTo(r.med) : "";
+          vitaShowNotification(`💊 İlaç Vakti: ${r.med.name}`, `İlaç Vakti: ${r.med.name} alma zamanınız geldi (${currentHM})${howTo ? ` — ${howTo}` : ""}.`, `vita-med-${r.med.id}-${currentHM}`);
+        });
       }
     }
     window.checkAndFireScheduledNotifications = checkAndFireScheduledNotifications;

@@ -651,7 +651,8 @@
           videoEl.setAttribute("muted", "true");
           videoEl.muted = true;
           videoEl.classList.remove("hidden");
-          await videoEl.play();
+          // play() bazı cihazlarda hiç sonuçlanmayabilir: en fazla 3 sn beklenir, okuma döngüsü yine de başlar.
+          await Promise.race([Promise.resolve(videoEl.play()).catch(() => {}), new Promise(r => setTimeout(r, 3000))]);
         }
         if ("BarcodeDetector" in window) {
           const detector = new window.BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "qr_code", "data_matrix"] });
@@ -937,7 +938,13 @@
 
       showAddSupFeedback("⏳ Fotoğraftaki barkod okunuyor...", "info");
 
+      if (event?.target) event.target.value = "";
       try {
+        // 0. Ortak görsel çözücü: HEIC / büyük / türü boş galeri fotoğrafları da okunur, birkaç ölçekte barkod aranır.
+        if (window.VitaImage) {
+          const code = await window.VitaImage.readBarcode(file);
+          if (code) { handleAddSupBarcodeDecoded(code); return; }
+        } else
         // 1. Önce fotoğraftaki barkodu doğrudan okumayı dene (BarcodeDetector varsa)
         if ("BarcodeDetector" in window) {
           try {
@@ -952,7 +959,7 @@
         }
 
         // 2. Tarayıcıda BarcodeDetector yoksa (ör. masaüstü Chrome, iOS Safari) cihaz içi ZXing okuyucusu kullanılır.
-        if (typeof loadZXingBrowser === "function") {
+        if (!window.VitaImage && typeof loadZXingBrowser === "function") {
           const imageUrl = URL.createObjectURL(file);
           try {
             const img = new Image();
@@ -968,8 +975,9 @@
           finally { URL.revokeObjectURL(imageUrl); }
         }
 
-        const base64Data = await convertAddSupFileToBase64(file);
-        const mimeType = file.type || "image/jpeg";
+        let base64Data, mimeType = file.type || "image/jpeg";
+        if (window.VitaImage) { const jpg = await window.VitaImage.toJpegBase64(file, 1600); base64Data = jpg.base64; mimeType = jpg.mimeType; }
+        else base64Data = await convertAddSupFileToBase64(file);
         // "İlaç ekle" penceresiyle aynı istem: alanlar bu formun alanlarına birebir karşılık gelir.
         const promptText = window.VITA_BOX_PHOTO_PROMPT || 'Fotoğraftaki takviye kutusundan {"urunAdi":"","marka":"","etkenMadde":"","form":"","dozaj":"","kutuAdedi":0,"gunlukDoz":0,"zamanBloku":"","aclikDurumu":"","tur":""} JSON nesnesini çıkar. Sadece JSON döndür.';
 

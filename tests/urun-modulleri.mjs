@@ -92,13 +92,13 @@ await p.evaluate(() => { clearGeminiApiKeyFromSettings(); localStorage.removeIte
 /* 6) Sade İlaç ekle: yalnızca ilaç kataloğu, sıklık, "Ben bu ilacı kullanıyorum" */
 await p.evaluate(() => document.getElementById('btnOpenAddMedication').click()); await sleep(400);
 const m0 = await p.evaluate(() => ({ open: !document.getElementById('addMedicationModal').classList.contains('hidden'), oldClosed: document.getElementById('barcodeScannerModal').classList.contains('hidden'), btn: document.getElementById('btnCommitAddMedication').innerText.trim() }));
-log('"Bugünkü ilaçlarım" kartındaki "İlaç Ekle" sade ilaç penceresini açar', m0.open && m0.oldClosed && m0.btn === 'Ben bu ilacı kullanıyorum', JSON.stringify(m0));
+log('"Bugünkü ilaçlarım" kartındaki "İlaç Ekle" tam ekran İlaç Ekle sayfasını açar', m0.open && m0.oldClosed && m0.btn === 'Ben bu ilacı kullanıyorum', JSON.stringify(m0));
 await p.type('#addMedSearchInput', 'euthy'); await sleep(300);
 const m1 = await p.evaluate(() => Array.from(document.querySelectorAll('#addMedSuggest b')).map(x => x.textContent));
 log('İlaç penceresi araması yalnızca ilaçları getirir', m1.length > 0 && m1.every(x => /Euthyrox/i.test(x)), JSON.stringify(m1));
 await p.evaluate(() => document.querySelector('#addMedSuggest [data-med-pick]').click()); await sleep(200);
-await p.evaluate(() => { const f = document.getElementById('addMedFrequency'); f.value = 'gunde2'; f.dispatchEvent(new Event('change')); });
-const ui2 = await p.evaluate(() => ({ clocks: Array.from(document.querySelectorAll('#addMedClocks input')).map(i => i.value), hint: document.getElementById('addMedScheduleHint').innerText }));
+await p.evaluate(() => document.querySelector('#vamVakits [data-vakit="Akşam"]').click());
+const ui2 = await p.evaluate(() => ({ clocks: VitaMedPage.getPlan().vakits.map(v => v.clock), hint: document.getElementById('addMedScheduleHint').innerText }));
 await p.evaluate(() => commitAddMedication()); await sleep(500);
 const m2 = await p.evaluate(() => {
   const med = state.medications.find(m => /Euthyrox/.test(m.name));
@@ -117,12 +117,12 @@ await p.evaluate(() => closeAddMedicationModal());
 await p.evaluate(() => openAddMedicationModal()); await sleep(200);
 await p.evaluate(() => lookupAddMedBarcode('8699999999994')); await sleep(500);
 const m4 = await p.evaluate(() => document.getElementById('addMedStatus').innerText);
-await p.evaluate(() => { document.getElementById('addMedName').value = 'Testilaç 5 mg'; const f = document.getElementById('addMedFrequency'); f.value = 'haftada1'; f.dispatchEvent(new Event('change')); document.getElementById('addMedWeekday').value = String(new Date().getDay()); document.querySelector('#addMedClocks input').value = '20:30'; commitAddMedication(); }); await sleep(400);
+await p.evaluate(() => { document.getElementById('addMedName').value = 'Testilaç 5 mg'; VitaMedPage.setPlan({ freq: 'days', vakits: { 'Akşam': '20:30' }, days: [new Date().getDay()] }); commitAddMedication(); }); await sleep(400);
 const m5 = await p.evaluate(() => ({ med: JSON.parse(localStorage.getItem('vita_custom_medication_barcodes') || '{}')['8699999999994'], sup: JSON.parse(localStorage.getItem('vita_custom_supplement_barcodes') || '{}')['8699999999994'] }));
 log('Bulunamayan ilaç barkodu: dış kataloğa sorulmaz; elle eklenince YALNIZCA ilaç önbelleğine öğrenilir', /ilaç listesinde yok/.test(m4) && NET.off.length === 0 && m5.med?.urunAdi === 'Testilaç 5 mg' && !m5.sup, JSON.stringify(m5));
 const m6 = await p.evaluate(async () => { const r = await lookupVitaBarcode('medication', '8699999999994'); return { src: r.source, name: r.item?.urunAdi, inSup: (await lookupVitaBarcode('supplement', '8699999999994', { ai: false, openFacts: false })).found }; });
 log('Öğrenilen ilaç barkodu ilaçta önbellekten bulunur, takviyede bulunmaz', m6.src === 'cache' && m6.name === 'Testilaç 5 mg' && !m6.inSup, JSON.stringify(m6));
-await p.evaluate(() => { openAddMedicationModal(); document.getElementById('addMedName').value = 'Parol 500 mg Tablet'; const f = document.getElementById('addMedFrequency'); f.value = 'gerektiginde'; f.dispatchEvent(new Event('change')); commitAddMedication(); }); await sleep(400);
+await p.evaluate(() => { openAddMedicationModal(); document.getElementById('addMedName').value = 'Parol 500 mg Tablet'; VitaMedPage.setPlan({ freq: 'prn' }); commitAddMedication(); }); await sleep(400);
 
 /* 7) Bugün Alınması Gereken İlaçlar: işaretle, kalıcı, gece sıfırlanır */
 const t1 = await p.evaluate(() => ({

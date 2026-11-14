@@ -24,8 +24,8 @@ log('Sol menüde Sağlık Modülleri altında "İLAÇLAR & TAKVİYELER": + Takvi
 await p.evaluate(() => { openAppDrawer(); document.getElementById('drawer-add-supplement').click(); }); await sleep(400);
 const m1 = await p.evaluate(() => ({ sup: !document.getElementById('addSupplementModal').classList.contains('hidden'), title: document.getElementById('vsaTitle').innerText }));
 await p.evaluate(() => { closeAddSupplementModal(); openAppDrawer(); document.getElementById('drawer-add-medication').click(); }); await sleep(400);
-const m2 = await p.evaluate(() => ({ med: !document.getElementById('addMedicationModal').classList.contains('hidden'), title: document.getElementById('vamTitle').innerText, supClosed: document.getElementById('addSupplementModal').classList.contains('hidden') }));
-log('Menüden "+ Takviye Ekle" tam ekran takviye sayfasını, "+ İlaç Ekle" ayrı ilaç penceresini açar', m1.sup && m1.title === 'Takviye Ekle' && m2.med && m2.title === 'İlaç ekle' && m2.supClosed, JSON.stringify({ m1, m2 }));
+const m2 = await p.evaluate(() => ({ med: !document.getElementById('addMedicationModal').classList.contains('hidden'), title: document.getElementById('vamTitle').innerText, tab: state.activeTab, supClosed: document.getElementById('addSupplementModal').classList.contains('hidden') }));
+log('Menüden "+ Takviye Ekle" tam ekran takviye sayfasını, "+ İlaç Ekle" tam ekran İlaç Ekle sayfasını açar', m1.sup && m1.title === 'Takviye Ekle' && m2.med && m2.title === 'İlaç Ekle' && m2.tab === 'view-add-medication' && m2.supClosed, JSON.stringify({ m1, m2 }));
 await p.evaluate(() => closeAddMedicationModal());
 
 /* 2) Ana Sayfa: "İlaç Kalkanı" yok; "Bugünkü ilaçlarım" kartı, sağ üstte "+ İlaç Ekle"; "İlaç kontrolü" yok */
@@ -41,10 +41,10 @@ log('"İlaç kontrolü" kartı "Bugünkü ilaçlarım" oldu: sağ üstte "+ İla
 
 /* 3) İlaç ekle: ad + sıklık + alım saati → "Aldım" işaretlenir; etkileşim denetimi sürer */
 await p.evaluate(() => document.getElementById('btnOpenAddMedication').click()); await sleep(300);
-await p.evaluate(() => { document.getElementById('addMedName').value = 'Euthyrox 50 mcg'; const f = document.getElementById('addMedFrequency'); f.value = 'gunde2'; f.dispatchEvent(new Event('change')); });
-const clk = await p.evaluate(() => Array.from(document.querySelectorAll('#addMedClocks input')).map(i => ({ type: i.type, v: i.value })));
-log('Günde 2 kez seçilince iki alım saati kutusu (09:00, 20:00) çıkar ve düzenlenebilir', clk.length === 2 && clk.every(c => c.type === 'time') && clk[0].v === '09:00' && clk[1].v === '20:00', JSON.stringify(clk));
-await p.evaluate(() => { const ins = document.querySelectorAll('#addMedClocks input'); ins[0].value = '08:30'; ins[1].value = '21:15'; commitAddMedication(); }); await sleep(500);
+await p.evaluate(() => { document.getElementById('addMedName').value = 'Euthyrox 50 mcg'; document.querySelector('#vamVakits [data-vakit="Akşam"]').click(); });
+const clk = await p.evaluate(() => Array.from(document.querySelectorAll('#addMedClocks .vsp-hm')).map(g => g.querySelector('.vsp-hh').value + ':' + g.querySelector('.vsp-mm').value));
+log('Sabah + Akşam seçilince iki alım saati kutusu (09:00, 20:00; dijital SS:DD) çıkar ve düzenlenebilir', clk.join() === '09:00,20:00', JSON.stringify(clk));
+await p.evaluate(() => { VitaMedPage.setClock('Sabah', '08:30'); VitaMedPage.setClock('Akşam', '21:15'); commitAddMedication(); }); await sleep(500);
 await p.evaluate(() => { state.supplements.push({ id: 'mg', name: 'Magnezyum Bisglisinat', timing: 'Akşam', toplamKutuAdedi: 30, kalanAdet: 30, gunlukDoz: 1, taken: false, scheduleDays: [0,1,2,3,4,5,6], scheduledDate: vitaLocalToday(), addedDate: Date.now() }); saveState(); renderDailyTab(); detectSupplementConflicts(); });
 await sleep(300);
 const row = await p.evaluate(() => {
@@ -81,7 +81,7 @@ const notif = await p.evaluate(async () => {
 log('Alım saati gelince "💊 İlaç Vakti: Parol 500 mg" — "İlaç Vakti: Parol 500 mg alma zamanınız geldi" (servis çalışanı ile)', notif.first.length === 1 && notif.first[0].t === '💊 İlaç Vakti: Parol 500 mg' && /^İlaç Vakti: Parol 500 mg alma zamanınız geldi/.test(notif.first[0].body) && notif.first[0].via === 'sw', JSON.stringify(notif.first));
 log('Aynı dakikada tekrar gönderilmez; "Aldım" işaretli doz için hatırlatma yok', notif.again === 1 && notif.afterTaken === 0, JSON.stringify({ again: notif.again, afterTaken: notif.afterTaken }));
 const hint = await p.evaluate(() => { localStorage.setItem('vitatakip_notifications_enabled', 'false'); openAddMedicationModal(); const h = document.getElementById('addMedNotifHint'); const r = { shown: !h.classList.contains('hidden'), text: h.innerText }; closeAddMedicationModal(); localStorage.setItem('vitatakip_notifications_enabled', 'true'); return r; });
-log('Bildirimler kapalıysa İlaç ekle penceresi açmayı önerir', hint.shown && /Bildirimleri aç/.test(hint.text), JSON.stringify(hint));
+log('Bildirimler kapalıysa İlaç Ekle sayfası açmayı önerir', hint.shown && /Bildirimleri aç/.test(hint.text), JSON.stringify(hint));
 
 /* 5) Silme (onaylı) */
 confirmAnswer = false;

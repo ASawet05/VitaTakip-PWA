@@ -114,10 +114,12 @@ function openAppDrawer() {
         // Yarım kalan düzenleme sonraki açılışa taşınmasın.
         if (window.VitaSupPage && typeof window.VitaSupPage.getEditIds === "function" && window.VitaSupPage.getEditIds()) window.VitaSupPage.reset();
       }
+      // İlaç Ekle sayfasından çıkılırken kamera kapanır.
+      if (state.activeTab === "view-add-medication" && viewId !== "view-add-medication" && typeof stopVitaMedCamera === "function") stopVitaMedCamera();
       state.activeTab = viewId;
       if (typeof markVitaGuideVisit === "function") markVitaGuideVisit(viewId);
 
-      const allViews = ["view-home", "view-labs", "view-neyim", "view-clinical-results", "view-report", "view-settings", "view-add-supplement"];
+      const allViews = ["view-home", "view-labs", "view-neyim", "view-clinical-results", "view-report", "view-settings", "view-add-supplement", "view-add-medication"];
       allViews.forEach(v => {
         const el = document.getElementById(v);
         if (el) {
@@ -174,7 +176,8 @@ function openAppDrawer() {
           "view-clinical-results": "Klinik Karar Analizi Sonuçları",
           "view-report": "Doktor Görüşmesi İçin Hasta Özeti",
           "view-settings": "Ayarlar & Uygulama Yönetimi",
-          "view-add-supplement": "Takviye Ekle"
+          "view-add-supplement": "Takviye Ekle",
+          "view-add-medication": "İlaç Ekle"
         };
         if (titleEl) titleEl.textContent = titles[viewId] || "Modül";
 

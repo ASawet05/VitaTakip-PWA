@@ -38,12 +38,16 @@
     });
   }
   async function processFile(file) {
-    if (!file || !/^image\//.test(file.type || "")) throw new Error("Lütfen bir fotoğraf (JPEG, PNG, WebP, HEIC) seçin.");
-    if (file.size > 25 * 1024 * 1024) throw new Error("Fotoğraf çok büyük (25 MB üstü).");
-    var source;
-    try { source = typeof createImageBitmap === "function" ? await createImageBitmap(file, { imageOrientation: "from-image" }) : await loadImage(file); }
-    catch (_) { source = await loadImage(file); }
-    var w = source.width, h = source.height;
+    if (file && file.size > 40 * 1024 * 1024) throw new Error("Fotoğraf çok büyük (40 MB üstü).");
+    /* Ortak çözücü: büyük fotoğrafları küçülterek açar (bellek), türü boş gelen galeri dosyalarını ve HEIC'i de destekler. */
+    var decoded, source, w, h;
+    if (window.VitaImage) {
+      decoded = await window.VitaImage.decode(file, { maxSide: 600 });
+      source = decoded.source; w = decoded.width; h = decoded.height;
+    } else {
+      if (!file || !/^image\//.test(file.type || "")) throw new Error("Lütfen bir fotoğraf (JPEG, PNG, WebP, HEIC) seçin.");
+      source = await loadImage(file); w = source.width; h = source.height;
+    }
     if (!w || !h) throw new Error("Görsel okunamadı.");
     var side = Math.min(w, h), sx = (w - side) / 2, sy = (h - side) / 2;
     var canvas = document.createElement("canvas");
@@ -52,7 +56,7 @@
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
     ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, SIZE, SIZE); // saydam PNG'ler JPEG'de siyah olmasın
     ctx.drawImage(source, sx, sy, side, side, 0, 0, SIZE, SIZE);
-    if (source.close) try { source.close(); } catch (_) {}
+    if (decoded) decoded.close(); else if (source.close) try { source.close(); } catch (_) {}
     var out = canvas.toDataURL("image/webp", 0.82);
     if (!/^data:image\/webp/.test(out)) out = canvas.toDataURL("image/jpeg", 0.85); // WebP kodlayamayan tarayıcılar
     if (!isValid(out)) throw new Error("Fotoğraf işlenemedi.");

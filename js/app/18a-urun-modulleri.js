@@ -279,8 +279,16 @@
       gunde2: { label: "Günde 2 kez", count: 2, defaults: ["09:00", "20:00"] },
       gunde3: { label: "Günde 3 kez", count: 3, defaults: ["09:00", "13:00", "19:00"] },
       haftada1: { label: "Haftada 1 kez", count: 1, defaults: ["09:00"], weekly: true },
-      gerektiginde: { label: "Gerektiğinde", count: 0, defaults: [] }
+      gerektiginde: { label: "Gerektiğinde", count: 0, defaults: [] },
+      // İlaç Ekle sayfasındaki serbest plan: 1–4 vakit (saat) ve isteğe bağlı gün listesi (days; boş = her gün)
+      plan: { label: "Planlı", count: -1, defaults: ["09:00"] }
     };
+    const VITA_DAY_SHORT = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"];
+    function vitaMedDaysLabel(days) {
+      const d = Array.isArray(days) ? days : [];
+      if (!d.length || d.length === 7) return "Her gün";
+      return [1, 2, 3, 4, 5, 6, 0].filter(x => d.includes(x)).map(x => VITA_DAY_SHORT[x]).join(", ");
+    }
     window.VITA_MED_FREQUENCIES = VITA_MED_FREQUENCIES;
 
     function isVitaClock(v) { return /^([01]\d|2[0-3]):[0-5]\d$/.test(String(v || "")); }
@@ -296,6 +304,7 @@
     function resolveVitaMedClocks(frequency, raw) {
       const def = VITA_MED_FREQUENCIES[frequency] || VITA_MED_FREQUENCIES.gunde1;
       const given = (Array.isArray(raw.clocks) ? raw.clocks : []).filter(isVitaClock);
+      if (frequency === "plan") return [...new Set(given.length ? given : def.defaults)].sort().slice(0, 4);
       const fromBlocks = (Array.isArray(raw.times) ? raw.times : []).map(t => VITA_MED_BLOCK_CLOCK[t]).filter(Boolean);
       const out = [];
       for (let i = 0; i < def.count; i++) out.push(given[i] || (def.count === 1 || fromBlocks.length === def.count ? fromBlocks[i] : "") || def.defaults[i]);
@@ -313,6 +322,8 @@
       const clocks = resolveVitaMedClocks(frequency, raw);
       const times = clocks.map(vitaBlockFromClock);
       const weekday = Number.isInteger(Number(raw.weekday)) && Number(raw.weekday) >= 0 && Number(raw.weekday) <= 6 ? Number(raw.weekday) : new Date().getDay();
+      const days = frequency === "plan" && Array.isArray(raw.days) ? [...new Set(raw.days.map(Number).filter(d => Number.isInteger(d) && d >= 0 && d <= 6))] : [];
+      const dose = Number(raw.dose);
       return {
         id: /^med_[a-z0-9_]+$/i.test(String(raw.id || "")) ? String(raw.id) : vitaMedId(),
         name,
@@ -323,6 +334,12 @@
         clocks,
         times,
         weekday,
+        days: days.length === 7 ? [] : days,
+        // Kullanım ayrıntıları (İlaç Ekle sayfası): form, her dozdaki miktar ve birim, aç/tok
+        form: String(raw.form || "").trim().slice(0, 40),
+        dose: Number.isFinite(dose) && dose > 0 ? Math.min(100, Math.round(dose * 100) / 100) : 1,
+        unit: String(raw.unit || "").trim().slice(0, 16),
+        aclikDurumu: String(raw.aclikDurumu || "").trim().slice(0, 60),
         addedAt: Number(raw.addedAt) > 0 ? Number(raw.addedAt) : Date.now()
       };
     }
@@ -341,6 +358,7 @@
     function getVitaMedicationDoses(med, date = new Date()) {
       const def = VITA_MED_FREQUENCIES[med.frequency] || VITA_MED_FREQUENCIES.gunde1;
       if (def.weekly && Number(med.weekday) !== date.getDay()) return [];
+      if (med.frequency === "plan" && Array.isArray(med.days) && med.days.length && !med.days.includes(date.getDay())) return [];
       return Array.isArray(med.clocks) ? med.clocks.slice() : [];
     }
     window.getVitaMedicationDoses = getVitaMedicationDoses;
@@ -349,8 +367,15 @@
       const def = VITA_MED_FREQUENCIES[med.frequency] || VITA_MED_FREQUENCIES.gunde1;
       if (med.frequency === "gerektiginde") return def.label;
       if (med.frequency === "haftada1") return `${def.label} · ${VITA_WEEKDAY_NAMES[med.weekday]} ${med.clocks?.[0] || "09:00"}`;
+      if (med.frequency === "plan") return `${vitaMedDaysLabel(med.days)} · ${(med.clocks || []).join(", ")}`;
       return `${def.label} · ${(med.clocks || []).join(", ")}`;
     }
+    /* "Aç karnına 1 tablet" — kart, bildirim ve özetlerde ortak */
+    function describeVitaMedicationHowTo(med) {
+      const amount = med && med.unit ? `${med.dose || 1} ${med.unit}` : "";
+      return [med && med.aclikDurumu, amount].filter(Boolean).join(" ");
+    }
+    window.describeVitaMedicationHowTo = describeVitaMedicationHowTo;
     window.describeVitaMedicationSchedule = describeVitaMedicationSchedule;
 
     /* Etkileşim motoru için profil alanlarını ilaç listesinden üret. */
@@ -373,7 +398,7 @@
         }
         if (rec) {
           const doses = (med.clocks || []).map(vitaBlockFromClock);
-          records.push({ ...rec, urunAdi: med.name, gunlukDoz: Math.max(1, doses.length || 1), dozPeriyodu: med.frequency === "haftada1" ? "haftalik" : "gunluk", zamanBloku: doses[0] || rec.zamanBloku || "Sabah", barcode: med.barcode || rec.barcode || "" });
+          records.push({ ...rec, urunAdi: med.name, gunlukDoz: Math.max(1, doses.length || 1), dozPeriyodu: med.frequency === "haftada1" || (med.frequency === "plan" && Array.isArray(med.days) && med.days.length === 1) ? "haftalik" : "gunluk", zamanBloku: doses[0] || rec.zamanBloku || "Sabah", barcode: med.barcode || rec.barcode || "" });
         }
       });
       state.user.prescriptionDrugRecords = records;
@@ -444,7 +469,8 @@
       if (existing) {
         Object.assign(existing, {
           barcode: med.barcode || existing.barcode, etkenMadde: med.etkenMadde || existing.etkenMadde, kategori: med.kategori || existing.kategori,
-          ...(options.keepSchedule ? {} : { frequency: med.frequency, clocks: med.clocks, times: med.times, weekday: med.weekday })
+          form: med.form || existing.form || "", unit: med.unit || existing.unit || "", aclikDurumu: med.aclikDurumu || existing.aclikDurumu || "",
+          ...(options.keepSchedule ? {} : { frequency: med.frequency, clocks: med.clocks, times: med.times, weekday: med.weekday, days: med.days, dose: med.dose })
         });
         saved = existing;
       } else {
@@ -534,7 +560,7 @@
                     <input id="${id}" type="checkbox" class="h-5 w-5 rounded cursor-pointer flex-shrink-0" ${r.taken ? "checked" : ""} data-med-id="${esc(r.med.id)}" data-dose="${esc(r.dose)}" aria-label="${esc(r.med.name)} ${esc(r.dose)}: aldım" title="Aldım" onchange="setVitaMedicationDoseTaken(this.dataset.medId, this.dataset.dose, this.checked)"/>
                     <label class="vsc-main" for="${id}">
                       <span class="vsc-title"><b class="vsc-name ${r.taken ? "line-through text-slate-400" : "text-navy-900"}">${esc(r.med.name)}</b><button type="button" class="vtm-info" aria-label="${esc(r.med.name)}: nasıl kullanılır?" title="Nasıl kullanılır?" onclick="event.preventDefault(); openVitaUsageInfo(this, 'med', ${esc(JSON.stringify(r.med.id))})">!</button></span>
-                      <span class="vsc-meta"><i class="fa-regular fa-clock" aria-hidden="true"></i>${esc(r.dose)}${r.med.frequency === "haftada1" ? " · haftalık" : ""}${r.taken ? " · aldım" : ""}</span>
+                      <span class="vsc-meta"><i class="fa-regular fa-clock" aria-hidden="true"></i>${esc(r.dose)}${r.med.frequency === "haftada1" ? " · haftalık" : ""}${r.med.frequency === "plan" && r.med.days?.length ? ` · ${esc(vitaMedDaysLabel(r.med.days))}` : ""}${r.med.unit ? ` · ${esc(`${r.med.dose || 1} ${r.med.unit}`)}` : ""}${r.med.aclikDurumu ? `<span class="vsc-hunger vsc-hunger--${/aç karnına/i.test(r.med.aclikDurumu) ? "empty" : (/tok|yemek/i.test(r.med.aclikDurumu) ? "full" : "any")}">${esc(r.med.aclikDurumu)}</span>` : ""}${r.taken ? " · aldım" : ""}</span>
                     </label>
                     <button type="button" class="vsc-del" title="İlacı listeden çıkar" aria-label="${esc(r.med.name)} listeden çıkar" onclick="confirmRemoveVitaMedication(${esc(JSON.stringify(r.med.id))})"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
                   </div>
@@ -543,7 +569,10 @@
             </div>`).join("")
         : `<div class="vtm-empty">Bugün alınması gereken ilaç yok.</div>`;
       const prn = meds.filter(m => m.frequency === "gerektiginde").map(m => m.name);
-      const weeklyOther = meds.filter(m => m.frequency === "haftada1" && !getVitaMedicationDoses(m).length).map(m => `${m.name} (${VITA_WEEKDAY_NAMES[m.weekday]})`);
+      const weeklyOther = [
+        ...meds.filter(m => m.frequency === "haftada1" && !getVitaMedicationDoses(m).length).map(m => `${m.name} (${VITA_WEEKDAY_NAMES[m.weekday]})`),
+        ...meds.filter(m => m.frequency === "plan" && m.days?.length && !getVitaMedicationDoses(m).length).map(m => `${m.name} (${vitaMedDaysLabel(m.days)})`)
+      ];
       const note = document.getElementById("todayMedsNote");
       if (note) {
         const parts = [];
@@ -610,28 +639,27 @@
 
     function vitaMedEl(id) { return document.getElementById(id); }
 
+    /* "İlaç Ekle" artık tam ekran sayfa (Takviye Ekle / Tahlillerim gibi): üstte "← Ana Sayfa" ve başlık. */
     function openAddMedicationModal(prefill = "") {
       const modal = vitaMedEl("addMedicationModal");
       if (!modal) return;
       if (window.SoundEffects) SoundEffects.playClick();
       loadVitaCatalog("medication");
       vitaMedLookup = null;
-      ["addMedSearchInput", "addMedName", "addMedBarcode"].forEach(id => { const el = vitaMedEl(id); if (el) el.value = ""; });
-      const freq = vitaMedEl("addMedFrequency"); if (freq) freq.value = "gunde1";
-      renderAddMedClockInputs(VITA_MED_FREQUENCIES.gunde1.defaults);
-      const day = vitaMedEl("addMedWeekday"); if (day) day.value = String(new Date().getDay());
-      updateAddMedFrequencyUI();
+      if (typeof navigateToView === "function" && state.activeTab !== "view-add-medication") navigateToView("view-add-medication");
+      modal.classList.remove("hidden");
+      window.scrollTo(0, 0);
+      stopVitaMedCamera();
+      if (window.VitaMedPage) window.VitaMedPage.reset();
       setAddMedStatus("");
       clearAddMedSuggest();
-      modal.classList.remove("hidden");
-      modal.style.display = "flex";
       if (prefill) { const s = vitaMedEl("addMedSearchInput"); if (s) { s.value = prefill; addMedSearch(prefill); } }
-      setTimeout(() => vitaMedEl("addMedSearchInput")?.focus(), 80);
     }
     function closeAddMedicationModal() {
       stopVitaMedCamera();
-      const modal = vitaMedEl("addMedicationModal");
-      if (modal) { modal.classList.add("hidden"); modal.style.display = "none"; }
+      vitaMedEl("addMedicationModal")?.classList.add("hidden");
+      // Tam ekran sayfadan Ana Sayfa'ya dönülür.
+      if (state.activeTab === "view-add-medication" && typeof navigateToView === "function") navigateToView("view-home");
     }
     window.openAddMedicationModal = openAddMedicationModal;
     window.closeAddMedicationModal = closeAddMedicationModal;
@@ -684,11 +712,11 @@
       if (bc && meta.barcode) bc.value = meta.barcode;
       const nameForRule = String(item.urunAdi || "");
       const rule = typeof window.findPrescriptionDrugInDb === "function" ? window.findPrescriptionDrugInDb(nameForRule) : null;
-      if (rule && !meta.keepSchedule) {
+      // Etken madde, form (addan/katalogdan) ve aç/tok önerisi (reçete kuralından) forma işlenir.
+      if (window.VitaMedPage) window.VitaMedPage.applyProduct({ urunAdi: item.urunAdi, etkenMadde: item.etkenMadde || rule?.etkenMadde, form: item.form, aclikDurumu: item.aclikDurumu || rule?.aclikDurumu });
+      if (rule && !meta.keepSchedule && window.VitaMedPage) {
         const f = frequencyFromRxRecord(rule);
-        const freq = vitaMedEl("addMedFrequency"); if (freq) freq.value = f.frequency;
-        renderAddMedClockInputs(f.times.map(t => VITA_MED_BLOCK_CLOCK[t] || "09:00"));
-        updateAddMedFrequencyUI();
+        window.VitaMedPage.setPlan({ freq: f.frequency === "haftada1" ? "days" : "daily", vakits: f.times, days: f.frequency === "haftada1" ? [new Date().getDay()] : [1, 2, 3, 4, 5, 6, 0] });
       }
       const details = [item.etkenMadde, item.kategori].filter(Boolean).join(" · ");
       const esc = v => escapeHtmlText(v);
@@ -758,44 +786,20 @@
       if (!t.closest("#addMedicationModal .vsa-search, #addMedSuggest")) clearAddMedSuggest();
     });
 
-    /* Alım saatleri: sıklığa göre 1–3 saat kutusu (varsayılanlar düzenlenebilir). Var olan değerler korunur. */
-    function renderAddMedClockInputs(preset) {
-      const box = vitaMedEl("addMedClocks");
-      if (!box) return;
-      const f = vitaMedEl("addMedFrequency")?.value || "gunde1";
-      const def = VITA_MED_FREQUENCIES[f] || VITA_MED_FREQUENCIES.gunde1;
-      const current = Array.isArray(preset) ? preset : Array.from(box.querySelectorAll("input")).map(i => i.value);
-      const labels = def.count === 1 ? ["Saat"] : def.count === 2 ? ["1. doz", "2. doz"] : ["1. doz", "2. doz", "3. doz"];
-      box.innerHTML = Array.from({ length: def.count }, (_, i) => {
-        const v = isVitaClock(current[i]) && (current.length === def.count || def.count === 1) ? current[i] : def.defaults[i];
-        return `<label class="vam-clock"><span>${labels[i]}</span><input type="time" step="300" value="${v}" data-clock-index="${i}" aria-label="${labels[i]} alım saati"/></label>`;
-      }).join("");
-      const lab = vitaMedEl("addMedClocksLabel");
-      if (lab) lab.textContent = def.count > 1 ? "Alım saatleri" : "Alım saati";
-    }
-    function readAddMedClocks() {
-      return Array.from(vitaMedEl("addMedClocks")?.querySelectorAll("input") || []).map(i => i.value).filter(isVitaClock);
-    }
-
-    function updateAddMedFrequencyUI() {
-      const f = vitaMedEl("addMedFrequency")?.value || "gunde1";
-      vitaMedEl("addMedTimeField")?.classList.toggle("hidden", f === "gerektiginde");
-      vitaMedEl("addMedWeekdayField")?.classList.toggle("hidden", f !== "haftada1");
-      renderAddMedClockInputs();
-      const hint = vitaMedEl("addMedScheduleHint");
-      if (hint) {
-        const map = { gunde2: "Her doz ayrı ayrı \"Aldım\" olarak işaretlenir.", gunde3: "Her doz ayrı ayrı \"Aldım\" olarak işaretlenir.", gerektiginde: "Günlük listede gösterilmez ve hatırlatma gönderilmez; gerektiğinde kullandığınız ilaçlar için." };
-        hint.textContent = map[f] || "";
-        hint.classList.toggle("hidden", !map[f]);
-      }
-      // Hatırlatma: bildirimler kapalıysa açma önerisi
-      const notif = vitaMedEl("addMedNotifHint");
-      if (notif) {
-        const enabled = typeof isNotificationEnabled === "function" && isNotificationEnabled() && typeof isNotificationPermissionGranted === "function" && isNotificationPermissionGranted();
-        notif.classList.toggle("hidden", enabled || f === "gerektiginde" || !("Notification" in window));
-      }
-    }
+    // Eski adlar (başka modüller çağırabilir): sayfa planını yeniden çizer.
+    function updateAddMedFrequencyUI() { if (window.VitaMedPage) window.VitaMedPage.refresh(); }
     window.updateAddMedFrequencyUI = updateAddMedFrequencyUI;
+
+    /* Sayfadaki plan → ilaç kaydı. Her gün 1–3 vakit eski "Günde N kez" biçiminde, tek gün + tek vakit "Haftada 1 kez",
+       diğerleri (4 vakit veya birkaç gün) "plan" (saatler + gün listesi) olarak saklanır; hepsi aynı ekranda gösterilir. */
+    function vitaMedScheduleFromPage(plan) {
+      if (plan.freq === "prn") return { frequency: "gerektiginde", clocks: [], days: [] };
+      const clocks = plan.vakits.map(v => v.clock);
+      const everyDay = plan.days.length === 7;
+      if (everyDay && clocks.length >= 1 && clocks.length <= 3) return { frequency: `gunde${clocks.length}`, clocks, days: [] };
+      if (plan.days.length === 1 && clocks.length === 1) return { frequency: "haftada1", clocks, weekday: plan.days[0], days: [] };
+      return { frequency: "plan", clocks, days: everyDay ? [] : plan.days.slice() };
+    }
 
     function commitAddMedication() {
       const name = String(vitaMedEl("addMedName")?.value || "").replace(/\s+/g, " ").trim();
@@ -804,16 +808,21 @@
         vitaMedEl("addMedName")?.focus();
         return null;
       }
+      const plan = window.VitaMedPage ? window.VitaMedPage.getPlan() : { freq: "daily", vakits: [{ vakit: "Sabah", clock: "09:00" }], days: [1, 2, 3, 4, 5, 6, 0] };
+      if (plan.freq === "days" && !plan.days.length) { showToast("Gün seçin", "\"Belirli günler\" seçiliyken en az bir gün işaretleyin.", "warning"); return null; }
+      const schedule = vitaMedScheduleFromPage(plan);
       const barcode = vitaBarcodeKey(vitaMedEl("addMedBarcode")?.value || "");
-      const frequency = vitaMedEl("addMedFrequency")?.value || "gunde1";
-      const clocks = readAddMedClocks();
-      const weekday = Number(vitaMedEl("addMedWeekday")?.value ?? new Date().getDay());
       const rule = typeof window.findPrescriptionDrugInDb === "function" ? window.findPrescriptionDrugInDb(name) : null;
       const catalogItem = searchVitaProducts("medication", name, 1)[0];
       const sameName = catalogItem && vitaFold(catalogItem.urunAdi) === vitaFold(name) ? catalogItem : null;
+      const typedActive = String(vitaMedEl("addMedActive")?.value || "").trim();
       const med = addVitaMedication({
-        name, barcode, frequency, weekday, clocks,
-        etkenMadde: sameName?.etkenMadde || rule?.etkenMadde || "", kategori: sameName?.kategori || rule?.kategori || ""
+        name, barcode, ...schedule,
+        etkenMadde: typedActive || sameName?.etkenMadde || rule?.etkenMadde || "", kategori: sameName?.kategori || rule?.kategori || "",
+        form: String(vitaMedEl("addMedForm")?.value || "").trim(),
+        dose: Number(vitaMedEl("addMedDose")?.value) || 1,
+        unit: vitaMedEl("addMedUnit")?.value || "",
+        aclikDurumu: String(vitaMedEl("addMedHunger")?.value || "").trim()
       });
       if (!med) return null;
       // Barkod bu modülün önbelleğine öğretilir (katalogda zaten aynı adla varsa gerek yok).
@@ -829,61 +838,111 @@
     window.commitAddMedication = commitAddMedication;
 
     /* --- Kamera ile barkod (yalnızca bu pencerenin kendi görüntü alanı) --- */
-    let vitaMedCam = { html5: null, stream: null, loop: false };
+    /* Kamera açılmama / "hazırlanıyor"da kalma düzeltmesi:
+       - Önceki tarayıcı örneği TAMAMEN durdurulup temizlenmeden yenisi başlatılmaz (eski örneğin gecikmeli clear()'ı yeni
+         görüntüyü silip okuyucuyu askıda bırakıyordu).
+       - Okuma çerçevesi görüntü genişliğine göre hesaplanır (dar ekranda sabit 250 px çerçeve başlatmayı kilitliyordu).
+       - Başlatma 9 sn içinde tamamlanmazsa doğrudan kamera akışı + BarcodeDetector / ZXing yedeğine geçilir.
+       - Takviye Ekle'deki kamera ile aynı akış ve aynı ayarlar. */
+    let vitaMedCam = { html5: null, stream: null, loop: false, zxing: null, stopping: null, session: 0 };
+    function vitaWithTimeout(promise, ms) {
+      return Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms))]);
+    }
     async function startVitaMedCamera() {
-      stopVitaMedCamera();
+      await stopVitaMedCamera();
+      const session = ++vitaMedCam.session;
       if (typeof window.ensureCameraPermissionForFeature === "function") {
         const ok = await window.ensureCameraPermissionForFeature("barcode", { sourceModal: "addMedicationModal" });
-        if (!ok) { setAddMedStatus("Kamera izni yok. Ayarlar > İzinler bölümünden kamera onayını açabilir ya da ilacın adını yazabilirsiniz.", "warn"); return; }
+        if (!ok) { setAddMedStatus("Kamera izni yok. Ayarlar > İzinler bölümünden kamera onayını açabilir, barkod fotoğrafı yükleyebilir ya da ilacın adını yazabilirsiniz.", "warn"); return; }
       }
+      if (session !== vitaMedCam.session) return; // bu arada kapatıldı / yeniden başlatıldı
       const wrap = vitaMedEl("addMedCamera"), reader = vitaMedEl("addMedQrReader"), video = vitaMedEl("addMedCameraVideo"), status = vitaMedEl("addMedCameraStatus");
       wrap?.classList.remove("hidden");
+      reader?.classList.remove("hidden");
       vitaMedEl("btnAddMedStartCamera")?.classList.add("hidden");
       vitaMedEl("btnAddMedStopCamera")?.classList.remove("hidden");
-      if (status) status.textContent = "Kamera hazırlanıyor…";
-      const onCode = text => { if (!text) return; stopVitaMedCamera(); lookupAddMedBarcode(text); };
+      if (status) status.textContent = "Kamera hazırlanıyor (EAN-13 / Karekod)…";
+      let handled = false;
+      const onCode = text => { if (!text || handled) return; handled = true; stopVitaMedCamera(); lookupAddMedBarcode(text); };
+      const inline = () => wrap?.querySelectorAll("video").forEach(v => { v.setAttribute("playsinline", "true"); v.setAttribute("webkit-playsinline", "true"); v.muted = true; v.playsInline = true; v.style.width = "100%"; v.style.objectFit = "cover"; });
+
       let Html5 = window.Html5Qrcode;
       if (typeof Html5 !== "function" && typeof loadHtml5QrCodeLibrary === "function") { try { Html5 = await loadHtml5QrCodeLibrary(); } catch (_) {} }
-      if (typeof Html5 === "function" && reader) {
+      if (typeof Html5 === "function" && reader && session === vitaMedCam.session) {
+        const inst = new Html5("addMedQrReader");
+        vitaMedCam.html5 = inst;
         try {
-          vitaMedCam.html5 = new Html5("addMedQrReader");
-          await vitaMedCam.html5.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 160 } }, onCode, () => {});
-          reader.querySelectorAll("video").forEach(v => { v.setAttribute("playsinline", "true"); v.muted = true; });
-          if (status) status.textContent = "İlaç kutusundaki barkodu çerçeveye hizalayın.";
+          await vitaWithTimeout(inst.start(
+            { facingMode: "environment" },
+            { fps: 10, aspectRatio: 1.0, qrbox: (w, h) => { const side = Math.max(120, Math.floor(Math.min(w, h) * 0.75)); return { width: side, height: Math.floor(side * 0.75) }; } },
+            onCode, () => {}
+          ), 9000);
+          if (session !== vitaMedCam.session) { stopVitaMedCamera(); return; }
+          inline(); setTimeout(inline, 350);
+          if (typeof updateCameraPermissionUI === "function") updateCameraPermissionUI();
+          if (status) status.textContent = "İlaç kutusundaki barkodu / karekodu çerçeveye hizalayın.";
           return;
-        } catch (_) { vitaMedCam.html5 = null; }
+        } catch (_) {
+          // Askıda kalan veya hata veren örneği tamamen kapatıp yedek yönteme geç
+          vitaMedCam.html5 = null;
+          try { await vitaWithTimeout(Promise.resolve(inst.stop()), 2000); } catch (__) {}
+          try { inst.clear(); } catch (__) {}
+          reader?.classList.add("hidden");
+        }
       }
-      if (!navigator.mediaDevices?.getUserMedia || !("BarcodeDetector" in window)) {
+      if (session !== vitaMedCam.session) return;
+      if (!navigator.mediaDevices?.getUserMedia) {
         stopVitaMedCamera();
-        setAddMedStatus("Bu cihazda canlı barkod taraması açılamadı. Barkod numarasını yazabilir veya kutu fotoğrafıyla tanıtabilirsiniz.", "warn");
+        setAddMedStatus("Bu cihazda canlı kamera açılamadı. \"Barkod fotoğrafı yükle\" ile barkodun fotoğrafını seçebilir veya ilacın adını yazabilirsiniz.", "warn");
         return;
       }
       try {
-        vitaMedCam.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
-        if (video) { video.srcObject = vitaMedCam.stream; video.muted = true; video.setAttribute("playsinline", "true"); video.classList.remove("hidden"); await video.play(); }
-        const detector = new window.BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "data_matrix", "qr_code"] });
-        vitaMedCam.loop = true;
-        if (status) status.textContent = "İlaç kutusundaki barkodu çerçeveye hizalayın.";
-        const tick = async () => {
-          if (!vitaMedCam.loop || !video) return;
-          try { const codes = await detector.detect(video); if (codes && codes[0]?.rawValue) { onCode(codes[0].rawValue); return; } } catch (_) {}
-          setTimeout(tick, 250);
-        };
-        tick();
+        vitaMedCam.stream = await vitaWithTimeout(navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }), 10000);
+        if (session !== vitaMedCam.session) { stopVitaMedCamera(); return; }
+        // play() bazı cihazlarda hiç sonuçlanmayabilir: en fazla 3 sn beklenir, okuma döngüsü yine de başlar.
+        if (video) { video.srcObject = vitaMedCam.stream; video.muted = true; video.setAttribute("playsinline", "true"); video.classList.remove("hidden"); await vitaWithTimeout(Promise.resolve(video.play()), 3000).catch(() => {}); }
+        if (typeof updateCameraPermissionUI === "function") updateCameraPermissionUI();
+        if ("BarcodeDetector" in window) {
+          const detector = new window.BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "data_matrix", "qr_code"] });
+          vitaMedCam.loop = true;
+          if (status) status.textContent = "İlaç kutusundaki barkodu / karekodu çerçeveye hizalayın.";
+          const tick = async () => {
+            if (!vitaMedCam.loop || !video) return;
+            try { const codes = await detector.detect(video); if (codes && codes[0]?.rawValue) { onCode(codes[0].rawValue); return; } } catch (_) {}
+            if (vitaMedCam.loop) setTimeout(tick, 200);
+          };
+          tick();
+        } else if (typeof loadZXingBrowser === "function" && video) {
+          const zx = await loadZXingBrowser();
+          vitaMedCam.loop = true;
+          if (status) status.textContent = "Kamera açık (ZXing). Barkodu çerçeveye hizalayın.";
+          vitaMedCam.zxing = await new zx.BrowserMultiFormatReader().decodeFromVideoElement(video, res => { if (res && res.getText && vitaMedCam.loop) onCode(res.getText()); });
+        } else if (status) {
+          status.textContent = "Kamera açık ama bu tarayıcı barkodu canlı okuyamıyor. \"Barkod fotoğrafı yükle\"yi kullanın.";
+        }
       } catch (error) {
         stopVitaMedCamera();
-        setAddMedStatus("Kamera açılamadı. Tarayıcı izinlerini kontrol edin ya da barkod numarasını yazın.", "warn");
+        setAddMedStatus("Kamera açılamadı. Tarayıcının kamera iznini kontrol edin; \"Barkod fotoğrafı yükle\" ile de devam edebilirsiniz.", "warn");
       }
     }
     function stopVitaMedCamera() {
       vitaMedCam.loop = false;
-      if (vitaMedCam.html5) { const inst = vitaMedCam.html5; vitaMedCam.html5 = null; try { Promise.resolve(inst.stop()).catch(() => {}).finally(() => { try { inst.clear(); } catch (_) {} }); } catch (_) {} }
+      vitaMedCam.session++;
+      const jobs = [];
+      if (vitaMedCam.zxing) { try { vitaMedCam.zxing.stop(); } catch (_) {} vitaMedCam.zxing = null; }
+      if (vitaMedCam.html5) {
+        const inst = vitaMedCam.html5; vitaMedCam.html5 = null;
+        jobs.push(vitaWithTimeout(Promise.resolve().then(() => inst.stop()), 2500).catch(() => {}).then(() => { try { inst.clear(); } catch (_) {} }));
+      }
       if (vitaMedCam.stream) { try { vitaMedCam.stream.getTracks().forEach(t => t.stop()); } catch (_) {} vitaMedCam.stream = null; }
+      vitaMedEl("addMedQrReader")?.querySelectorAll("video").forEach(v => { try { v.srcObject?.getTracks?.().forEach(t => t.stop()); v.pause(); v.srcObject = null; } catch (_) {} });
       const video = vitaMedEl("addMedCameraVideo");
       if (video) { try { video.pause(); video.srcObject = null; } catch (_) {} video.classList.add("hidden"); }
       vitaMedEl("addMedCamera")?.classList.add("hidden");
       vitaMedEl("btnAddMedStartCamera")?.classList.remove("hidden");
       vitaMedEl("btnAddMedStopCamera")?.classList.add("hidden");
+      vitaMedCam.stopping = Promise.all(jobs);
+      return vitaMedCam.stopping;
     }
     window.startVitaMedCamera = startVitaMedCamera;
     window.stopVitaMedCamera = stopVitaMedCamera;
@@ -898,8 +957,13 @@
       const file = event?.target?.files?.[0];
       if (!file) return;
       setAddMedStatus(`<i class="fa-solid fa-circle-notch fa-spin"></i> Fotoğraftaki barkod okunuyor…`, "info");
+      stopVitaMedCamera();
+      if (event?.target) event.target.value = "";
       try {
-        if ("BarcodeDetector" in window) {
+        if (window.VitaImage) {
+          const code = await window.VitaImage.readBarcode(file);
+          if (code && vitaBarcodeKey(code)) { await lookupAddMedBarcode(code); return; }
+        } else if ("BarcodeDetector" in window) {
           const bitmap = await createImageBitmap(file);
           const codes = await new window.BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "code_128", "data_matrix"] }).detect(bitmap);
           if (codes && codes[0]?.rawValue) { await lookupAddMedBarcode(codes[0].rawValue); return; }
@@ -923,13 +987,20 @@
       }
       setAddMedStatus(`<i class="fa-solid fa-circle-notch fa-spin"></i> Kutu yapay zekâ ile tanınıyor…`, "info");
       try {
-        const dataUrl = await new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(String(r.result || "")); r.onerror = reject; r.readAsDataURL(file); });
-        const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
-        const res = await window.callGeminiWithFallback(window.VITA_BOX_PHOTO_PROMPT || "", base64, file.type || "image/jpeg", { expectBoxJson: true, mode: "medication", fileName: file.name || "", showFallbackToast: true });
+        let base64, mimeType = file.type || "image/jpeg";
+        if (window.VitaImage) {
+          // JPEG'e çevrilip küçültülür: HEIC / türü boş galeri dosyaları da gönderilebilir, veri harcaması azalır.
+          const jpg = await window.VitaImage.toJpegBase64(file, 1600);
+          base64 = jpg.base64; mimeType = jpg.mimeType;
+        } else {
+          const dataUrl = await new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(String(r.result || "")); r.onerror = reject; r.readAsDataURL(file); });
+          base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
+        }
+        const res = await window.callGeminiWithFallback(window.VITA_BOX_PHOTO_PROMPT || "", base64, mimeType, { expectBoxJson: true, mode: "medication", fileName: file.name || "", showFallbackToast: true });
         const box = typeof window.parseGeminiBoxJsonResponse === "function" ? window.parseGeminiBoxJsonResponse(res?.text) : null;
         if (!res || res.usedLocalFallback || !box?.urunAdi) throw new Error(res?.consentDeclined ? "Fotoğraf gönderimi onaylanmadı; fotoğraf gönderilmedi." : "Kutudaki ilaç okunamadı. Ön yüzü yakından ve net çekin ya da adını yazın.");
         vitaMedLookup = null;
-        applyAddMedItem({ urunAdi: box.urunAdi, etkenMadde: box.etkenMadde }, { sourceLabel: "Gemini yapay zekâ (kutu fotoğrafı)", verifyHint: true });
+        applyAddMedItem({ urunAdi: box.urunAdi, etkenMadde: box.etkenMadde, form: box.form, aclikDurumu: box.aclikDurumu }, { sourceLabel: "Gemini yapay zekâ (kutu fotoğrafı)", verifyHint: true });
         if (box.tur === "takviye") setAddMedStatus(`${vitaMedEl("addMedStatus")?.innerHTML || ""}<span class="vam-warn">Bu ürün bir takviye gibi görünüyor; takviyeler Ana Sayfa'daki "Takviye ekle" bölümünden eklenir.</span>`, "warn");
       } catch (error) {
         setAddMedStatus(escapeHtmlText(error?.message || "Kutu tanınamadı."), "warn");

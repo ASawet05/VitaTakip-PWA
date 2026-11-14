@@ -24,11 +24,11 @@
 <!-- Uses Inter when already available; otherwise falls back immediately to the system UI font. -->
 <!-- Font Awesome 6 CDN -->
 <!-- build:css -->
-<link rel="stylesheet" href="./css/app.css?v=f498a26b45">
-<script defer src="./js/app.1.js?v=f498a26b45"></script>
-<script defer src="./js/app.2.js?v=f498a26b45"></script>
-<script defer src="./js/app.3.js?v=f498a26b45"></script>
-<script defer src="./js/app.4.js?v=f498a26b45"></script>
+<link rel="stylesheet" href="./css/app.css?v=041a4e1812">
+<script defer src="./js/app.1.js?v=041a4e1812"></script>
+<script defer src="./js/app.2.js?v=041a4e1812"></script>
+<script defer src="./js/app.3.js?v=041a4e1812"></script>
+<script defer src="./js/app.4.js?v=041a4e1812"></script>
 <!-- /build:css -->
 <!-- Chart.js loads only if a trend chart is needed. -->
 <!-- PDF.js loads only when a user selects a PDF for analysis. -->
@@ -1860,6 +1860,87 @@ Verileri Sil
 </div>
 </div>
 </section> <!-- view-settings Sonu -->
+<section class="hidden space-y-3 max-w-2xl mx-auto vsp vam-page" id="view-add-medication" aria-labelledby="vamTitle">
+<div class="vsp-page" id="addMedicationModal">
+<h1 class="sr-only" id="vamTitle">İlaç Ekle</h1>
+<section class="vsa-find" id="addMedFindSection">
+<div class="vsa-search">
+<i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+<input autocomplete="off" id="addMedSearchInput" inputmode="search" maxlength="64" oninput="addMedSearch(this.value)" onkeydown="addMedSearchKey(event)" placeholder="İlaç adı veya barkod numarası" type="search" aria-controls="addMedSuggest"/>
+</div>
+<div class="vsa-suggest hidden" id="addMedSuggest" role="listbox" aria-label="Eşleşen ilaçlar"></div>
+<div class="vsa-actions">
+<button class="vsa-btn vsa-btn-main" id="btnAddMedStartCamera" onclick="startVitaMedCamera()" type="button"><i class="fa-solid fa-barcode"></i><span>Barkod Tara</span></button>
+<button class="vsa-btn vsa-btn-stop hidden" id="btnAddMedStopCamera" onclick="stopVitaMedCamera()" type="button"><i class="fa-solid fa-stop"></i><span>Kamerayı Kapat</span></button>
+<button class="vsa-btn" id="btnAddMedPhoto" onclick="triggerAddMedPhoto()" type="button" title="Kutunun fotoğrafını çekin: önce barkod okunur, okunamazsa yapay zekâ (anahtar ve onay varsa) tanır."><i class="fa-solid fa-wand-magic-sparkles"></i><span>Yapay Zekâ ile Tanı</span></button>
+<input accept="image/*" capture="environment" class="hidden" id="addMedPhotoInput" onchange="handleAddMedPhoto(event)" type="file"/>
+</div>
+<div class="vsa-uploads" role="group" aria-label="Galeriden fotoğraf yükle">
+<button class="vsa-upbtn" id="btnAddMedBarcodeGallery" onclick="document.getElementById('addMedBarcodeGalleryInput').click()" type="button" title="Galeriden barkodlu / karekodlu bir fotoğraf seçin; barkod yoksa görsel reddedilir."><i class="fa-solid fa-image" aria-hidden="true"></i><span>Barkod fotoğrafı yükle</span></button>
+<button class="vsa-upbtn" id="btnAddMedAiGallery" onclick="document.getElementById('addMedAiGalleryInput').click()" type="button" title="Daha önce çektiğiniz ilaç kutusu fotoğrafını seçin."><i class="fa-solid fa-upload" aria-hidden="true"></i><span>Kutu fotoğrafı yükle</span></button>
+<input accept="image/*,.heic,.heif" class="hidden" id="addMedBarcodeGalleryInput" onchange="handleBarcodeGalleryPhoto(event, 'medication')" type="file"/>
+<input accept="image/*,.heic,.heif" class="hidden" id="addMedAiGalleryInput" onchange="handleAddMedPhoto(event)" type="file"/>
+</div>
+<div class="hidden vsa-cam" id="addMedCamera">
+<div class="vsa-cam-box">
+<div id="addMedQrReader"></div>
+<video autoplay="" class="hidden" id="addMedCameraVideo" muted="" playsinline="" webkit-playsinline=""></video>
+<div class="vsa-frame" aria-hidden="true"></div>
+</div>
+<p id="addMedCameraStatus">Barkodu çerçeveye hizalayın.</p>
+</div>
+<div aria-live="polite" class="hidden vam-status" id="addMedStatus"></div>
+</section>
+<!-- 1) Ürün bilgisi -->
+<section class="vsp-card" aria-labelledby="vamProductTitle">
+<h2 class="vsp-h" id="vamProductTitle"><i class="fa-solid fa-prescription-bottle-medical" aria-hidden="true"></i> Ürün bilgisi</h2>
+<label class="vsp-field"><span class="vsp-lbl">İlaç adı *</span>
+<input autocomplete="off" id="addMedName" maxlength="120" oninput="if(window.VitaMedPage) VitaMedPage.refresh()" placeholder="Örn: Euthyrox 100 mcg" type="text"/></label>
+<label class="vsp-field"><span class="vsp-lbl">Etken madde</span>
+<input autocomplete="off" id="addMedActive" maxlength="160" oninput="if(window.VitaMedPage) VitaMedPage.refresh()" placeholder="Örn: Levotiroksin sodyum" type="text"/></label>
+<div class="vsp-field"><span class="vsp-lbl" id="vamFormLbl">Form</span>
+<div class="vsp-forms" id="vamForms" role="group" aria-labelledby="vamFormLbl"></div>
+<input id="addMedForm" type="hidden" value=""/></div>
+<label class="vsp-field"><span class="vsp-lbl">Barkod <small>(isteğe bağlı)</small></span>
+<input autocomplete="off" id="addMedBarcode" inputmode="numeric" maxlength="32" placeholder="Taranınca otomatik dolar" type="text"/></label>
+</section>
+<!-- 2) Nasıl alacaksınız? -->
+<fieldset class="vsp-card vsa-dose" id="addMedDoseFieldset">
+<legend>Nasıl alacaksınız?</legend>
+<div class="vsp-grid2">
+<div class="vsp-field"><span class="vsp-lbl" id="vamDoseLbl">Her dozda kaç adet?</span><div class="vsp-step"><button type="button" class="vsp-stepbtn" data-step="-1" data-target="addMedDose" aria-label="Her dozda kaç adet: azalt">−</button><input id="addMedDose" inputmode="numeric" max="100" min="1" type="number" value="1" oninput="if(window.VitaMedPage) VitaMedPage.refresh()"/><button type="button" class="vsp-stepbtn" data-step="1" data-target="addMedDose" aria-label="Her dozda kaç adet: artır">+</button></div></div>
+<label class="vsp-field"><span class="vsp-lbl">Birim</span>
+<select id="addMedUnit" onchange="if(window.VitaMedPage) VitaMedPage.refresh()">
+<option value="tablet">tablet</option><option value="kapsül">kapsül</option><option value="damla">damla</option><option value="mL">mL</option><option value="ölçek">ölçek</option><option value="puf">puf (sprey)</option><option value="saşe">saşe</option><option value="doz">doz (iğne/diğer)</option>
+</select></label>
+</div>
+<div class="vsp-field"><span class="vsp-lbl">Ne sıklıkla?</span>
+<div class="vsp-seg vam-seg3" role="radiogroup" aria-label="Kullanım sıklığı">
+<button type="button" class="vsp-segbtn is-on" data-medfreq="daily" role="radio" aria-checked="true">Her gün</button>
+<button type="button" class="vsp-segbtn" data-medfreq="days" role="radio" aria-checked="false">Belirli günler</button>
+<button type="button" class="vsp-segbtn" data-medfreq="prn" role="radio" aria-checked="false">Gerektiğinde</button>
+</div>
+<div class="hidden vsp-days" id="vamDays" role="group" aria-label="Haftanın günleri">
+<button type="button" class="vsp-chip" data-day="1" aria-pressed="false">Pzt</button><button type="button" class="vsp-chip" data-day="2" aria-pressed="false">Sal</button><button type="button" class="vsp-chip" data-day="3" aria-pressed="false">Çar</button><button type="button" class="vsp-chip" data-day="4" aria-pressed="false">Per</button><button type="button" class="vsp-chip" data-day="5" aria-pressed="false">Cum</button><button type="button" class="vsp-chip" data-day="6" aria-pressed="false">Cmt</button><button type="button" class="vsp-chip" data-day="0" aria-pressed="false">Paz</button>
+</div></div>
+<div class="vsp-field" id="addMedTimeField"><span class="vsp-lbl" id="addMedClocksLabel">Hangi vakitler? <small>(her vakit bir doz)</small></span>
+<div class="vsp-vakits" id="vamVakits" role="group" aria-label="Vakitler">
+<button type="button" class="vsp-chip is-on" data-vakit="Sabah" aria-pressed="true"><i class="fa-solid fa-sun" aria-hidden="true"></i> Sabah</button><button type="button" class="vsp-chip" data-vakit="Öğle" aria-pressed="false"><i class="fa-solid fa-utensils" aria-hidden="true"></i> Öğle</button><button type="button" class="vsp-chip" data-vakit="Akşam" aria-pressed="false"><i class="fa-solid fa-moon" aria-hidden="true"></i> Akşam</button><button type="button" class="vsp-chip" data-vakit="Gece" aria-pressed="false"><i class="fa-regular fa-clock" aria-hidden="true"></i> Gece</button>
+</div>
+<div class="vsp-clocks" id="addMedClocks"></div></div>
+<label class="vsp-field"><span class="vsp-lbl">Aç mı, tok mu?</span>
+<select id="addMedHunger" onchange="if(window.VitaMedPage) VitaMedPage.markHungerTouched()">
+<option value="">Belirtilmedi</option><option value="Aç karnına">Aç karnına</option><option value="Tok karnına">Tok karnına</option><option value="Yemekle birlikte">Yemekle birlikte</option><option value="Fark etmez">Fark etmez</option>
+</select></label>
+<p class="vsa-dose-preview" id="addMedPreview" aria-live="polite">Her dozda 1 tablet · Sabah 09:00 · Her gün</p>
+<p class="hidden vam-hint" id="addMedScheduleHint"></p>
+<p class="hidden vam-notif" id="addMedNotifHint"><i class="fa-solid fa-bell" aria-hidden="true"></i> <span>Saatinde "İlaç Vakti" hatırlatması için bildirimleri açın.</span> <button type="button" onclick="toggleBrowserNotifications().then(() => VitaMedPage.refresh())">Bildirimleri aç</button></p>
+</fieldset>
+<p class="vam-foot">İlaç barkodları yalnızca bu cihazda aranır; dış ürün kataloglarına gönderilmez. Doz ve saat için hekiminizin / prospektüsün talimatı geçerlidir.</p>
+<div class="vsp-submitbar"><button class="vsa-submit" id="btnCommitAddMedication" onclick="commitAddMedication()" type="button"><i class="fa-solid fa-check"></i><span>Ben bu ilacı kullanıyorum</span></button></div>
+</div>
+</section>
+
 <!-- ========================================================================= -->
 <!--   TAKVİYE EKLE: tam ekran sayfa (eski pencerenin yerine). id'ler korunur.   -->
 <!-- ========================================================================= -->
@@ -1878,6 +1959,12 @@ Verileri Sil
 <button class="vsa-btn vsa-btn-stop hidden" id="btnAddSupStopCamera" onclick="if(window.SoundEffects) SoundEffects.playClick(); stopScanner()" type="button"><i class="fa-solid fa-stop"></i><span>Kamerayı Kapat</span></button>
 <button class="vsa-btn" id="btnAddSupAiBoxScan" onclick="if(window.SoundEffects) SoundEffects.playClick(); triggerGeminiBoxScan()" type="button" title="Kutunun fotoğrafını çekin: önce barkod okunur, okunamazsa yapay zekâ (Gemini) ürünü tanır ve formu doldurur."><i class="fa-solid fa-wand-magic-sparkles"></i><span>Yapay Zekâ ile Tanı</span></button>
 <input accept="image/*" capture="environment" class="hidden" id="addSupAiPhotoInput" onchange="handleAddSupAiPhotoInput(event)" type="file"/>
+</div>
+<div class="vsa-uploads" role="group" aria-label="Galeriden fotoğraf yükle">
+<button class="vsa-upbtn" id="btnAddSupBarcodeGallery" onclick="if(window.SoundEffects) SoundEffects.playClick(); document.getElementById('addSupBarcodeGalleryInput').click()" type="button" title="Galeriden barkodlu bir fotoğraf seçin; barkod yoksa görsel reddedilir."><i class="fa-solid fa-image" aria-hidden="true"></i><span>Barkod fotoğrafı yükle</span></button>
+<button class="vsa-upbtn" id="btnAddSupAiGallery" onclick="if(window.SoundEffects) SoundEffects.playClick(); document.getElementById('addSupAiGalleryInput').click()" type="button" title="Daha önce çektiğiniz kutu fotoğrafını seçin; önce barkod aranır, yoksa yapay zekâ tanır."><i class="fa-solid fa-upload" aria-hidden="true"></i><span>Kutu fotoğrafı yükle</span></button>
+<input accept="image/*,.heic,.heif" class="hidden" id="addSupBarcodeGalleryInput" onchange="handleBarcodeGalleryPhoto(event, 'supplement')" type="file"/>
+<input accept="image/*,.heic,.heif" class="hidden" id="addSupAiGalleryInput" onchange="handleAddSupAiPhotoInput(event)" type="file"/>
 </div>
 <div class="hidden vsa-cam" id="addSupCameraViewportWrapper">
 <div class="vsa-cam-box">
@@ -2651,71 +2738,6 @@ Verileri Sil
 </div>
 <!-- MODAL: MANUEL TAKVİYE VE FARMASÖTİK FORM EKLEME -->
 <!-- İLAÇ EKLE (sade): yalnızca ilaç kataloğu + ilaç barkod önbelleği; "Ben bu ilacı kullanıyorum" -->
-<div class="fixed inset-0 z-50 bg-navy-950/70 backdrop-blur-sm hidden items-center justify-center p-4" id="addMedicationModal" style="z-index:60" onclick="if(event.target===this) closeAddMedicationModal()">
-<div class="vsa-card vam-card" role="dialog" aria-modal="true" aria-labelledby="vamTitle">
-<div class="vsa-head">
-<div>
-<h3 id="vamTitle">İlaç ekle</h3>
-<p>Barkodu tarayın veya ilacın adını yazın.</p>
-</div>
-<button class="vsa-x" type="button" aria-label="Kapat" onclick="closeAddMedicationModal()"><i class="fa-solid fa-xmark"></i></button>
-</div>
-<section class="vsa-find">
-<div class="vsa-search">
-<i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-<input autocomplete="off" id="addMedSearchInput" inputmode="search" maxlength="64" oninput="addMedSearch(this.value)" onkeydown="addMedSearchKey(event)" placeholder="İlaç adı veya barkod numarası" type="search"/>
-</div>
-<div class="vsa-suggest hidden" id="addMedSuggest" role="listbox"></div>
-<div class="vsa-actions">
-<button class="vsa-btn vsa-btn-main" id="btnAddMedStartCamera" onclick="startVitaMedCamera()" type="button"><i class="fa-solid fa-barcode"></i><span>Barkod tara</span></button>
-<button class="vsa-btn vsa-btn-stop hidden" id="btnAddMedStopCamera" onclick="stopVitaMedCamera()" type="button"><i class="fa-solid fa-stop"></i><span>Kamerayı kapat</span></button>
-<button class="vsa-btn" id="btnAddMedPhoto" onclick="triggerAddMedPhoto()" type="button" title="Kutunun fotoğrafı: önce barkod okunur, okunamazsa yapay zekâ (anahtar ve onay varsa) tanır."><i class="fa-solid fa-camera"></i><span>Kutu fotoğrafı</span></button>
-<input accept="image/*" capture="environment" class="hidden" id="addMedPhotoInput" onchange="handleAddMedPhoto(event)" type="file"/>
-</div>
-<div class="hidden vsa-cam" id="addMedCamera">
-<div class="vsa-cam-box">
-<div id="addMedQrReader"></div>
-<video autoplay="" class="hidden" id="addMedCameraVideo" muted="" playsinline="" webkit-playsinline=""></video>
-<div class="vsa-frame" aria-hidden="true"></div>
-</div>
-<p id="addMedCameraStatus">Barkodu çerçeveye hizalayın.</p>
-</div>
-<div aria-live="polite" class="hidden vam-status" id="addMedStatus"></div>
-</section>
-<div class="vsa-form">
-<label class="vsa-field"><span>İlaç adı *</span>
-<input autocomplete="off" id="addMedName" maxlength="120" placeholder="Örn: Euthyrox 100 mcg" type="text"/></label>
-<div class="vsa-row vam-row">
-<label class="vsa-field"><span>Kullanım sıklığı</span>
-<select id="addMedFrequency" onchange="updateAddMedFrequencyUI()">
-<option value="gunde1">Günde 1 kez</option>
-<option value="gunde2">Günde 2 kez</option>
-<option value="gunde3">Günde 3 kez</option>
-<option value="haftada1">Haftada 1 kez</option>
-<option value="gerektiginde">Gerektiğinde</option>
-</select></label>
-</div>
-<div class="vsa-field" id="addMedTimeField"><span id="addMedClocksLabel">Alım saati</span>
-<div class="vam-clocks" id="addMedClocks"></div></div>
-<label class="hidden vsa-field" id="addMedWeekdayField"><span>Hangi gün?</span>
-<select id="addMedWeekday">
-<option value="1">Pazartesi</option>
-<option value="2">Salı</option>
-<option value="3">Çarşamba</option>
-<option value="4">Perşembe</option>
-<option value="5">Cuma</option>
-<option value="6">Cumartesi</option>
-<option value="0">Pazar</option>
-</select></label>
-<p class="hidden vam-hint" id="addMedScheduleHint"></p>
-<p class="hidden vam-notif" id="addMedNotifHint"><i class="fa-solid fa-bell" aria-hidden="true"></i> <span>Saatinde "İlaç Vakti" hatırlatması için bildirimleri açın.</span> <button type="button" onclick="toggleBrowserNotifications().then(() => updateAddMedFrequencyUI())">Bildirimleri aç</button></p>
-<label class="vsa-field"><span>Barkod <small>(isteğe bağlı)</small></span>
-<input autocomplete="off" id="addMedBarcode" inputmode="numeric" maxlength="32" placeholder="Taranınca otomatik dolar" type="text"/></label>
-</div>
-<button class="vsa-submit" id="btnCommitAddMedication" onclick="commitAddMedication()" type="button"><i class="fa-solid fa-check"></i><span>Ben bu ilacı kullanıyorum</span></button>
-<p class="vam-foot">İlaç barkodları yalnızca bu cihazda aranır; dış ürün kataloglarına gönderilmez. Kullanım sıklığı hekiminizin/prospektüsün talimatına göre seçilmelidir.</p>
-</div>
-</div>
 <!-- Gerçek kamera barkod okuyucu ve yerel fotoğraf ön incelemesi. İki modlu: 'supplement' (Takviye Ekle) ve 'medication' (İlaç Seç ve Denetle). -->
 <div aria-hidden="true" class="hidden fixed inset-0 z-[75] bg-navy-950/80 backdrop-blur-sm items-center justify-center p-3 sm:p-4 no-print" data-scanner-mode="supplement" id="barcodeScannerModal" onclick="if(event.target===this) closeBarcodeScannerModal()">
 <section aria-labelledby="barcodeScannerTitle" aria-modal="true" class="w-full max-w-2xl max-h-[94dvh] overflow-y-auto rounded-3xl bg-white shadow-2xl border border-teal-400" role="dialog">
@@ -3040,6 +3062,6 @@ Verileri Sil
 <!-- build:js -->
 <!-- Betikler <head> içinde defer ile yüklenir (yukarıdaki build:css bloğu). -->
 <!-- /build:js -->
-<input accept="image/*" class="hidden" id="profilePhotoInput" onchange="VitaProfilePhoto.onFile(event)" type="file" aria-hidden="true" tabindex="-1"/>
+<input accept="image/*,.heic,.heif" class="hidden" id="profilePhotoInput" onchange="VitaProfilePhoto.onFile(event)" type="file" aria-hidden="true" tabindex="-1"/>
 </body>
   </html>
