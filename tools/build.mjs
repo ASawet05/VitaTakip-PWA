@@ -22,7 +22,7 @@ const JS = [
   'js/prescription_drugs_db.js', 'js/app/08-pdf-onboarding-conflicts.js', 'js/app/09-symptom-review-storage.js',
   'js/supplement_db.js', 'js/app/10-daily-tracking-deprescribing.js', 'js/app/11-cdss-analysis.js',
   'js/app/12-report-notifications-ai-chat.js', 'js/app/13-ai-summary-barcode.js', 'js/app/14-spotlight-tour.js',
-  'js/app/15-fridge-schedule.js', 'js/app/16-lab-evidence.js', 'js/app/17-lab-insights.js', 'js/app/18-food-alternatives.js',
+  'js/app/15-fridge-schedule.js', 'js/app/16-lab-evidence.js', 'js/app/17-lab-insights.js', 'js/app/18-food-alternatives.js', 'js/app/18a-urun-modulleri.js',
   'js/lab-trend.js', 'js/recharts-lab-dashboard.js', 'js/app/19-app-startup.js',
   'js/legal-onboarding.js', 'js/medical-drawer.js', 'js/doctor-tests.js', 'js/clinical-simple.js', 'js/report-simple.js',
   'js/age-stage.js', 'js/day-compact.js', 'js/add-sup-simple.js', 'js/scanner-simple.js', 'js/ui-enhancements.js',
@@ -103,7 +103,8 @@ const icons = fs.readdirSync(path.join(root, 'icons')).map(f => `./icons/${f}`);
 const fonts = fs.readdirSync(path.join(root, 'vendor/fontawesome/webfonts')).map(f => `./vendor/fontawesome/webfonts/${f}`);
 const referenced = new Set();
 for (const f of ['index.html', 'manifest.json', ...JS]) {
-  for (const m of rd(f).matchAll(/["'`(]\.?\/?((?:vendor|img|icons)\/[A-Za-z0-9_./-]+\.(?:js|png|jpe?g|webp|svg|woff2))["'`)]/g)) referenced.add(`./${m[1]}`);
+  // data/*.json: takviye ve ilaç katalogları da çevrimdışı önbelleğe alınır.
+  for (const m of rd(f).matchAll(/["'`(]\.?\/?((?:vendor|img|icons|data)\/[A-Za-z0-9_./-]+\.(?:js|json|png|jpe?g|webp|svg|woff2))["'`)]/g)) referenced.add(`./${m[1]}`);
 }
 const core = [...new Set(['./', './index.html', './manifest.json', `./css/app.css?v=${hash}`, ...jsFiles, ...icons, ...fonts, ...[...referenced].sort()])];
 const missing = core.filter(u => u !== './' && !fs.existsSync(path.join(root, u.replace(/^\.\//, '').replace(/\?.*$/, ''))));

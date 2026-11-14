@@ -1,16 +1,16 @@
 /* VitaTakip servis çalışanı — çevrimdışı açılış ve hızlı önbellek.
    Sunucu yoktur; yalnızca bu sitenin kendi dosyaları önbelleğe alınır. Kullanıcı verileri (localStorage/IndexedDB)
    burada tutulmaz. CACHE_VERSION ve CORE_FILES `node tools/build.mjs` ile otomatik güncellenir. */
-const CACHE_VERSION = 'vitatakip-96ba13b1b5';
+const CACHE_VERSION = 'vitatakip-eacbd7fb10';
 const CORE_FILES = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./css/app.css?v=96ba13b1b5",
-  "./js/app.1.js?v=96ba13b1b5",
-  "./js/app.2.js?v=96ba13b1b5",
-  "./js/app.3.js?v=96ba13b1b5",
-  "./js/app.4.js?v=96ba13b1b5",
+  "./css/app.css?v=eacbd7fb10",
+  "./js/app.1.js?v=eacbd7fb10",
+  "./js/app.2.js?v=eacbd7fb10",
+  "./js/app.3.js?v=eacbd7fb10",
+  "./js/app.4.js?v=eacbd7fb10",
   "./icons/apple-touch-icon.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
@@ -19,6 +19,8 @@ const CORE_FILES = [
   "./vendor/fontawesome/webfonts/fa-regular-400.woff2",
   "./vendor/fontawesome/webfonts/fa-solid-900.woff2",
   "./vendor/fontawesome/webfonts/fa-v4compatibility.woff2",
+  "./data/tr-medications.json",
+  "./data/tr-supplements.json",
   "./img/symptoms/brittle_nails.jpg",
   "./img/symptoms/dark_nail.jpg",
   "./img/symptoms/hair.jpg",

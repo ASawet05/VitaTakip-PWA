@@ -3,7 +3,7 @@
 <html lang="tr">
 <head>
 <!-- Gizlilik: sayfa yalnızca kendi adresine ve (kullanıcı kendi anahtarını girerse) Google Gemini API'ye bağlanabilir. Sunucu yok. -->
-<meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://generativelanguage.googleapis.com; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://generativelanguage.googleapis.com https://world.openfoodfacts.org https://world.openproductsfacts.org; form-action 'self'">
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 <!-- Ana ekrana eklenebilir web sayfası (PWA): sunucu yok; servis çalışanı yalnızca bu sitenin dosyalarını önbelleğe alır -->
 <link rel="manifest" href="./manifest.json">
@@ -24,11 +24,11 @@
 <!-- Uses Inter when already available; otherwise falls back immediately to the system UI font. -->
 <!-- Font Awesome 6 CDN -->
 <!-- build:css -->
-<link rel="stylesheet" href="./css/app.css?v=96ba13b1b5">
-<script defer src="./js/app.1.js?v=96ba13b1b5"></script>
-<script defer src="./js/app.2.js?v=96ba13b1b5"></script>
-<script defer src="./js/app.3.js?v=96ba13b1b5"></script>
-<script defer src="./js/app.4.js?v=96ba13b1b5"></script>
+<link rel="stylesheet" href="./css/app.css?v=eacbd7fb10">
+<script defer src="./js/app.1.js?v=eacbd7fb10"></script>
+<script defer src="./js/app.2.js?v=eacbd7fb10"></script>
+<script defer src="./js/app.3.js?v=eacbd7fb10"></script>
+<script defer src="./js/app.4.js?v=eacbd7fb10"></script>
 <!-- /build:css -->
 <!-- Chart.js loads only if a trend chart is needed. -->
 <!-- PDF.js loads only when a user selects a PDF for analysis. -->
@@ -387,6 +387,16 @@
 <!-- Bugün Alınması Gereken Takviyeler Listesi (Doğrudan Üstte) -->
 <div class="mt-4 space-y-4" id="supplementChecklistContainer"></div>
 </div>
+<!-- İlaç modülü: bugün alınması gereken ilaçlar (gece 00:00'da sıfırlanır) -->
+<section class="hidden vtm-card" id="todayMedsCard" aria-labelledby="todayMedsTitle">
+<div class="vtm-head">
+<h2 id="todayMedsTitle"><i class="fa-solid fa-prescription-bottle-medical" aria-hidden="true"></i> Bugün Alınması Gereken İlaçlar</h2>
+<span class="vtm-counter" id="todayMedsCounter" aria-live="polite"></span>
+</div>
+<ul class="vtm-list" id="todayMedsList"></ul>
+<p class="hidden vtm-note" id="todayMedsNote"></p>
+<button class="vtm-add" onclick="openAddMedicationModal()" type="button"><i class="fa-solid fa-plus" aria-hidden="true"></i> İlaç ekle</button>
+</section>
 <!-- Alt Açılır Çekmece: Gerçek Zamanlı İlaç–Besin Etkileşim Kalkanı (En Alt Kısımda, Kalabalık Yapmayan Çekmece) -->
 <!-- İlaç kontrolü (ilaç–besin etkileşim kalkanı): sade çekmece -->
 <details class="vsd" id="dailyProtocolMedicationsDrawer">
@@ -406,7 +416,7 @@
 <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
 <input autocomplete="off" id="quickAddMedInput" inputmode="search" onkeydown="if(event.key==='Enter'){event.preventDefault(); addQuickMedicationFromInput();}" oninput="vsMedSearch(this.value)" placeholder="İlaç adı yazın (Örn: Euthyrox, Glucophage)" type="text"/>
 </div>
-<button class="vsd-btn vsd-btn-scan" id="btnOpenMedicationScannerModal" onclick="if(window.SoundEffects) SoundEffects.playClick(); openBarcodeScannerModal('medication')" type="button" aria-label="Barkod ile ilaç ekle"><i class="fa-solid fa-barcode"></i><span>Barkod</span></button>
+<button class="vsd-btn vsd-btn-scan" id="btnOpenMedicationScannerModal" onclick="openAddMedicationModal(document.getElementById('quickAddMedInput')?.value || '')" type="button" aria-label="İlaç ekle (barkod, ad veya kutu fotoğrafı)"><i class="fa-solid fa-barcode"></i><span>Barkod</span></button>
 </div>
 <div class="vsd-suggest hidden" id="vsMedSuggest" role="listbox"></div>
 <!-- Seçili ilaç grupları -->
@@ -2516,6 +2526,76 @@ Verileri Sil
 </div>
 </div>
 <!-- MODAL: MANUEL TAKVİYE VE FARMASÖTİK FORM EKLEME -->
+<!-- İLAÇ EKLE (sade): yalnızca ilaç kataloğu + ilaç barkod önbelleği; "Ben bu ilacı kullanıyorum" -->
+<div class="fixed inset-0 z-50 bg-navy-950/70 backdrop-blur-sm hidden items-center justify-center p-4" id="addMedicationModal" style="z-index:60" onclick="if(event.target===this) closeAddMedicationModal()">
+<div class="vsa-card vam-card" role="dialog" aria-modal="true" aria-labelledby="vamTitle">
+<div class="vsa-head">
+<div>
+<h3 id="vamTitle">İlaç ekle</h3>
+<p>Barkodu tarayın veya ilacın adını yazın.</p>
+</div>
+<button class="vsa-x" type="button" aria-label="Kapat" onclick="closeAddMedicationModal()"><i class="fa-solid fa-xmark"></i></button>
+</div>
+<section class="vsa-find">
+<div class="vsa-search">
+<i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+<input autocomplete="off" id="addMedSearchInput" inputmode="search" maxlength="64" oninput="addMedSearch(this.value)" onkeydown="addMedSearchKey(event)" placeholder="İlaç adı veya barkod numarası" type="search"/>
+</div>
+<div class="vsa-suggest hidden" id="addMedSuggest" role="listbox"></div>
+<div class="vsa-actions">
+<button class="vsa-btn vsa-btn-main" id="btnAddMedStartCamera" onclick="startVitaMedCamera()" type="button"><i class="fa-solid fa-barcode"></i><span>Barkod tara</span></button>
+<button class="vsa-btn vsa-btn-stop hidden" id="btnAddMedStopCamera" onclick="stopVitaMedCamera()" type="button"><i class="fa-solid fa-stop"></i><span>Kamerayı kapat</span></button>
+<button class="vsa-btn" id="btnAddMedPhoto" onclick="triggerAddMedPhoto()" type="button" title="Kutunun fotoğrafı: önce barkod okunur, okunamazsa yapay zekâ (anahtar ve onay varsa) tanır."><i class="fa-solid fa-camera"></i><span>Kutu fotoğrafı</span></button>
+<input accept="image/*" capture="environment" class="hidden" id="addMedPhotoInput" onchange="handleAddMedPhoto(event)" type="file"/>
+</div>
+<div class="hidden vsa-cam" id="addMedCamera">
+<div class="vsa-cam-box">
+<div id="addMedQrReader"></div>
+<video autoplay="" class="hidden" id="addMedCameraVideo" muted="" playsinline="" webkit-playsinline=""></video>
+<div class="vsa-frame" aria-hidden="true"></div>
+</div>
+<p id="addMedCameraStatus">Barkodu çerçeveye hizalayın.</p>
+</div>
+<div aria-live="polite" class="hidden vam-status" id="addMedStatus"></div>
+</section>
+<div class="vsa-form">
+<label class="vsa-field"><span>İlaç adı *</span>
+<input autocomplete="off" id="addMedName" maxlength="120" placeholder="Örn: Euthyrox 100 mcg" type="text"/></label>
+<div class="vsa-row vam-row">
+<label class="vsa-field"><span>Kullanım sıklığı</span>
+<select id="addMedFrequency" onchange="updateAddMedFrequencyUI()">
+<option value="gunde1">Günde 1 kez</option>
+<option value="gunde2">Günde 2 kez (sabah–akşam)</option>
+<option value="gunde3">Günde 3 kez (sabah–öğle–akşam)</option>
+<option value="haftada1">Haftada 1 kez</option>
+<option value="gerektiginde">Gerektiğinde</option>
+</select></label>
+<label class="vsa-field" id="addMedTimeField"><span>Ne zaman?</span>
+<select id="addMedTime">
+<option value="Sabah">Sabah</option>
+<option value="Öğle">Öğle</option>
+<option value="Akşam">Akşam</option>
+<option value="Gece">Gece</option>
+</select></label>
+</div>
+<label class="hidden vsa-field" id="addMedWeekdayField"><span>Hangi gün?</span>
+<select id="addMedWeekday">
+<option value="1">Pazartesi</option>
+<option value="2">Salı</option>
+<option value="3">Çarşamba</option>
+<option value="4">Perşembe</option>
+<option value="5">Cuma</option>
+<option value="6">Cumartesi</option>
+<option value="0">Pazar</option>
+</select></label>
+<p class="hidden vam-hint" id="addMedScheduleHint"></p>
+<label class="vsa-field"><span>Barkod <small>(isteğe bağlı)</small></span>
+<input autocomplete="off" id="addMedBarcode" inputmode="numeric" maxlength="32" placeholder="Taranınca otomatik dolar" type="text"/></label>
+</div>
+<button class="vsa-submit" id="btnCommitAddMedication" onclick="commitAddMedication()" type="button"><i class="fa-solid fa-check"></i><span>Ben bu ilacı kullanıyorum</span></button>
+<p class="vam-foot">İlaç barkodları yalnızca bu cihazda aranır; dış ürün kataloglarına gönderilmez. Kullanım sıklığı hekiminizin/prospektüsün talimatına göre seçilmelidir.</p>
+</div>
+</div>
 <div class="fixed inset-0 z-50 bg-navy-950/70 backdrop-blur-sm hidden items-center justify-center p-4" id="addSupplementModal" style="z-index:60" onclick="if(event.target===this) closeAddSupplementModal()">
 <div class="vsa-card" role="dialog" aria-modal="true" aria-labelledby="vsaTitle">
 <div class="vsa-head">
@@ -2815,7 +2895,7 @@ Verileri Sil
 <label class="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-[10px] leading-relaxed text-amber-950"><input class="mt-0.5 h-4 w-4 shrink-0 rounded border-amber-400 text-teal-600" id="barcodePhotoConsent" type="checkbox"/><span><strong>Yapay zekâ fotoğraf onayı:</strong> "Yapay Zekâ ile Kutuyu Tanı"yı kullandığımda seçtiğim kutu fotoğrafının ürün adını ve içeriğini tespit etmek için Google Gemini'ye gönderilmesini onaylıyorum. Barkod okuma için fotoğraf gönderilmez. Fotoğrafa kişisel bilgi eklemeyin.</span></label>
 <div aria-live="polite" class="hidden rounded-2xl border border-indigo-200 bg-indigo-50 p-3 text-xs text-indigo-950" id="barcodeAiResult"><div class="font-black"><i class="fa-solid fa-robot mr-1"></i> Yapay Zeka Kutu &amp; İçerik Tanıma Sonucu</div><pre class="mt-2 whitespace-pre-wrap break-words font-sans text-xs leading-relaxed" id="barcodeAiResultText"></pre><div aria-live="polite" class="hidden vita-ai-actions" id="barcodeAiResultActions"></div><p class="mt-2 border-t border-indigo-200 pt-2 text-[10px] leading-relaxed">Bu sonuç görselde okunabilen yazıların analizidir; etken madde, doz ve ürün kimliğini kutu/prospektüs veya eczacıyla doğrulayın.</p></div>
 </section>
-<div class="rounded-xl border border-amber-300 bg-amber-50 p-3 text-[10px] leading-relaxed text-amber-950"><strong><i class="fa-solid fa-triangle-exclamation mr-1"></i> Önemli:</strong> Barkod önce <strong>Türkiye EAN-13 (869) Takviye &amp; İlaç Veritabanı</strong>, yalnızca bu cihazdaki ürün listesinde aranır (internete sorgu gönderilmez); listede yoksa ürün adını elle yazabilirsiniz. <em>Takviye Ekle</em> modunda yalnızca vitamin ve gıda takviyeleri, <em>İlaç Seç ve Denetle</em> modunda ise genel/reçeteli ilaçlar eşleştirilir.</div>
+<div class="rounded-xl border border-amber-300 bg-amber-50 p-3 text-[10px] leading-relaxed text-amber-950"><strong><i class="fa-solid fa-triangle-exclamation mr-1"></i> Önemli:</strong> Barkod önce <strong>Türkiye EAN-13 (869) Takviye &amp; İlaç Veritabanı</strong>, önce bu cihazdaki ürün listesinde aranır (ilaç barkodları internete gönderilmez); listede yoksa ürün adını elle yazabilirsiniz. <em>Takviye Ekle</em> modunda yalnızca vitamin ve gıda takviyeleri, <em>İlaç Seç ve Denetle</em> modunda ise genel/reçeteli ilaçlar eşleştirilir.</div>
 <div class="flex justify-end"><button class="min-h-10 rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700" onclick="closeBarcodeScannerModal()" type="button">Kapat</button></div>
 </div>
 </section>

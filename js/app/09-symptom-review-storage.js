@@ -326,6 +326,8 @@ function checkPendingSymptomReviews() {
         userId: String(userId), snapshotVersion: 2, updatedAt: Number(updatedAt) || Date.now(),
         user: cloneVitaJson(state.user, null),
         supplements: cloneVitaJson(Array.isArray(state.supplements) ? state.supplements : [], []),
+        medications: cloneVitaJson(Array.isArray(state.medications) ? state.medications : [], []),
+        medTaken: cloneVitaJson(state.medTaken || null, null),
         hydration: cloneVitaJson(state.hydration || { current: 0, target: 2450 }, { current: 0, target: 2450 }),
         labHistory: cloneVitaJson(Array.isArray(state.labHistory) ? state.labHistory : [], []),
         labValues: cloneVitaJson(state.labValues || {}, {}),
@@ -394,6 +396,9 @@ function checkPendingSymptomReviews() {
           if (stored.snapshotVersion >= 2) {
             if (stored.user && typeof stored.user === "object") state.user = stored.user;
             if (Array.isArray(stored.supplements)) state.supplements = stored.supplements;
+            if (Array.isArray(stored.medications)) state.medications = stored.medications.map(normalizeVitaMedication).filter(Boolean);
+            if (stored.medTaken && typeof stored.medTaken === "object") state.medTaken = stored.medTaken;
+            if (typeof reconcileVitaMedicationsWithProfile === "function") reconcileVitaMedicationsWithProfile();
             if (stored.hydration && typeof stored.hydration === "object") state.hydration = stored.hydration;
             if (stored.supplementReviews && typeof stored.supplementReviews === "object") state.supplementReviews = stored.supplementReviews;
             if (stored.lastCDSS && typeof stored.lastCDSS === "object") state.lastCDSS = stored.lastCDSS;
@@ -627,6 +632,8 @@ function checkPendingSymptomReviews() {
         state.selectedSymptomsArray = symptomsArr;
         writes.push(
           [`vitatakip_supplements_${userId}`, JSON.stringify(state.supplements)],
+          [`vitatakip_medications_${userId}`, JSON.stringify(Array.isArray(state.medications) ? state.medications : [])],
+          [`vitatakip_med_taken_${userId}`, JSON.stringify(state.medTaken || null)],
           [`vitatakip_hydration_${userId}`, JSON.stringify(state.hydration)],
           [`vitatakip_labs_${userId}`, JSON.stringify(state.labValues)],
           [`vitatakip_labreferences_${userId}`, JSON.stringify(state.labReferences || {})],
@@ -1085,7 +1092,7 @@ function checkPendingSymptomReviews() {
 
     /* G6 — Çoklu sekme: başka bir sekmede bu hesabın verisi değişirse bu sekme yeniden yüklenir.
        Böylece eski veriyle yapılan bir sonraki kayıt diğer sekmedeki değişiklikleri silmez. */
-    const VITA_SYNCED_KEY_PREFIXES = ["vitatakip_user_", "vitatakip_supplements_", "vitatakip_hydration_", "vitatakip_labs_",
+    const VITA_SYNCED_KEY_PREFIXES = ["vitatakip_user_", "vitatakip_supplements_", "vitatakip_medications_", "vitatakip_med_taken_", "vitatakip_hydration_", "vitatakip_labs_",
       "vitatakip_labreferences_", "vitatakip_labhistory_", "vitatakip_symptoms_", "vitatakip_resolved_symptoms_", "vitatakip_reviews_", "vitatakip_notes_"];
     let vitaCrossTabTimer = null;
     window.addEventListener("storage", event => {

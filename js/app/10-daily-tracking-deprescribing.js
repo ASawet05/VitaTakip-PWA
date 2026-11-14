@@ -1,5 +1,7 @@
 function renderDailyTab() {
       if (!state.user) return;
+      // "Bugün Alınması Gereken İlaçlar" kartı (ilaç modülü) — diğer bölümlerden bağımsız, her yenilemede güncellenir.
+      if (typeof renderTodayMedications === "function") { try { renderTodayMedications(); } catch (error) { console.warn("İlaç listesi çizilemedi:", error); } }
       updateLabApplicationReferenceHints();
       const p = state.user;
 
@@ -712,56 +714,51 @@ function renderDailyTab() {
 
       // Kamera video akışı arkada açık kalmayacak şekilde temiz kapatılsın
       stopScanner();
+      if (typeof hideAddSupAiResultCard === "function") hideAddSupAiResultCard();
 
-      const digitsOnly = cleanBarcode.replace(/\D/g, "");
-      const lowerQuery = cleanBarcode.toLocaleLowerCase("tr-TR");
-      /* EAN-13 "0..." kodlarını okuyucular 12 haneli UPC-A olarak döndürür; karşılaştırma normalize edilmiş kodla yapılır. */
-      const scanNorm = typeof normalizeBarcodeForMatch === "function" ? normalizeBarcodeForMatch(cleanBarcode) : "";
-      const sameCode = code => code === cleanBarcode || (digitsOnly.length >= 8 && code === digitsOnly) ||
-        Boolean(scanNorm && typeof normalizeBarcodeForMatch === "function" && normalizeBarcodeForMatch(code) === scanNorm);
-
-      // 1. ÖNCE VITA_SUPPLEMENT_DB (Takviye Veri Tabanı) içerisinde barkod veya isimle ara
-      const supDb = Array.isArray(window.VITA_SUPPLEMENT_DB) ? window.VITA_SUPPLEMENT_DB : [];
-      const supFound = supDb.find(item =>
-        sameCode(item.barcode) ||
-        item.urunAdi.toLocaleLowerCase("tr-TR").includes(lowerQuery) ||
-        item.marka.toLocaleLowerCase("tr-TR").includes(lowerQuery) ||
-        item.etkenMadde.toLocaleLowerCase("tr-TR").includes(lowerQuery)
-      );
-
-      if (supFound) {
-        fillAddSupplementModalFormFromItem(supFound);
-        const msg = `Ürün Tanındı: ${supFound.urunAdi}`;
-        showAddSupFeedback(`✅ ${msg} (${supFound.marka} • ${supFound.form} • ${supFound.dozaj} • ${supFound.kutuAdedi} Adet)`, "success");
-        if (window.SoundEffects) SoundEffects.playSuccess();
-        showToast(msg, `${supFound.marka} — ${supFound.etkenMadde} form alanlarına otomatik aktarıldı.`, "success");
-        return;
-      }
-
-      // 2. VITA_PRESCRIPTION_DRUG_DB (Reçeteli İlaç) içerisinde mi kontrol et
-      const rxDb = Array.isArray(window.VITA_PRESCRIPTION_DRUG_DB) ? window.VITA_PRESCRIPTION_DRUG_DB : [];
-      const rxFound = rxDb.find(item =>
-        sameCode(item.barcode) ||
-        item.urunAdi.toLocaleLowerCase("tr-TR").includes(lowerQuery)
-      );
-
-      if (rxFound) {
-        if (typeof window.registerPrescriptionDrugToShield === "function") {
-          window.registerPrescriptionDrugToShield(rxFound, { openDrawer: true });
+      /* TAKVİYE MODÜLÜ: yalnızca takviye önbelleği + takviye kataloğu (+ açık katalog, firma tahmini, Gemini).
+         İlaç kataloğunda ASLA aranmaz; ilaçlar "İlaç ekle" bölümünden eklenir. */
+      const barcodeKey = typeof vitaBarcodeKey === "function" ? vitaBarcodeKey(cleanBarcode) : "";
+      if (!barcodeKey) {
+        // Barkod değil, ürün adı yazıldı: takviye listesinde en iyi eşleşme
+        const best = typeof searchVitaProducts === "function" ? searchVitaProducts("supplement", cleanBarcode, 1)[0] : null;
+        addSupLastLookup = best ? { barcode: "", source: best._source } : null;
+        if (best) {
+          applySupplementLookupResult(best, best._source === "cache" ? "Bu cihazda daha önce kaydettiğiniz ürün" : "Türkiye takviye kataloğu", false);
+          return;
         }
-        const depletionNotice = Array.isArray(rxFound.tuketilenBesinler) && rxFound.tuketilenBesinler.length > 0
-          ? ` • Tüketilen Besinler: ${rxFound.tuketilenBesinler.join(", ")} (Tahlil Takibi Önerilir)`
-          : "";
-        showAddSupFeedback(
-          `🛡️ Bu ürün reçeteli bir ilaçtır ve İlaç Kalkanına eklendi: ${rxFound.urunAdi} (${rxFound.etkenMadde} • ${rxFound.kategori}). Kural: ${rxFound.etkilesimKurali}${depletionNotice}`,
-          "warning"
-        );
+        showAddSupFeedback(`"${cleanBarcode}" takviye listesinde yok. Ürün adını aşağıya yazarak ekleyebilirsiniz.`, "warning");
         return;
       }
 
-      // 3. İkisinde de yoksa: AI Kutu Tanıma Fallback
-      showAddSupFeedback(`⚠️ Ürün veritabanında bulunamadı (${cleanBarcode}). Ürün adını yazarak ekleyebilirsiniz.`, "warning");
-      if (fallbackBox) fallbackBox.classList.remove("hidden");
+      addSupLastLookup = { barcode: barcodeKey, source: "pending" };
+      showAddSupFeedback(`⏳ Barkod (${barcodeKey}) takviye listesinde aranıyor…`, "info");
+      return lookupVitaBarcode("supplement", barcodeKey).then(result => {
+        if (!addSupLastLookup || addSupLastLookup.barcode !== barcodeKey) return result; // bu arada başka barkod okundu
+        addSupLastLookup = { barcode: barcodeKey, source: result.found ? result.source : "none" };
+        if (result.found) {
+          applySupplementLookupResult(result.item, result.sourceLabel, Boolean(result.verifyHint));
+          return result;
+        }
+        const guessText = result.guess && result.guess.text ? ` ${result.guess.text}` : "";
+        showAddSupFeedback(`⚠️ Bu barkod takviye listesinde bulunamadı (${barcodeKey}).${guessText} Ürün adını yazıp eklediğinizde bu barkod bir dahaki sefere otomatik tanınır.`, "warning");
+        if (fallbackBox) fallbackBox.classList.remove("hidden");
+        return result;
+      });
+    }
+
+    /* Son barkod araması: kaydederken barkodun takviye önbelleğine öğretilmesi için. */
+    let addSupLastLookup = null;
+
+    function applySupplementLookupResult(item, sourceLabel, verifyHint) {
+      fillAddSupplementModalFormFromItem(item);
+      const details = [item.marka, item.form, item.dozaj, Number(item.kutuAdedi) > 0 ? `${item.kutuAdedi} adet` : ""].filter(Boolean).join(" • ");
+      showAddSupFeedback(
+        `${verifyHint ? "🔎" : "✅"} Ürün tanındı: ${item.urunAdi}${details ? ` (${details})` : ""} — Kaynak: ${sourceLabel}.${verifyHint ? " Bu bilgi dış kaynaktan/tahminden geldi; kutudaki etiketle karşılaştırıp gerekirse düzeltin." : ""}`,
+        verifyHint ? "warning" : "success"
+      );
+      if (window.SoundEffects) SoundEffects.playSuccess();
+      showToast(`Ürün tanındı: ${item.urunAdi}`, `Kaynak: ${sourceLabel}. Bilgiler forma aktarıldı.`, verifyHint ? "info" : "success");
     }
 
     async function triggerGeminiBoxScan() {
@@ -822,6 +819,7 @@ function renderDailyTab() {
       const fallbackBox = document.getElementById("addSupFallbackConfirmBox");
       if (fallbackBox) fallbackBox.classList.add("hidden");
       hideAddSupAiResultCard();
+      addSupLastLookup = null;
 
       showAddSupFeedback("⏳ Fotoğraftaki barkod okunuyor...", "info");
 
@@ -1029,6 +1027,7 @@ function renderDailyTab() {
       if (feedbackBox) { feedbackBox.classList.add("hidden"); feedbackBox.textContent = ""; }
       if (fallbackBox) fallbackBox.classList.add("hidden");
       hideAddSupAiResultCard();
+      addSupLastLookup = null;
       const moreDetails = document.getElementById("addSupMoreDetails");
       if (moreDetails) moreDetails.open = false;
 
@@ -1196,6 +1195,21 @@ function renderDailyTab() {
           scheduleDays: [1, 2, 3, 4, 5, 6, 0],
           scheduledDate: todayIso
         });
+
+        /* Barkod TAKVİYE önbelleğine öğretilir (ilaç önbelleğine asla): bir dahaki taramada katalogda olmasa da tanınır.
+           Barkod zaten takviye kataloğunda aynı ürün olarak varsa gereksiz kopya yapılmaz. */
+        const learnKey = typeof vitaBarcodeKey === "function" ? vitaBarcodeKey(barcodeVal) : "";
+        if (learnKey && typeof learnVitaBarcode === "function") {
+          const fromCatalog = addSupLastLookup && addSupLastLookup.barcode === learnKey && addSupLastLookup.source === "catalog";
+          if (!fromCatalog) {
+            const [brandPart, ...activeParts] = brandActive.split(/\s+—\s+/);
+            learnVitaBarcode("supplement", learnKey, {
+              urunAdi: name, marka: activeParts.length ? brandPart : "", etkenMadde: activeParts.length ? activeParts.join(" — ") : brandPart,
+              form: customForm || "", dozaj: (document.getElementById("manualSupDose")?.value || "").trim(),
+              kutuAdedi: toplamKutuAdedi, gunlukDoz, zamanBloku: timing, aclikDurumu: hungerNote
+            });
+          }
+        }
       } else {
         const cfg = FORM_DOSAGE_CONFIG[catalogKey];
         const chosenForm = document.getElementById("modalFormSelect").value;

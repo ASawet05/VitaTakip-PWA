@@ -5,7 +5,8 @@
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); }
   function lc(s) { return String(s || "").toLocaleLowerCase("tr-TR"); }
-  function db() { return typeof getCombinedTurkishBarcodeDb === "function" ? getCombinedTurkishBarcodeDb() : []; }
+  /* Yalnızca TAKVİYE modülü: takviye kataloğu + takviye barkod önbelleği (Türkçe karakter duyarsız). İlaçlar burada çıkmaz. */
+  var lastHits = [];
 
   function box() { return $("vsAddSuggest"); }
   function clearSuggest() { var b = box(); if (b) { b.classList.add("hidden"); b.innerHTML = ""; } }
@@ -22,16 +23,10 @@
       rows += '<button type="button" class="vsa-sg" data-bc="' + esc(digits) + '"><span class="vsa-sg-ico"><i class="fa-solid fa-barcode"></i></span>' +
         '<span class="vsa-sg-t"><b>Barkodu ara</b><small>' + esc(digits) + '</small></span></button>';
     }
-    var matches = db().filter(function (it) {
-      return lc(it.name).indexOf(q) > -1 || lc(it.brand).indexOf(q) > -1 || lc(it.ingredients).indexOf(q) > -1 || (digits.length >= 4 && String(it.barcode).indexOf(digits) > -1);
-    });
-    /* Önce takviyeler, sonra ilaçlar */
-    matches.sort(function (a, b2) { return (a.type === "supplement" ? 0 : 1) - (b2.type === "supplement" ? 0 : 1); });
-    matches.slice(0, 6).forEach(function (it) {
-      var rx = it.type === "medication";
-      rows += '<button type="button" class="vsa-sg" data-bc="' + esc(it.barcode) + '"><span class="vsa-sg-ico' + (rx ? " rx" : "") + '"><i class="fa-solid ' + (rx ? "fa-prescription-bottle-medical" : "fa-capsules") + '"></i></span>' +
-        '<span class="vsa-sg-t"><b>' + esc(it.name) + '</b><small>' + esc([it.brand, it.form || it.ingredients].filter(Boolean).join(" · ")) + '</small></span>' +
-        (rx ? '<span class="vsa-sg-tag">İlaç → kalkan</span>' : "") + '</button>';
+    lastHits = typeof searchVitaProducts === "function" ? searchVitaProducts("supplement", value, 6) : [];
+    lastHits.forEach(function (it, i) {
+      rows += '<button type="button" class="vsa-sg" data-sup-pick="' + i + '"><span class="vsa-sg-ico"><i class="fa-solid fa-capsules"></i></span>' +
+        '<span class="vsa-sg-t"><b>' + esc(it.urunAdi) + '</b><small>' + esc([it.marka, it.form || it.etkenMadde].filter(Boolean).join(" · ") || (it._source === "cache" ? "Daha önce eklediğiniz" : "")) + '</small></span></button>';
     });
     if (!rows) {
       rows = '<div class="vsa-sg-empty"><span><b>“' + esc(value.trim()) + '”</b> listede yok.</span>' +
@@ -48,6 +43,16 @@
     if (inp && name) inp.value = name;
   }
 
+  /* Listeden seçilen takviye: barkodu varsa barkodla (öğrenme için), yoksa adla forma aktarılır. */
+  function pickItem(index) {
+    var it = lastHits[index];
+    clearSuggest();
+    if (!it) return;
+    if (it.barcode && typeof handleAddSupBarcodeDecoded === "function") { handleAddSupBarcodeDecoded(it.barcode); return; }
+    if (typeof handleAddSupBarcodeDecoded === "function") handleAddSupBarcodeDecoded(it.urunAdi);
+    var inp = $("addSupBarcodeInput"); if (inp) inp.value = it.urunAdi;
+  }
+
   function useOwnName() {
     var inp = $("addSupBarcodeInput"), nm = $("manualSupName");
     if (nm && inp) { nm.value = inp.value.trim(); nm.dispatchEvent(new Event("input", { bubbles: true })); nm.focus(); }
@@ -59,15 +64,18 @@
     if (e.key === "Escape") { clearSuggest(); return; }
     if (e.key !== "Enter") return;
     e.preventDefault();
-    var first = box() && box().querySelector("[data-bc]");
-    if (first) pick(first.getAttribute("data-bc"));
+    var first = box() && box().querySelector("[data-bc], [data-sup-pick]");
+    if (first && first.hasAttribute("data-bc")) pick(first.getAttribute("data-bc"));
+    else if (first) pickItem(Number(first.getAttribute("data-sup-pick")));
     else if (box() && box().querySelector("[data-own]")) useOwnName();
     else if (typeof handleAddSupBarcodeDecoded === "function") handleAddSupBarcodeDecoded(e.target.value);
   };
 
   document.addEventListener("click", function (e) {
     var sg = e.target.closest && e.target.closest("#vsAddSuggest [data-bc]");
-    if (sg) { pick(sg.getAttribute("data-bc"), sg.querySelector("b") && sg.querySelector("b").textContent); return; }
+    if (sg) { pick(sg.getAttribute("data-bc")); return; }
+    var sp = e.target.closest && e.target.closest("#vsAddSuggest [data-sup-pick]");
+    if (sp) { pickItem(Number(sp.getAttribute("data-sup-pick"))); return; }
     if (e.target.closest && e.target.closest("#vsAddSuggest [data-own]")) { useOwnName(); return; }
     if (!(e.target.closest && e.target.closest(".vsa-search, #vsAddSuggest"))) clearSuggest();
   });
@@ -154,8 +162,8 @@
     var b = box(); if (!b) return;
     var q = lc(value).trim();
     if (q.length < 2) { clear(); return; }
-    var db = Array.isArray(window.VITA_PRESCRIPTION_DRUG_DB) ? window.VITA_PRESCRIPTION_DRUG_DB : [];
-    var hits = db.filter(function (d) { return lc(d.urunAdi).indexOf(q) > -1 || lc(d.etkenMadde).indexOf(q) > -1 || lc(d.kategori).indexOf(q) > -1; }).slice(0, 6);
+    /* Yalnızca İLAÇ modülü: ilaç kataloğu + ilaç barkod önbelleği (Türkçe karakter duyarsız). Takviyeler burada çıkmaz. */
+    var hits = typeof searchVitaProducts === "function" ? searchVitaProducts("medication", value, 6) : [];
     if (!hits.length) {
       b.innerHTML = '<div class="vsa-sg-empty"><span><b>“' + esc(value.trim()) + '”</b> listede yok.</span><button type="button" data-med-own="1"><i class="fa-solid fa-plus" aria-hidden="true"></i> Bu adla ekle</button></div>';
     } else {
@@ -171,9 +179,19 @@
     var t = e.target.closest && e.target.closest("#vsMedSuggest [data-med], #vsMedSuggest [data-med-own]");
     if (t) {
       var inp = $("quickAddMedInput");
-      if (inp && t.getAttribute("data-med")) inp.value = t.getAttribute("data-med");
+      var chosen = t.getAttribute("data-med") || (inp ? inp.value.trim() : "");
       clear();
-      if (typeof addQuickMedicationFromInput === "function") addQuickMedicationFromInput();
+      /* Seçim sade "İlaç ekle" penceresini açar: kullanım sıklığı seçilip "Ben bu ilacı kullanıyorum" ile kaydedilir. */
+      if (typeof openAddMedicationModal === "function") {
+        if (inp) inp.value = "";
+        openAddMedicationModal();
+        var name = $("addMedName"); if (name) name.value = chosen;
+        var s = $("addMedSearchInput"); if (s) s.value = chosen;
+        if (t.getAttribute("data-med") && typeof window.applyVitaMedicationCatalogName === "function") window.applyVitaMedicationCatalogName(chosen);
+      } else {
+        if (inp) inp.value = chosen;
+        if (typeof addQuickMedicationFromInput === "function") addQuickMedicationFromInput();
+      }
       return;
     }
     if (!(e.target.closest && e.target.closest(".vsd-input, #vsMedSuggest"))) clear();

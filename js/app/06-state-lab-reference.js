@@ -10,6 +10,8 @@ let currentAuthMode = "login";
     const state = {
       user: null,
       supplements: [],
+      medications: [],
+      medTaken: null,
       hydration: { current: 0, target: 2450 },
       labValues: { d3: null, b12: null, ferritin: null, mg: null, ca: null, zinc: null, creatinine: null, folate: null, alt: null, hb: null, mcv: null, crp: null },
       labReferences: {},
@@ -391,6 +393,8 @@ let currentAuthMode = "login";
       if (window.VitaAIChat && typeof window.VitaAIChat.resetSession === "function") window.VitaAIChat.resetSession();
       state.user = null;
       state.supplements = [];
+      state.medications = [];
+      state.medTaken = null;
       state.hydration = { current: 0, target: 2450 };
       state.labValues = createEmptyLabValuesState();
       state.labReferences = createEmptyLabReferencesState();
@@ -575,13 +579,15 @@ let currentAuthMode = "login";
       } catch (error) {
         console.warn("VitaTakip geçici oturum bilgisi okunamadı.", error);
       }
-      return vitaMemorySessionStore.has(k) ? vitaMemorySessionStore.get(k) : safeLocalStorageGetItem(k);
+      return vitaMemorySessionStore.has(k) ? vitaMemorySessionStore.get(k) : null;
     }
+    /* Geçici oturum bilgisi yalnızca sekme deposunda (ve bellekte) tutulur. Kalıcı depoya YAZILMAZ:
+       "Beni hatırla" kapalıyken sayfa yenilense bile oturum kimliği cihazda kalıcı olarak saklanmamalı.
+       "Beni hatırla" açıkken kalıcı kayıt ayrıca ve açıkça yapılır. */
     function safeSessionStorageSetItem(key, value) {
       const k = String(key);
       const v = String(value);
       vitaMemorySessionStore.set(k, v);
-      safeLocalStorageSetItem(k, v);
       try { window.sessionStorage.setItem(k, v); return true; }
       catch (error) { console.warn("VitaTakip geçici oturum bilgisi saklanamadı.", error); return true; }
     }
@@ -644,7 +650,7 @@ let currentAuthMode = "login";
       const kept = users.filter(u => !removedIds.has(String(u?.id || "")));
       try { saveUsersDb(kept); } catch (error) { console.warn("Legacy demo accounts could not be removed from the local account index.", error); return 0; }
       const prefixes = [
-        "vitatakip_user_", "vitatakip_supplements_", "vitatakip_hydration_", "vitatakip_labs_",
+        "vitatakip_user_", "vitatakip_supplements_", "vitatakip_medications_", "vitatakip_med_taken_", "vitatakip_hydration_", "vitatakip_labs_",
         "vitatakip_labreferences_", "vitatakip_labhistory_", "vitatakip_symptoms_", "vitatakip_resolved_symptoms_",
         "vitatakip_reviews_", "vitatakip_cdss_", "vitatakip_notes_", "vitatakip_lastActiveDate_",
         "vitatakip_labdraft_", "vitatakip_profiledraft_", "vitatakip_anamnesis_category_",

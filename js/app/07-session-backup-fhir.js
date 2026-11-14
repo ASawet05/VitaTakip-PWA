@@ -67,6 +67,8 @@ function checkMidnightReset(userId) {
       state.resolvedSymptoms = new Set(Array.isArray(storedResolvedSymptoms) ? storedResolvedSymptoms : []);
       const storedReviews = readStoredJSON(`vitatakip_reviews_${userId}`, {});
       state.supplementReviews = storedReviews && typeof storedReviews === "object" ? storedReviews : {};
+      // İlaçlar ayrı kayıtta (vitatakip_medications_): eski kayıtlarda profildeki ilaç listesinden taşınır.
+      if (typeof loadVitaMedications === "function") loadVitaMedications(userId);
       invalidateClinicalAnalysisCache({ clearDOM: true });
 
       checkMidnightReset(userId);
@@ -133,7 +135,7 @@ function checkMidnightReset(userId) {
       if (!activeUserId) { showToast("Hata", "Oturum açmadan yedek alamazsınız.", "error"); return; }
       const backupPayload = {
         app: "VitaTakip", version: "9.4.0", exportDate: new Date().toISOString(),
-        user: state.user, supplements: state.supplements, hydration: state.hydration,
+        user: state.user, supplements: state.supplements, medications: Array.isArray(state.medications) ? state.medications : [], hydration: state.hydration,
         labValues: state.labValues, labReferences: state.labReferences || {}, labHistory: state.labHistory,
         selectedSymptoms: Array.from(state.selectedSymptoms),
         resolvedSymptoms: Array.from(state.resolvedSymptoms),
@@ -265,6 +267,10 @@ function checkMidnightReset(userId) {
               if (keepName) state.user.name = keepName;
             }
             if (Array.isArray(parsed.supplements)) state.supplements = parsed.supplements.map(sanitizeImportedSupplement).filter(Boolean).slice(0, 300);
+            /* İlaçlar ayrı modül: yedekte varsa alınır; eski yedeklerde profildeki ilaç adlarından oluşturulur. */
+            state.medications = Array.isArray(parsed.medications) && typeof normalizeVitaMedication === "function" ? parsed.medications.map(normalizeVitaMedication).filter(Boolean).slice(0, 200) : [];
+            state.medTaken = null;
+            if (typeof reconcileVitaMedicationsWithProfile === "function") reconcileVitaMedicationsWithProfile();
             if (parsed.hydration && typeof parsed.hydration === "object") {
               const current = vitaNumberInRange(parsed.hydration.current, 0, 20000);
               state.hydration = { ...state.hydration, current: current !== null ? current : 0 };

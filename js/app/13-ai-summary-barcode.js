@@ -1144,7 +1144,8 @@ window.VitaAIChat = VitaAIChat;
     function findTurkishDatabaseMatch(rawQuery) {
       const q = String(rawQuery || "").trim();
       if (!q) return null;
-      const combinedDb = getCombinedTurkishBarcodeDb();
+      // Modül izolasyonu: barkod okuyucu hangi modda açıldıysa yalnızca o türdeki ürünlerde arar (ilaç ↔ takviye karışmaz).
+      const combinedDb = getCombinedTurkishBarcodeDb().filter(item => (item.type || (item.prescriptionDbRecord ? "medication" : "supplement")) === currentBarcodeScannerMode);
       const normCode = normalizeBarcodeForMatch(q);
 
       if (normCode) {
@@ -1372,7 +1373,8 @@ window.VitaAIChat = VitaAIChat;
         quickInput.value = rawName;
         addQuickMedicationFromInput();
       } else {
-        if (!state.user.medications.some(m => m.toLocaleLowerCase("tr-TR") === rawName.toLocaleLowerCase("tr-TR"))) {
+        if (typeof addVitaMedication === "function") addVitaMedication({ name: rawName }, { noRefresh: true });
+        else if (!state.user.medications.some(m => m.toLocaleLowerCase("tr-TR") === rawName.toLocaleLowerCase("tr-TR"))) {
           state.user.medications.push(rawName);
         }
         if (typeof saveState === "function") saveState();

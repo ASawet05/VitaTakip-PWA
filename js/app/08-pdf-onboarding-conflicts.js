@@ -660,7 +660,17 @@ function applyParsedPdfValues() {
         state.user.prescriptionDrugRecords.push(entry);
       }
 
-      if (!state.user.medications.some(m => m.toLocaleLowerCase("tr-TR") === entry.urunAdi.toLocaleLowerCase("tr-TR"))) {
+      // İlaç modülü tek doğru kaynaktır (vitatakip_medications_): kayıt oraya da işlenir, profil alanları ondan üretilir.
+      if (typeof addVitaMedication === "function") {
+        const already = typeof findVitaMedication === "function" ? findVitaMedication(entry.urunAdi) : null;
+        const zaman = ["Sabah", "Öğle", "Akşam", "Gece"].find(t => String(entry.zamanBloku || "").startsWith(t)) || "Sabah";
+        addVitaMedication({
+          name: entry.urunAdi, etkenMadde: entry.etkenMadde, kategori: entry.kategori,
+          barcode: /^\d{8,14}$/.test(String(entry.barcode || "")) ? entry.barcode : "",
+          frequency: entry.dozPeriyodu === "haftalik" ? "haftada1" : (entry.gunlukDoz >= 3 ? "gunde3" : entry.gunlukDoz === 2 ? "gunde2" : "gunde1"),
+          times: [zaman]
+        }, { noRefresh: true, keepSchedule: Boolean(already) });
+      } else if (!state.user.medications.some(m => m.toLocaleLowerCase("tr-TR") === entry.urunAdi.toLocaleLowerCase("tr-TR"))) {
         state.user.medications.push(entry.urunAdi);
       }
 
@@ -726,6 +736,7 @@ function applyParsedPdfValues() {
           return true;
         });
       }
+      if (typeof removeVitaMedication === "function") removeVitaMedication(removedRecord ? removedRecord.urunAdi : barcodeOrName, { noRefresh: true });
       if (typeof invalidateClinicalAnalysisCache === "function") invalidateClinicalAnalysisCache({ clearDOM: true });
       saveState();
       if (typeof syncAllProfileSummariesUI === "function") syncAllProfileSummariesUI();
@@ -823,7 +834,10 @@ function applyParsedPdfValues() {
         }
       });
 
-      if (!state.user.medications.some(m => m.toLocaleLowerCase("tr-TR") === lower)) {
+      if (typeof addVitaMedication === "function") {
+        // Listede olmayan ilaç: varsayılan "Günde 1 kez · Sabah"; sıklık İlaç ekle penceresinden değiştirilebilir.
+        if (!(typeof findVitaMedication === "function" && findVitaMedication(rawVal))) addVitaMedication({ name: rawVal }, { noRefresh: true });
+      } else if (!state.user.medications.some(m => m.toLocaleLowerCase("tr-TR") === lower)) {
         state.user.medications.push(rawVal);
       }
 
@@ -845,6 +859,9 @@ function applyParsedPdfValues() {
 
     function removeCustomMedication(medName) {
       if (!state.user) return;
+      const med = typeof findVitaMedication === "function" ? findVitaMedication(medName) : null;
+      if (med) medName = med.name;
+      if (typeof removeVitaMedication === "function") removeVitaMedication(medName, { noRefresh: true });
       if (Array.isArray(state.user.medications)) {
         state.user.medications = state.user.medications.filter(m => m !== medName);
       }
@@ -940,10 +957,12 @@ function applyParsedPdfValues() {
 
       const customHtml = customMeds.map(med => {
         const matchedDepletionCode = resolveDepletionCodeForMedicationName(med);
+        const medRecord = typeof findVitaMedication === "function" ? findVitaMedication(med) : null;
+        const schedule = medRecord && typeof describeVitaMedicationSchedule === "function" ? describeVitaMedicationSchedule(medRecord) : "";
         return `
           <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-bold bg-navy-900 text-teal-200 border border-navy-800">
             <i class="fa-solid fa-prescription-bottle text-teal-400"></i>
-            <span>${escapeHtmlText(med)}</span>
+            <span>${escapeHtmlText(med)}${schedule ? `<small class="ml-1 font-semibold text-teal-100/80">· ${escapeHtmlText(schedule)}</small>` : ""}</span>
             ${matchedDepletionCode ? `
               <button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); openDrugNutrientDepletionDrawer(${safeJsStringAttribute(matchedDepletionCode)}, ${safeJsStringAttribute(med)})" class="misantha-depletion-tag ml-0.5" title="Bu ilacın vitamin/mineral tüketim analizini aç">
                 <i class="fa-solid fa-flask-vial text-amber-700"></i>
