@@ -492,7 +492,7 @@
       list.innerHTML = rows.length
         ? rows.map(r => {
             const id = `todayMed_${r.med.id}_${VITA_MED_TIMES.indexOf(r.dose)}`;
-            return `<li class="vtm-row${r.taken ? " is-taken" : ""}"><input id="${id}" type="checkbox" ${r.taken ? "checked" : ""} data-med-id="${esc(r.med.id)}" data-dose="${esc(r.dose)}" onchange="setVitaMedicationDoseTaken(this.dataset.medId, this.dataset.dose, this.checked)"/><label for="${id}"><b>${esc(r.med.name)}</b><small>${esc(r.dose)}${r.med.frequency === "haftada1" ? " · haftalık" : ""}</small></label></li>`;
+            return `<li class="vtm-row${r.taken ? " is-taken" : ""}"><input id="${id}" type="checkbox" ${r.taken ? "checked" : ""} data-med-id="${esc(r.med.id)}" data-dose="${esc(r.dose)}" onchange="setVitaMedicationDoseTaken(this.dataset.medId, this.dataset.dose, this.checked)"/><label for="${id}"><b>${esc(r.med.name)}</b><small>${esc(r.dose)}${r.med.frequency === "haftada1" ? " · haftalık" : ""}</small></label><button type="button" class="vtm-info" aria-label="${esc(r.med.name)}: nasıl kullanılır?" title="Nasıl kullanılır?" onclick="openVitaUsageInfo(this, 'med', ${esc(JSON.stringify(r.med.id))})">!</button></li>`;
           }).join("")
         : `<li class="vtm-empty">Bugün alınması gereken ilaç yok.</li>`;
       const prn = meds.filter(m => m.frequency === "gerektiginde").map(m => m.name);

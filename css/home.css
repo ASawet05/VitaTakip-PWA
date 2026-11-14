@@ -288,3 +288,31 @@
 .vsk-chev{transition:transform .2s}
 .vsk[open] .vsk-chev{transform:rotate(180deg)}
 .vsk-body{padding:0 14px 14px}
+/* ===== Genel düzen denetimi düzeltmeleri ===== */
+/* Takviye grup başlığı: "Tümü alındı" başlığın sağında, ayrı satır kaplamaz */
+.vsg-head{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:#334155;min-height:36px}
+.vsg-label{min-width:0}
+.vsg-count{font-size:10.5px;font-weight:800;color:#64748b;background:#f1f5f9;border-radius:999px;padding:1px 8px}
+.vsg-all{margin-left:auto;flex:0 0 auto;min-height:34px;padding:4px 10px;border-radius:10px;border:1px solid #6ee7b7;background:#ecfdf5;color:#047857;font-size:11px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.vsg-all:hover{background:#d1fae5}
+/* Bugünkü ilaçlar: "!" kullanım bilgisi */
+.vtm-info{flex:0 0 28px;width:28px;height:28px;border-radius:999px;border:1.5px solid #f59e0b;background:#fffbeb;color:#b45309;font-size:13px;font-weight:900;cursor:pointer}
+/* Geri düğmesi: tek satır, yeterli dokunma alanı */
+.vbh-back{min-height:40px}
+#viewHeaderBar #currentViewTitle{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Tahliller: değer adları iki satıra sığar (kesilmez); giriş kutuları 40 px ve 16 px yazı (iPhone yakınlaştırmasın) */
+#view-labs label.truncate{white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3;min-height:2.6em}
+#view-labs input[id^="inputLab"]{min-height:40px;font-size:16px}
+#view-labs #inputLabDate{min-height:40px;font-size:15px}
+#view-labs button[onclick*="openENabiz"],#view-labs button.px-3.py-1\.5{min-height:40px}
+/* Küçük dokunma alanları: belirti kontrolü, "Profili Düzenle" */
+.sdc-yes,.sdc-no{min-height:40px !important;padding-left:14px !important;padding-right:14px !important}
+.sdc-all{min-height:36px}
+.vst-head > button{min-height:40px}
+/* Alt menü yazıları okunur boyut */
+.vita-mobile-nav button span{font-size:10.5px !important;line-height:1.15}
+/* Yapay zekâ düğmesi: aşağı kaydırırken gizlenir; sayfa sonunda içeriği örtmemesi için alt boşluk */
+#vitaAiFab{transition:transform .25s ease,opacity .25s ease}
+#vitaAiFab.vita-fab-hidden{transform:translateY(140%) scale(.8);opacity:0;pointer-events:none}
+@media (max-width:767px){html body main{padding-bottom:calc(6.25rem + 50px + 64px + env(safe-area-inset-bottom)) !important}}
+@media (prefers-reduced-motion:reduce){#vitaAiFab{transition:none}}

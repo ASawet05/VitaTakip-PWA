@@ -61,3 +61,22 @@
     applyVitaTakipUIUX();
   }
 })();
+
+/* Yapay zekâ düğmesi (sağ alt): aşağı kaydırırken gizlenir, böylece değer etiketlerini, silme ikonlarını ve
+   imza/alt bilgi alanını kapatmaz; yukarı kaydırınca, durunca veya sayfa başına dönünce geri gelir. Sohbet açıkken hep görünür. */
+(function () {
+  "use strict";
+  var lastY = window.scrollY || 0, idle = null;
+  function fab() { return document.getElementById("vitaAiFab"); }
+  function chatOpen() { var box = document.getElementById("vita-ai-chatbox"); return box && !box.classList.contains("hidden"); }
+  function show() { var f = fab(); if (f) f.classList.remove("vita-fab-hidden"); }
+  function hide() { var f = fab(); if (f && !chatOpen()) f.classList.add("vita-fab-hidden"); }
+  window.addEventListener("scroll", function () {
+    var y = window.scrollY || 0;
+    if (y > lastY + 6 && y > 120) hide();
+    else if (y < lastY - 6 || y < 120) show();
+    lastY = y;
+    clearTimeout(idle);
+    idle = setTimeout(show, 1400);
+  }, { passive: true });
+})();

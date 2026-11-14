@@ -60,8 +60,11 @@
       if (!home) return;
       if (!host) {
         host = document.createElement("div"); host.id = "symptomDailyCheck";
-        var hero = home.firstElementChild; // karşılama kartının hemen altı
-        home.insertBefore(host, hero && hero.nextSibling ? hero.nextSibling : null);
+        // Ana Sayfa sırası: günlük takviye/ilaçlar → su → belirti kontrolü → günlük özet
+        var water = document.getElementById("homeHydrationCard");
+        var hero = home.firstElementChild;
+        if (water) home.insertBefore(host, water.nextSibling);
+        else home.insertBefore(host, hero && hero.nextSibling ? hero.nextSibling : null);
       }
       var key = sympKey();
       var keys = state.selectedSymptoms instanceof Set ? Array.from(state.selectedSymptoms) : [];

@@ -1043,7 +1043,8 @@ function checkPendingSymptomReviews() {
           const formFn = cfg.forms[item.selectedForm];
           if (formFn) {
             const evaluated = formFn(w);
-            item.doseText = evaluated.doseText;
+            // Şablonlar doz hesaplamaz: boşsa kullanıcının günlük miktarı yazılır (ör. "Günde 1 damla").
+            item.doseText = evaluated.doseText || `Günde ${Math.max(1, Number(item.gunlukDoz) || 1)} ${item.dozBirimi || (/damla/i.test(String(item.selectedForm || "")) ? "damla" : "adet")}`;
             item.subText = evaluated.subText;
             item.instruction = evaluated.instruction;
             item.timing = evaluated.timing;

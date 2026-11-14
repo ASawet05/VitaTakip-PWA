@@ -24,11 +24,11 @@
 <!-- Uses Inter when already available; otherwise falls back immediately to the system UI font. -->
 <!-- Font Awesome 6 CDN -->
 <!-- build:css -->
-<link rel="stylesheet" href="./css/app.css?v=41e0c5f7db">
-<script defer src="./js/app.1.js?v=41e0c5f7db"></script>
-<script defer src="./js/app.2.js?v=41e0c5f7db"></script>
-<script defer src="./js/app.3.js?v=41e0c5f7db"></script>
-<script defer src="./js/app.4.js?v=41e0c5f7db"></script>
+<link rel="stylesheet" href="./css/app.css?v=8cc7d8e971">
+<script defer src="./js/app.1.js?v=8cc7d8e971"></script>
+<script defer src="./js/app.2.js?v=8cc7d8e971"></script>
+<script defer src="./js/app.3.js?v=8cc7d8e971"></script>
+<script defer src="./js/app.4.js?v=8cc7d8e971"></script>
 <!-- /build:css -->
 <!-- Chart.js loads only if a trend chart is needed. -->
 <!-- PDF.js loads only when a user selects a PDF for analysis. -->
@@ -182,7 +182,7 @@
 <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
 <i class="fa-solid fa-magnifying-glass text-xs sm:text-sm"></i>
 </span>
-<input class="w-full pl-9 sm:pl-10 pr-8 py-2 rounded-2xl bg-navy-800/90 hover:bg-navy-800 focus:bg-slate-900 border border-slate-700 focus:border-teal-400 text-xs text-white placeholder-slate-400 focus:outline-none transition shadow-inner" id="globalSearchInput" onfocus="handleGlobalSearch(this.value)" oninput="handleGlobalSearch(this.value)" placeholder="Nasıl yardımcı olabilirim? (Örn: D Vitamini, Kramp, Demir, e-Nabız...)" type="text"/>
+<input class="w-full pl-9 sm:pl-10 pr-8 py-2 rounded-2xl bg-navy-800/90 hover:bg-navy-800 focus:bg-slate-900 border border-slate-700 focus:border-teal-400 text-xs text-white placeholder-slate-400 focus:outline-none transition shadow-inner" id="globalSearchInput" onfocus="handleGlobalSearch(this.value)" oninput="handleGlobalSearch(this.value)" placeholder="Ara…" title="Uygulamada ara (ör. D vitamini, kramp, demir, e-Nabız)" type="text"/>
 <button class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer" id="clearSearchBtn" onclick="clearGlobalSearch()">
 <i class="fa-solid fa-xmark text-xs"></i>
 </button>
@@ -227,11 +227,11 @@
 <!-- ========================================================================= -->
 <div class="hidden bg-white border-b border-slate-200 py-2.5 px-3 sm:px-6 lg:px-8 shadow-sm no-print" id="viewHeaderBar">
 <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
-<button class="flex items-center gap-2 text-xs font-black text-slate-700 hover:text-teal-600 transition px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 cursor-pointer" onclick="navigateToView('view-home')">
-<i class="fa-solid fa-arrow-left"></i>
-<span>← Ana Sayfaya Dön</span>
+<button aria-label="Ana Sayfaya dön" class="vbh-back flex shrink-0 items-center gap-2 whitespace-nowrap text-xs font-black text-slate-700 hover:text-teal-600 transition px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 cursor-pointer" onclick="navigateToView('view-home')" type="button">
+<i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+<span>Ana Sayfa</span>
 </button>
-<div class="flex items-center gap-2 text-xs">
+<div class="flex min-w-0 items-center gap-2 text-xs">
 <span class="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse"></span>
 <span class="font-bold text-navy-900 truncate" id="currentViewTitle">Modül Adı</span>
 </div>
@@ -276,85 +276,11 @@
 </div>
 </div>
 </div>
-<!-- Hızlı Aksiyon & Günlük Sıvı Hedefi Şeridi -->
-<div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 vita-hide-in-compact">
-<div class="flex items-center gap-3 w-full md:w-auto">
-<div class="w-11 h-11 rounded-2xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center text-lg flex-shrink-0">
-<i class="fa-solid fa-droplet"></i>
-</div>
-<div>
-<div class="flex items-center gap-2">
-<h4 class="text-xs font-bold text-navy-900">Günlük Sıvı Hedefi</h4>
-<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200" id="homeHydrationTag">Kilo × 35 ml</span>
-</div>
-<p class="text-[11px] text-slate-500 mt-0.5 font-medium" id="homeHydrationText">0 / 2450 ml tamamlandı</p>
-</div>
-</div>
-<div class="w-full md:w-72 bg-slate-100 rounded-full h-3 overflow-hidden">
-<div class="bg-gradient-to-r from-sky-400 to-teal-500 h-3 rounded-full transition-all duration-500" id="homeHydrationBar" style="width: 0%"></div>
-</div>
-<div class="flex items-center gap-2 w-full md:w-auto justify-end">
-<button class="px-3.5 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-bold border border-sky-200 transition cursor-pointer active:scale-95 flex items-center gap-1.5" onclick="if(window.SoundEffects) SoundEffects.playClick(); addWater(250)">
-<i class="fa-solid fa-glass-water"></i> +250 ml
-          </button>
-<button class="px-3.5 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-bold border border-teal-200 transition cursor-pointer active:scale-95 flex items-center gap-1.5" onclick="if(window.SoundEffects) SoundEffects.playClick(); addWater(500)">
-<i class="fa-solid fa-bottle-water"></i> +500 ml
-          </button>
-</div>
-</div>
+<!-- Ana Sayfa sırası: Emniyet Kalkanı (katlanmış) → bugünkü takviyeler + ilaçlar → su → belirti kontrolü → günlük özet -->
 <!-- Biyolojik Yanıt Süresi Dolan Takviyeler İçin Uyarı Şeridi -->
 <div class="hidden space-y-3" id="pendingReviewAlertBanner"></div>
 <!-- Çakışma & Biyoyararlanım Emniyet Kalkanı Bildirim Şeridi -->
 <div class="hidden space-y-3" id="conflictShieldAlertBanner"></div>
-<!-- 4'lü Özet Sayaç Kartları (Doğrudan Açık) -->
-<details open class="rounded-2xl border border-slate-200 bg-white shadow-sm" id="homeDailySummaryDetails">
-<summary class="cursor-pointer list-none px-4 py-3 text-xs font-bold text-slate-700 flex items-center justify-between gap-3">
-<span><i class="fa-solid fa-chart-simple mr-2 text-teal-600"></i>Günlük özet göstergeleri</span>
-<i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
-</summary>
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 p-3 sm:p-4 border-t border-slate-100">
-<div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/80 flex items-center justify-between">
-<div>
-<span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">VitaSkor</span>
-<div class="text-xl sm:text-2xl font-black text-navy-900 mt-0.5" id="dashVitaSkor">0%</div>
-<p class="text-[10px] sm:text-[11px] text-teal-600 font-semibold mt-0.5" id="dashVitaSkorHint">Uyum Oranı</p>
-</div>
-<div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-teal-50 border border-teal-100 text-teal-600 flex items-center justify-center text-base sm:text-lg">
-<i class="fa-solid fa-shield-heart"></i>
-</div>
-</div>
-<div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/80 flex items-center justify-between">
-<div>
-<span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-amber-600">Sabah</span>
-<div class="text-xl sm:text-2xl font-black text-navy-900 mt-0.5" id="dashMorningCount">0/0</div>
-<p class="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-0.5">Yağlı Kahvaltı İle</p>
-</div>
-<div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-amber-50 border border-amber-100 text-amber-500 flex items-center justify-center text-base sm:text-lg">
-<i class="fa-solid fa-sun"></i>
-</div>
-</div>
-<div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/80 flex items-center justify-between">
-<div>
-<span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-sky-600">Öğle</span>
-<div class="text-xl sm:text-2xl font-black text-navy-900 mt-0.5" id="dashNoonCount">0/0</div>
-<p class="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-0.5">Antagonizma Engeli</p>
-</div>
-<div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-sky-50 border border-sky-100 text-sky-500 flex items-center justify-center text-base sm:text-lg">
-<i class="fa-solid fa-utensils"></i>
-</div>
-</div>
-<div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/80 flex items-center justify-between">
-<div>
-<span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-indigo-600">Akşam</span>
-<div class="text-xl sm:text-2xl font-black text-navy-900 mt-0.5" id="dashEveningCount">0/0</div>
-<p class="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-0.5">Kas &amp; Uyku Onarımı</p>
-</div>
-<div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-500 flex items-center justify-center text-base sm:text-lg">
-<i class="fa-solid fa-moon"></i>
-</div>
-</div>
-</div>
-</details>
 <!-- Ana Çalışma Alanı: Bugünün Listesi ve Yan Bilgiler -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 <div class="lg:col-span-2 space-y-6 vita-hide-in-compact">
@@ -482,6 +408,81 @@
 </div>
 </details>
 </div>
+<!-- Hızlı Aksiyon & Günlük Sıvı Hedefi Şeridi -->
+<div id="homeHydrationCard" class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 vita-hide-in-compact">
+<div class="flex items-center gap-3 w-full md:w-auto">
+<div class="w-11 h-11 rounded-2xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center text-lg flex-shrink-0">
+<i class="fa-solid fa-droplet"></i>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h4 class="text-xs font-bold text-navy-900">Günlük Sıvı Hedefi</h4>
+<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200" id="homeHydrationTag">Kilo × 35 ml</span>
+</div>
+<p class="text-[11px] text-slate-500 mt-0.5 font-medium" id="homeHydrationText">0 / 2450 ml tamamlandı</p>
+</div>
+</div>
+<div class="w-full md:w-72 bg-slate-100 rounded-full h-3 overflow-hidden">
+<div class="bg-gradient-to-r from-sky-400 to-teal-500 h-3 rounded-full transition-all duration-500" id="homeHydrationBar" style="width: 0%"></div>
+</div>
+<div class="flex items-center gap-2 w-full md:w-auto justify-end">
+<button class="px-3.5 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-bold border border-sky-200 transition cursor-pointer active:scale-95 flex items-center gap-1.5" onclick="if(window.SoundEffects) SoundEffects.playClick(); addWater(250)">
+<i class="fa-solid fa-glass-water"></i> +250 ml
+          </button>
+<button class="px-3.5 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-bold border border-teal-200 transition cursor-pointer active:scale-95 flex items-center gap-1.5" onclick="if(window.SoundEffects) SoundEffects.playClick(); addWater(500)">
+<i class="fa-solid fa-bottle-water"></i> +500 ml
+          </button>
+</div>
+</div>
+<!-- 4'lü Özet Sayaç Kartları (Doğrudan Açık) -->
+<details open class="rounded-2xl border border-slate-200 bg-white shadow-sm" id="homeDailySummaryDetails">
+<summary class="cursor-pointer list-none px-4 py-3 text-xs font-bold text-slate-700 flex items-center justify-between gap-3">
+<span><i class="fa-solid fa-chart-simple mr-2 text-teal-600"></i>Günlük özet göstergeleri</span>
+<i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+</summary>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 p-3 sm:p-4 border-t border-slate-100">
+<div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/80 flex items-center justify-between">
+<div>
+<span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">VitaSkor</span>
+<div class="text-xl sm:text-2xl font-black text-navy-900 mt-0.5" id="dashVitaSkor">0%</div>
+<p class="text-[10px] sm:text-[11px] text-teal-600 font-semibold mt-0.5" id="dashVitaSkorHint">Uyum Oranı</p>
+</div>
+<div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-teal-50 border border-teal-100 text-teal-600 flex items-center justify-center text-base sm:text-lg">
+<i class="fa-solid fa-shield-heart"></i>
+</div>
+</div>
+<div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/80 flex items-center justify-between">
+<div>
+<span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-amber-600">Sabah</span>
+<div class="text-xl sm:text-2xl font-black text-navy-900 mt-0.5" id="dashMorningCount">0/0</div>
+<p class="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-0.5">Yağlı Kahvaltı İle</p>
+</div>
+<div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-amber-50 border border-amber-100 text-amber-500 flex items-center justify-center text-base sm:text-lg">
+<i class="fa-solid fa-sun"></i>
+</div>
+</div>
+<div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/80 flex items-center justify-between">
+<div>
+<span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-sky-600">Öğle</span>
+<div class="text-xl sm:text-2xl font-black text-navy-900 mt-0.5" id="dashNoonCount">0/0</div>
+<p class="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-0.5">Antagonizma Engeli</p>
+</div>
+<div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-sky-50 border border-sky-100 text-sky-500 flex items-center justify-center text-base sm:text-lg">
+<i class="fa-solid fa-utensils"></i>
+</div>
+</div>
+<div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/80 flex items-center justify-between">
+<div>
+<span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-indigo-600">Akşam</span>
+<div class="text-xl sm:text-2xl font-black text-navy-900 mt-0.5" id="dashEveningCount">0/0</div>
+<p class="text-[10px] sm:text-[11px] text-slate-500 font-medium mt-0.5">Kas &amp; Uyku Onarımı</p>
+</div>
+<div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-500 flex items-center justify-center text-base sm:text-lg">
+<i class="fa-solid fa-moon"></i>
+</div>
+</div>
+</div>
+</details>
 </section> <!-- view-home Sonu -->
 <!-- ========================================================================= -->
 <!--     GÖRÜNÜM 2: TAHLİLLERİM & LABORATUVAR ARŞİVİ (view-labs)               -->
@@ -1261,9 +1262,9 @@
 <p class="text-xs text-slate-500 mt-0.5">Hekimin hastanın durumunu hızlıca kavraması için tekrarları arındırılmış kısa klinik özet veya isteğe bağlı ayrıntılı ek rapor.</p>
 </div>
 <div class="flex flex-wrap items-center gap-2">
-<button class="px-3.5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs transition flex items-center gap-2 cursor-pointer shadow-sm" onclick="if(window.SoundEffects) SoundEffects.playClick(); exportFHIRBundle()" type="button">
+<button class="hidden px-3.5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs transition items-center gap-2 cursor-pointer shadow-sm" id="btnExportFhirBundle" onclick="if(window.SoundEffects) SoundEffects.playClick(); exportFHIRBundle()" title="Hastane/sağlık sistemleri için teknik veri dosyası (HL7 FHIR JSON)" type="button">
 <i class="fa-solid fa-fire-flame-curved text-amber-600"></i>
-<span>HL7 FHIR JSON</span>
+<span>Teknik veri dosyası (HL7 FHIR)</span>
 </button>
 <button class="hidden px-4 py-2.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 font-bold text-xs transition flex items-center gap-2 cursor-pointer shadow-sm" aria-hidden="true" tabindex="-1" onclick="if(window.SoundEffects) SoundEffects.playClick(); TTSVoice.readCurrentAnalysis()" type="button">
 <i class="fa-solid fa-volume-high text-teal-600"></i>
@@ -2090,7 +2091,7 @@ Verileri Sil
 <div class="hidden vita-consent-hint" id="aiConsentHint" role="note"><i aria-hidden="true" class="fa-solid fa-shield-halved"></i><span id="aiConsentHintText">Gemini için Ayarlar'dan veri paylaşım onayı verin.</span><button onclick="VitaAIChat.openConsentSettings()" type="button">Ayarlar</button></div>
 </div>
 <!-- Yüzen Tetikleyici Buton -->
-<button class="w-13 h-13 p-3.5 rounded-full bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 text-white shadow-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition border-2 border-white/50 cursor-pointer" onclick="VitaAIChat.toggle()" type="button">
+<button id="vitaAiFab" class="w-13 h-13 p-3.5 rounded-full bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 text-white shadow-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition border-2 border-white/50 cursor-pointer" onclick="VitaAIChat.toggle()" type="button">
 <i class="fa-solid fa-wand-magic-sparkles text-xl text-amber-300"></i>
 </button>
 </div>

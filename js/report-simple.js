@@ -138,6 +138,9 @@
     var b = $("rsModeToggle"); if (!b) return;
     var detailed = typeof getDoctorReportMode === "function" && getDoctorReportMode() === "detailed";
     b.textContent = detailed ? "← Kısa rapora dön" : "Ayrıntılı raporu göster (isteğe bağlı)";
+    // Teknik HL7 FHIR dışa aktarımı yalnızca ayrıntılı modda görünür (kısa raporda kafa karıştırmasın).
+    var fhir = $("btnExportFhirBundle");
+    if (fhir) { fhir.classList.toggle("hidden", !detailed); fhir.classList.toggle("flex", detailed); }
   }
 
   var origRender = window.renderReportTab;

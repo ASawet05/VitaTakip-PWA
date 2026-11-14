@@ -82,11 +82,11 @@
           const groupEl = document.createElement("div");
           groupEl.className = "space-y-2.5";
           groupEl.innerHTML = `
-            <div class="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-700">
+            <div class="vsg-head">
               <i class="fa-solid ${g.icon}"></i>
-              <span>${g.label}</span>
-              <span class="text-[10px] text-slate-400 font-normal">(${g.items.filter(i=>i.taken).length}/${g.items.length} alındı)</span>
-              <button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); markTimingTaken(${safeJsStringAttribute(g.timing)})" class="ml-auto min-h-9 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-[10px] font-black text-emerald-800 hover:bg-emerald-100" title="Bu zaman dilimindeki tüm takviyeleri alındı olarak işaretler">Tümünü Alındı İşaretle</button>
+              <span class="vsg-label">${g.label}</span>
+              <span class="vsg-count">${g.items.filter(i=>i.taken).length}/${g.items.length}</span>
+              <button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); markTimingTaken(${safeJsStringAttribute(g.timing)})" class="vsg-all" title="Bu zaman dilimindeki tüm takviyeleri alındı olarak işaretler" aria-label="${escapeHtmlText(g.label)}: tümünü alındı işaretle"><i class="fa-solid fa-check-double" aria-hidden="true"></i> Tümü alındı</button>
             </div>
           `;
 

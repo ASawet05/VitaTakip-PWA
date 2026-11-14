@@ -4,11 +4,11 @@ const VITA_SUPPLEMENT_DB=[{barcode:"VT-SUP-01",urunAdi:"Ocean Vitamin D3 1000 IU
             <i class="fa-solid fa-pills text-amber-500 mr-1"></i> Henüz takviye yok. “Takviye Ekle” ile başlayın.
           </div>
         `}else{const groups=[{timing:"Sabah",label:"Sabah protokolü",icon:"fa-sun text-amber-500",items:morningItems},{timing:"Öğle",label:"Öğle protokolü",icon:"fa-utensils text-sky-500",items:noonItems},{timing:"Akşam",label:"Akşam protokolü",icon:"fa-moon text-indigo-500",items:eveningItems}];groups.forEach(g=>{if(g.items.length===0)return;const groupEl=document.createElement("div");groupEl.className="space-y-2.5";groupEl.innerHTML=`
-            <div class="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-700">
+            <div class="vsg-head">
               <i class="fa-solid ${g.icon}"></i>
-              <span>${g.label}</span>
-              <span class="text-[10px] text-slate-400 font-normal">(${g.items.filter(i=>i.taken).length}/${g.items.length} alındı)</span>
-              <button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); markTimingTaken(${safeJsStringAttribute(g.timing)})" class="ml-auto min-h-9 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-[10px] font-black text-emerald-800 hover:bg-emerald-100" title="Bu zaman dilimindeki tüm takviyeleri alındı olarak işaretler">Tümünü Alındı İşaretle</button>
+              <span class="vsg-label">${g.label}</span>
+              <span class="vsg-count">${g.items.filter(i=>i.taken).length}/${g.items.length}</span>
+              <button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); markTimingTaken(${safeJsStringAttribute(g.timing)})" class="vsg-all" title="Bu zaman dilimindeki tüm takviyeleri alındı olarak işaretler" aria-label="${escapeHtmlText(g.label)}: tümünü alındı işaretle"><i class="fa-solid fa-check-double" aria-hidden="true"></i> Tümü alındı</button>
             </div>
           `;g.items.forEach(item=>{const card=document.createElement("div");card.className=`vsc-card px-3 py-2.5 rounded-2xl border transition-all ${item.taken?"bg-teal-50/70 border-teal-200":"bg-white border-slate-200 hover:border-slate-300 shadow-sm"}`;card.dataset.supId=String(item.id);const bioStatus=getSupplementBiomarkerStatus(item);let deprescribingBadgeHtml="";let criticalWarningIconHtml="";if(bioStatus){const isCreatine=bioStatus.key==="creatinine";const hasKidneyChronic=(state.user.chronic||[]).includes("kidney");const hasEgfrRisk=state.lastCDSS?.egfrResult&&(state.lastCDSS.egfrResult.riskLevel==="high"||state.lastCDSS.egfrResult.riskLevel==="severe");if(isCreatine&&(bioStatus.val>getCreatinineUpperLimit()||hasKidneyChronic||hasEgfrRisk)){deprescribingBadgeHtml=`
                   <div class="mt-2.5 p-2.5 rounded-xl bg-rose-50 border-2 border-rose-400 text-rose-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-sm animate-bounce-short">

@@ -44,6 +44,13 @@ function checkMidnightReset(userId) {
 
       const storedSupplements = readStoredJSON(`vitatakip_supplements_${userId}`, []);
       state.supplements = Array.isArray(storedSupplements) ? storedSupplements : [];
+      // Eski sürümlerin belirsiz yer tutucu doz yazısı ("Etiket / hekim planındaki miktarı girin") net günlük miktara çevrilir.
+      state.supplements.forEach(s => {
+        if (s && typeof s.doseText === "string" && /Etiket \/ hekim planındaki miktarı girin|Günlük miktarı .*girin/.test(s.doseText)) {
+          const rest = s.doseText.replace(/Etiket \/ hekim planındaki miktarı girin|Günlük miktarı .*girin/g, "").replace(/^\s*•\s*/, "").trim();
+          s.doseText = `Günde ${Math.max(1, Number(s.gunlukDoz) || 1)} ${s.dozBirimi || "adet"}${rest ? ` • ${rest}` : ""}`;
+        }
+      });
       if (removeLegacyDemoSupplements()) {
         safeLocalStorageSetItem(`vitatakip_supplements_${userId}`, JSON.stringify(state.supplements));
       }
