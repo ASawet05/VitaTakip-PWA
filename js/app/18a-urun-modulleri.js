@@ -849,3 +849,57 @@
     // Katalogları erken yükle (çevrimdışı önbellekten gelir; arama anında hazır olsun).
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => { loadVitaCatalog("supplement"); loadVitaCatalog("medication"); scheduleVitaMidnightRefresh(); }, { once: true });
     else { loadVitaCatalog("supplement"); loadVitaCatalog("medication"); scheduleVitaMidnightRefresh(); }
+
+    /* "!" KULLANIM BİLGİSİ: takviye/ilaç adının yanındaki düğme; yalnızca kısa, pratik besin–zamanlama özeti. */
+    const VITA_USAGE_TIPS = [
+      [/demir|ferro|iron|feramat|microfer|lipofer/, "Aç karnına veya yemeklerden 2 saat sonra alınız. Süt, peynir, çay ve kahve ile birlikte tüketmeyiniz."],
+      [/d3|d vitamini|vitamin d|kolekalsiferol|k2|omega|balik yagi|a vitamini|e vitamini|koenzim|q10|devit/, "Yağda çözünür; kahvaltıda veya sağlıklı yağ içeren ana öğünle birlikte alınız."],
+      [/magnezyum|magnesium/, "Akşam yemeğiyle veya yatmadan önce alınız. Demir ve tiroid ilacıyla aynı saatte almayınız."],
+      [/kalsiyum|calcium/, "Yemekle birlikte alınız. Demir ve tiroid ilacıyla aynı saatte almayınız."],
+      [/cinko|zinc/, "Yemekle birlikte alınız (aç karnına mide bulandırabilir). Demir ve kalsiyumla aynı saatte almayınız."],
+      [/b12|kobalamin/, "Sabah alınız. Dilaltı formu dilin altında eriyene kadar bekletiniz."],
+      [/folat|folik/, "Sabah, yemekle veya yemeksiz alınabilir."],
+      [/c vitamini|vitamin c|redoxon/, "Yemekle birlikte alınız; demirle birlikte alınırsa emilimini artırır."],
+      [/probiyotik/, "Kahvaltıdan önce alınız; sıcak içecekle birlikte almayınız."],
+      [/kolajen|collagen/, "Bol suyla, tercihen aç karnına alınız."],
+      [/kreatin|creatine/, "Bol suyla, günün herhangi bir saatinde alınız."],
+      [/multivitamin|supradyn|pharmaton/, "Kahvaltıda, yemekle birlikte alınız."],
+      [/levotiroksin|euthyrox|levotiron|tefor/, "Sabah, kahvaltıdan 30–60 dakika önce aç karnına, yalnızca suyla alınız."],
+      [/metformin|glucophage|glifor|matofin/, "Yemekle birlikte veya yemekten hemen sonra alınız."]
+    ];
+    function getVitaUsageTip(kind, record) {
+      const text = vitaFold([record?.name, record?.etkenMadde, record?.markaEtken].filter(Boolean).join(" "));
+      const hit = VITA_USAGE_TIPS.find(([re]) => re.test(text));
+      if (hit) return hit[1];
+      if (kind === "med" && typeof window.findPrescriptionDrugInDb === "function") {
+        const rule = window.findPrescriptionDrugInDb(record?.name || "");
+        if (rule && (rule.zamanBloku || rule.aclikDurumu)) return `${[rule.zamanBloku, rule.aclikDurumu].filter(Boolean).join(" · ")} alınız.`;
+      }
+      return kind === "med" ? "Hekiminizin veya prospektüsün talimatına göre alınız." : "Kutu üzerindeki kullanım talimatına uygun alınız.";
+    }
+    function closeVitaUsageInfo() { document.getElementById("vitaUsagePop")?.remove(); }
+    function openVitaUsageInfo(btn, kind, id) {
+      closeVitaUsageInfo();
+      const record = kind === "med" ? findVitaMedication(id) : (state.supplements || []).find(s => String(s.id) === String(id));
+      if (!record || !btn) return;
+      const pop = document.createElement("div");
+      pop.id = "vitaUsagePop";
+      pop.className = "vita-usage-pop";
+      pop.setAttribute("role", "dialog");
+      pop.setAttribute("aria-label", `${record.name}: nasıl kullanılır?`);
+      const plan = kind === "med" ? describeVitaMedicationSchedule(record) : String(record.doseText || "").replace(/Etiket \/ hekim planındaki miktarı girin|Günlük miktarı.*girin/g, "").trim();
+      pop.innerHTML = `<b>${escapeHtmlText(record.name)}</b><p>${escapeHtmlText(getVitaUsageTip(kind, record))}</p>${plan ? `<small>Planınız: ${escapeHtmlText(plan)}</small>` : ""}<button type="button" aria-label="Kapat" onclick="closeVitaUsageInfo()">×</button>`;
+      document.body.appendChild(pop);
+      const r = btn.getBoundingClientRect();
+      const w = Math.min(300, window.innerWidth - 24);
+      pop.style.width = `${w}px`;
+      pop.style.left = `${Math.max(12, Math.min(window.innerWidth - w - 12, r.left + r.width / 2 - w / 2))}px`;
+      const below = r.bottom + 8;
+      pop.style.top = `${below + pop.offsetHeight > window.innerHeight - 12 ? Math.max(12, r.top - pop.offsetHeight - 8) : below}px`;
+    }
+    document.addEventListener("click", e => { const pop = document.getElementById("vitaUsagePop"); if (pop && !pop.contains(e.target) && !e.target.closest?.(".vsc-info, .vtm-info")) closeVitaUsageInfo(); }, true);
+    document.addEventListener("keydown", e => { if (e.key === "Escape") closeVitaUsageInfo(); });
+    window.addEventListener("scroll", closeVitaUsageInfo, { passive: true });
+    window.openVitaUsageInfo = openVitaUsageInfo;
+    window.closeVitaUsageInfo = closeVitaUsageInfo;
+    window.getVitaUsageTip = getVitaUsageTip;

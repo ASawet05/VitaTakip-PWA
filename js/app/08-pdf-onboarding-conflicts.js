@@ -1333,28 +1333,21 @@ function applyParsedPdfValues() {
       if (banner) {
         banner.classList.remove("hidden");
         banner.style.display = "block";
+        /* Çekmece: varsayılan olarak yalnızca başlık/özet görünür; dokununca ayrıntılı etkileşim açıklamaları açılır.
+           Açık/kapalı durumu yeniden çizimlerde korunur (oturum boyunca). */
+        const shieldOpen = Boolean(window.vitaShieldBannerOpen);
         banner.innerHTML = `
-          <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-rose-950 via-rose-900 to-navy-950 border-2 border-rose-500 text-white shadow-xl space-y-3 pulse-danger">
-            <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-rose-700/60">
-              <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center font-black text-sm flex-shrink-0 shadow-md">
-                  <i class="fa-solid fa-shield-virus"></i>
-                </div>
-                <div>
-                  <h4 class="text-xs sm:text-sm font-black text-white tracking-wide">
-                    🛡️ Gerçek Zamanlı İlaç–Besin &amp; Biyoyararlanım Emniyet Kalkanı Devrede!
-                  </h4>
-                  <span class="text-[10px] text-rose-300 font-semibold">
-                    Klinik Veritabanında ${conflicts.length} Adet Etkileşim / Zamanlama Uyarısı Tespit Edildi ${dangerCount > 0 ? `(${dangerCount} Kritik)` : ""}
-                  </span>
-                </div>
-              </div>
-              <span class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-rose-500/30 text-rose-200 border border-rose-400/50">
-                Hekim / Eczacı Danışmanlığı Şart
+          <details class="vsk rounded-2xl bg-gradient-to-r from-rose-950 via-rose-900 to-navy-950 border-2 border-rose-500 text-white shadow-xl" ${shieldOpen ? "open" : ""} ontoggle="window.vitaShieldBannerOpen = this.open">
+            <summary class="vsk-sum">
+              <span class="vsk-ico"><i class="fa-solid fa-shield-virus" aria-hidden="true"></i></span>
+              <span class="vsk-text">
+                <b>Emniyet Kalkanı: ${conflicts.length} etkileşim uyarısı${dangerCount > 0 ? ` <em>(${dangerCount} kritik)</em>` : ""}</b>
+                <small>İlaç–besin ve emilim zamanlaması · ayrıntılar için dokunun</small>
               </span>
-            </div>
-
-            <div class="space-y-2">
+              <i class="fa-solid fa-chevron-down vsk-chev" aria-hidden="true"></i>
+            </summary>
+            <div class="vsk-body space-y-2">
+            <p class="text-[10px] font-black uppercase text-rose-200">Hekim / eczacı danışmanlığı şart</p>
               ${conflicts.map(c => `
                 <div class="p-3 rounded-xl ${c.severity === 'danger' ? 'bg-rose-900/60 border border-rose-400/80 text-rose-100' : 'bg-amber-900/40 border border-amber-400/70 text-amber-100'} text-xs">
                   <div class="flex flex-wrap items-center justify-between gap-2">
@@ -1384,57 +1377,14 @@ function applyParsedPdfValues() {
                 </div>
               `).join('')}
             </div>
-          </div>
+          </details>
         `;
       }
 
-      // 2. Günlük Protokol Kartı İçi Doğrudan Uyarı Kutusu (#dailyProtocolInteractionAlert)
+      // 2. "Bugünkü takviyelerim" içindeki tekrar kutusu kaldırıldı: aynı uyarılar üstteki Emniyet Kalkanı çekmecesinde.
       if (dailyAlert) {
-        dailyAlert.classList.remove("hidden");
-        dailyAlert.innerHTML = `
-          <div class="p-3.5 sm:p-4 rounded-2xl border-2 ${dangerCount > 0 ? 'border-rose-400 bg-rose-50/95 text-rose-950' : 'border-amber-400 bg-amber-50/95 text-amber-950'} space-y-2.5 shadow-sm">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="flex items-center gap-2">
-                <span class="w-7 h-7 rounded-xl ${dangerCount > 0 ? 'bg-rose-600 text-white' : 'bg-amber-500 text-white'} flex items-center justify-center text-xs font-black">
-                  <i class="fa-solid fa-triangle-exclamation"></i>
-                </span>
-                <div>
-                  <h4 class="text-xs font-black">Günlük Protokol İlaç–Besin Etkileşim Uyarısı (${conflicts.length})</h4>
-                  <p class="text-[10px] opacity-80">Aşağıdaki ilaç-takviye veya mineral-mineral etkileşimleri emilim kaybı ya da klinik risk oluşturabilir:</p>
-                </div>
-              </div>
-              <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-white border ${dangerCount > 0 ? 'border-rose-300 text-rose-800' : 'border-amber-300 text-amber-800'}">
-                Canlı Klinik Denetim
-              </span>
-            </div>
-            <div class="space-y-2">
-              ${conflicts.map(c => `
-                <div class="p-2.5 rounded-xl bg-white border ${c.severity === 'danger' ? 'border-rose-200' : 'border-amber-200'} text-xs space-y-1">
-                  <div class="flex flex-wrap items-center justify-between gap-1.5">
-                    <strong class="font-black text-[11px] ${c.severity === 'danger' ? 'text-rose-900' : 'text-amber-900'}">${escapeHtmlText(c.title)}</strong>
-                    <span class="text-[9px] font-semibold text-slate-500">${escapeHtmlText(c.source || "Klinik Veritabanı")}</span>
-                  </div>
-                  <p class="text-[11px] text-slate-700 leading-relaxed">${escapeHtmlText(c.desc)}</p>
-                  <div class="pt-1 flex flex-wrap items-center justify-between gap-2">
-                    <span class="text-[10px] font-bold text-teal-800">👉 ${escapeHtmlText(c.actionText)}</span>
-                    <div class="flex flex-wrap items-center gap-1.5">
-                      ${c.supplementId && c.recommendedTiming ? `
-                        <button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); autoResolveSupplementTimingConflict(${safeJsStringAttribute(c.supplementId)}, ${safeJsStringAttribute(c.recommendedTiming)})" class="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-black text-[10px] cursor-pointer transition">
-                          ⏱️ ${escapeHtmlText(c.recommendedTiming)} Dilimine Ayır
-                        </button>
-                      ` : ''}
-                      ${c.supplementId && c.recommendedForm ? `
-                        <button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); autoResolveSupplementFormConflict(${safeJsStringAttribute(c.supplementId)}, ${safeJsStringAttribute(c.recommendedForm)})" class="px-2.5 py-1 rounded-lg bg-navy-900 hover:bg-slate-800 text-white font-black text-[10px] cursor-pointer transition">
-                          💊 ${escapeHtmlText(c.recommendedForm.replace(/_/g, ' '))} Formuna Geç
-                        </button>
-                      ` : ''}
-                    </div>
-                  </div>
-                </div>
-              `).join("")}
-            </div>
-          </div>
-        `;
+        dailyAlert.classList.add("hidden");
+        dailyAlert.innerHTML = "";
       }
 
       if (typeof parseKidneyFunctionAndCompareMedications === "function") {

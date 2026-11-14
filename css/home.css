@@ -267,3 +267,24 @@
 .vst-head{flex-wrap:nowrap !important}
 .vst-status{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px}
 .vst-status > div{display:flex;flex-wrap:wrap;gap:6px}
+/* "!" kullanım bilgisi ve Emniyet Kalkanı çekmecesi */
+.vsc-title{display:flex;align-items:flex-start;gap:6px;min-width:0}
+.vsc-main{cursor:pointer}
+.vsc-name{border:0;background:none;padding:0;text-align:left;cursor:pointer}
+.vsc-info{flex:0 0 22px;width:22px;height:22px;border-radius:999px;border:1.5px solid #f59e0b;background:#fffbeb;color:#b45309;font-size:12px;font-weight:900;line-height:1;cursor:pointer}
+.vsc-stock{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.vita-usage-pop{position:fixed;z-index:9995;padding:12px 34px 12px 12px;border-radius:14px;background:#fff;border:1px solid #fcd34d;box-shadow:0 12px 32px rgba(15,23,42,.25);font-size:12.5px;line-height:1.45;color:#1e293b}
+.vita-usage-pop p{margin:4px 0 0}
+.vita-usage-pop small{display:block;margin-top:6px;color:#64748b;font-weight:700}
+.vita-usage-pop button{position:absolute;top:6px;right:8px;width:24px;height:24px;border:0;background:none;font-size:18px;color:#94a3b8;cursor:pointer}
+.vsk{padding:0}
+.vsk-sum{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;list-style:none}
+.vsk-sum::-webkit-details-marker{display:none}
+.vsk-ico{flex:0 0 32px;height:32px;border-radius:10px;background:#e11d48;display:flex;align-items:center;justify-content:center}
+.vsk-text{flex:1;min-width:0;display:flex;flex-direction:column}
+.vsk-text b{font-size:13px}
+.vsk-text em{font-style:normal;color:#fecdd3}
+.vsk-text small{font-size:10.5px;color:#fda4af}
+.vsk-chev{transition:transform .2s}
+.vsk[open] .vsk-chev{transform:rotate(180deg)}
+.vsk-body{padding:0 14px 14px}

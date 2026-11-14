@@ -147,9 +147,9 @@ const KDSSRuleEngine = {
         defaultForm: "Damla",
         reviewDays: 60,
         forms: {
-          "Damla": (weight) => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Doz bu prototip tarafından hesaplanmaz", timing: "Sabah", instruction: "Yağda çözünür; kahvaltıda veya sağlıklı yağ içeren ana öğünle birlikte alınız. ⚠️ Kesin günlük damla dozunuz hekiminiz tarafından kan tahlili sonucunuza göre reçete edilmelidir." }),
-          "Kapsül": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Doz bu prototip tarafından hesaplanmaz", timing: "Sabah", instruction: "Tok karnına kahvaltı ile birlikte yutunuz. Hekiminizin onayladığı dozajda kullanınız." }),
-          "Sprey": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Sublingual / ağız içi sprey formu", timing: "Sabah", instruction: "Ağız içine veya dil altına püskürterek alınız. Hekim kontrolünde kullanılmalıdır." })
+          "Damla": (weight) => ({ doseText: "", subText: "Doz bu prototip tarafından hesaplanmaz", timing: "Sabah", instruction: "Yağda çözünür; kahvaltıda veya sağlıklı yağ içeren ana öğünle birlikte alınız. ⚠️ Kesin günlük damla dozunuz hekiminiz tarafından kan tahlili sonucunuza göre reçete edilmelidir." }),
+          "Kapsül": () => ({ doseText: "", subText: "Doz bu prototip tarafından hesaplanmaz", timing: "Sabah", instruction: "Tok karnına kahvaltı ile birlikte yutunuz. Hekiminizin onayladığı dozajda kullanınız." }),
+          "Sprey": () => ({ doseText: "", subText: "Sublingual / ağız içi sprey formu", timing: "Sabah", instruction: "Ağız içine veya dil altına püskürterek alınız. Hekim kontrolünde kullanılmalıdır." })
         }
       },
       "Omega3": {
@@ -157,8 +157,8 @@ const KDSSRuleEngine = {
         defaultForm: "Yumusak_Kapsul",
         reviewDays: 30,
         forms: {
-          "Yumusak_Kapsul": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Trigliserid form; içerik etiketten doğrulanmalı", timing: "Öğle", instruction: "Günün en zengin ana öğünüyle birlikte alınız; aç karnına bazı kişilerde reflü veya balık tadı yapabilir. Ürünün etiketindeki porsiyon ve kullanım talimatını izleyiniz." }),
-          "Sıvı_Yağ": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Sıvı yağ formu; ölçü etiketten doğrulanmalı", timing: "Öğle", instruction: "Yemek esnasında veya hemen sonrasında tüketiniz. Ölçüyü ve porsiyonu ürün etiketine göre belirleyiniz." })
+          "Yumusak_Kapsul": () => ({ doseText: "", subText: "Trigliserid form; içerik etiketten doğrulanmalı", timing: "Öğle", instruction: "Günün en zengin ana öğünüyle birlikte alınız; aç karnına bazı kişilerde reflü veya balık tadı yapabilir. Ürünün etiketindeki porsiyon ve kullanım talimatını izleyiniz." }),
+          "Sıvı_Yağ": () => ({ doseText: "", subText: "Sıvı yağ formu; ölçü etiketten doğrulanmalı", timing: "Öğle", instruction: "Yemek esnasında veya hemen sonrasında tüketiniz. Ölçüyü ve porsiyonu ürün etiketine göre belirleyiniz." })
         },
         safetyLock: "⚠️ Kanama Riski Uyarısı: Kan sulandırıcı (Coumadin, Aspirin vb.) ilaç kullanan bireylerde yüksek doz Omega-3 kanama süresini uzatabilir; hekim onayı olmadan kesinlikle kullanılmamalıdır."
       },
@@ -167,9 +167,9 @@ const KDSSRuleEngine = {
         defaultForm: "Saşe",
         reviewDays: 45,
         forms: {
-          "Saşe": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Saşe formu; elemental demir miktarını etiketten doğrulayın", timing: "Öğle", instruction: "Bir bardak suyla karıştırınız. C vitaminiyle birlikte kullanım ve kullanım sıklığını ürün etiketindeki veya hekiminizin verdiği plandaki talimata göre doğrulayınız." }),
-          "Kapsül": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Kapsül formu; içerik etiketten doğrulanmalı", timing: "Öğle", instruction: "Öğle yemeğinden yaklaşık 2 saat sonra bol suyla alınız; ürün etiketi veya kişisel hekiminiz/eczacınız farklı talimat verdiyse onu izleyiniz." }),
-          "Tablet": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Tablet formu; içerik etiketten doğrulanmalı", timing: "Öğle", instruction: "Yemek arası veya aç karnına bol suyla kullanım bazı ürünlerde önerilebilir. Ürünün etiketini ve size verilen kişisel kullanım talimatını esas alınız." })
+          "Saşe": () => ({ doseText: "", subText: "Saşe formu; elemental demir miktarını etiketten doğrulayın", timing: "Öğle", instruction: "Bir bardak suyla karıştırınız. C vitaminiyle birlikte kullanım ve kullanım sıklığını ürün etiketindeki veya hekiminizin verdiği plandaki talimata göre doğrulayınız." }),
+          "Kapsül": () => ({ doseText: "", subText: "Kapsül formu; içerik etiketten doğrulanmalı", timing: "Öğle", instruction: "Öğle yemeğinden yaklaşık 2 saat sonra bol suyla alınız; ürün etiketi veya kişisel hekiminiz/eczacınız farklı talimat verdiyse onu izleyiniz." }),
+          "Tablet": () => ({ doseText: "", subText: "Tablet formu; içerik etiketten doğrulanmalı", timing: "Öğle", instruction: "Yemek arası veya aç karnına bol suyla kullanım bazı ürünlerde önerilebilir. Ürünün etiketini ve size verilen kişisel kullanım talimatını esas alınız." })
         },
         safetyLock: "⚠️ Toksisite Uyarısı: Yetişkinlerde demir vücuttan aktif olarak atılamaz ve organlarda birikir. Kesinlikle kilonun katlarına göre doz hesaplanmaz; kanda Ferritin ve Hemoglobin düzeyine göre yalnızca uzman hekimce planlanır."
       },
@@ -178,9 +178,9 @@ const KDSSRuleEngine = {
         defaultForm: "Dilaltı_Tablet",
         reviewDays: 35,
         forms: {
-          "Dilaltı_Tablet": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Dilaltı form (oral takviyeye üstünlüğü kanıtlanmamıştır; hekim/eczacıya danışın)", timing: "Sabah", instruction: "Sabah aç karnına dil altında tamamen eriyene kadar bekletiniz. Hekim önerisine göre kullanınız." }),
-          "Dilaltı_Sprey": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Yüksek biyoyararlanımlı sprey formu", timing: "Sabah", instruction: "Sabahları dil altına sıkarak 30 saniye yutkunmadan bekleyiniz. Hekim gözetiminde alınız." }),
-          "Kapsül": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Klasik oral form (bağırsaktan pasif difüzyon)", timing: "Sabah", instruction: "Sabah kahvaltısı ile birlikte bol suyla yutunuz. Hekim tavsiyesine uyunuz." })
+          "Dilaltı_Tablet": () => ({ doseText: "", subText: "Dilaltı form (oral takviyeye üstünlüğü kanıtlanmamıştır; hekim/eczacıya danışın)", timing: "Sabah", instruction: "Sabah aç karnına dil altında tamamen eriyene kadar bekletiniz. Hekim önerisine göre kullanınız." }),
+          "Dilaltı_Sprey": () => ({ doseText: "", subText: "Yüksek biyoyararlanımlı sprey formu", timing: "Sabah", instruction: "Sabahları dil altına sıkarak 30 saniye yutkunmadan bekleyiniz. Hekim gözetiminde alınız." }),
+          "Kapsül": () => ({ doseText: "", subText: "Klasik oral form (bağırsaktan pasif difüzyon)", timing: "Sabah", instruction: "Sabah kahvaltısı ile birlikte bol suyla yutunuz. Hekim tavsiyesine uyunuz." })
         }
       },
       "Folat": {
@@ -188,9 +188,9 @@ const KDSSRuleEngine = {
         defaultForm: "Kapsül",
         reviewDays: 28,
         forms: {
-          "Kapsül": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Aktif 5-MTHF (Metiltetrahidrofolat) formu", timing: "Sabah", instruction: "Sabah kahvaltısı ile birlikte alınız; B12 ile sinerjik metilasyon döngüsünü destekler. Hekim kontrolünde tüketiniz." }),
-          "Dilaltı_Tablet": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Hızlı emilimli sublingual metilfolat", timing: "Sabah", instruction: "Sabah aç karnına dil altında eritiniz. Hekim gözetiminde alınız." }),
-          "Tablet": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Standart aktif folat tableti", timing: "Sabah", instruction: "Bol su ile yutunuz. Hekim onayıyla kullanınız." })
+          "Kapsül": () => ({ doseText: "", subText: "Aktif 5-MTHF (Metiltetrahidrofolat) formu", timing: "Sabah", instruction: "Sabah kahvaltısı ile birlikte alınız; B12 ile sinerjik metilasyon döngüsünü destekler. Hekim kontrolünde tüketiniz." }),
+          "Dilaltı_Tablet": () => ({ doseText: "", subText: "Hızlı emilimli sublingual metilfolat", timing: "Sabah", instruction: "Sabah aç karnına dil altında eritiniz. Hekim gözetiminde alınız." }),
+          "Tablet": () => ({ doseText: "", subText: "Standart aktif folat tableti", timing: "Sabah", instruction: "Bol su ile yutunuz. Hekim onayıyla kullanınız." })
         }
       },
       "Magnezyum": {
@@ -198,9 +198,9 @@ const KDSSRuleEngine = {
         defaultForm: "Tablet",
         reviewDays: 21,
         forms: {
-          "Tablet": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Magnezyum Malat (kas/enerji) veya Sitrat", timing: "Akşam", instruction: "Akşam yemeğinden 1–2 saat sonra bol suyla alınız. Böbrek hastalığı veya düzenli ilaç kullanımı varsa etkileşim olasılığını eczacı/hekimle doğrulayınız." }),
-          "Saşe": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Magnezyum Bisglisinat (uyku/stres/sinir sistemi)", timing: "Akşam", instruction: "Yatmadan yaklaşık 1 saat önce bir bardak ılık suyla karıştırıp içiniz. Ürün etiketindeki porsiyonu aşmayınız." }),
-          "Kapsül": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Şelatlı magnezyum formu", timing: "Akşam", instruction: "Yatmadan önce bol suyla alınız. Ürünün etiketindeki kullanım talimatını izleyiniz." })
+          "Tablet": () => ({ doseText: "", subText: "Magnezyum Malat (kas/enerji) veya Sitrat", timing: "Akşam", instruction: "Akşam yemeğinden 1–2 saat sonra bol suyla alınız. Böbrek hastalığı veya düzenli ilaç kullanımı varsa etkileşim olasılığını eczacı/hekimle doğrulayınız." }),
+          "Saşe": () => ({ doseText: "", subText: "Magnezyum Bisglisinat (uyku/stres/sinir sistemi)", timing: "Akşam", instruction: "Yatmadan yaklaşık 1 saat önce bir bardak ılık suyla karıştırıp içiniz. Ürün etiketindeki porsiyonu aşmayınız." }),
+          "Kapsül": () => ({ doseText: "", subText: "Şelatlı magnezyum formu", timing: "Akşam", instruction: "Yatmadan önce bol suyla alınız. Ürünün etiketindeki kullanım talimatını izleyiniz." })
         }
       },
       "Çinko": {
@@ -208,8 +208,8 @@ const KDSSRuleEngine = {
         defaultForm: "Kapsül",
         reviewDays: 30,
         forms: {
-          "Kapsül": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Çinko Pikolinat veya Bisglisinat formu", timing: "Öğle", instruction: "Aç karnına bulantı yapabileceğinden öğle yemeğinden 1–2 saat sonra alınız. Demir ve kalsiyum ile aynı anda almayınız. ⚠️ Uzun süreli yüksek doz (>40 mg/gün) çinko kullanımı bakır (Cu) eksikliğine ve sideroblastik anemiye yol açabileceğinden yalnızca hekim kontrolünde kullanılmalıdır." }),
-          "Tablet": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Standart çinko tableti", timing: "Öğle", instruction: "Tok karnına bol su ile alınız. Hekiminizin önerdiği süreyi ve dozu aşmayınız." })
+          "Kapsül": () => ({ doseText: "", subText: "Çinko Pikolinat veya Bisglisinat formu", timing: "Öğle", instruction: "Aç karnına bulantı yapabileceğinden öğle yemeğinden 1–2 saat sonra alınız. Demir ve kalsiyum ile aynı anda almayınız. ⚠️ Uzun süreli yüksek doz (>40 mg/gün) çinko kullanımı bakır (Cu) eksikliğine ve sideroblastik anemiye yol açabileceğinden yalnızca hekim kontrolünde kullanılmalıdır." }),
+          "Tablet": () => ({ doseText: "", subText: "Standart çinko tableti", timing: "Öğle", instruction: "Tok karnına bol su ile alınız. Hekiminizin önerdiği süreyi ve dozu aşmayınız." })
         },
         safetyLock: "⚠️ Bakır Antagonizması Uyarısı: Uzun süreli yüksek doz çinko alımı bağırsakta metallotiyonein sentezini artırarak Bakır (Cu) emilimini bloke eder."
       },
@@ -218,9 +218,9 @@ const KDSSRuleEngine = {
         defaultForm: "Saşe",
         reviewDays: 60,
         forms: {
-          "Saşe": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Hidrolize kolajen peptit tozu + C vitamini", timing: "Akşam", instruction: "Gece yatmadan önce bir bardak ılık suyla karıştırarak tüketiniz. Etikette belirtilen porsiyonu aşmayınız." }),
-          "Sıvı_Shot": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Kullanıma hazır sıvı kolajen peptiti", timing: "Akşam", instruction: "Gece kullanmayı tercih ediyorsanız ürün etiketindeki porsiyonu doğrudan tüketiniz; saklama ve kullanım talimatını izleyiniz." }),
-          "Tablet": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Standart hidrolize kolajen tableti", timing: "Akşam", instruction: "Akşam öğünü sonrasında kullanmayı planlıyorsanız, C vitaminiyle birlikte kullanımın uygunluğunu ürün etiketi ve kişisel planınıza göre doğrulayınız." })
+          "Saşe": () => ({ doseText: "", subText: "Hidrolize kolajen peptit tozu + C vitamini", timing: "Akşam", instruction: "Gece yatmadan önce bir bardak ılık suyla karıştırarak tüketiniz. Etikette belirtilen porsiyonu aşmayınız." }),
+          "Sıvı_Shot": () => ({ doseText: "", subText: "Kullanıma hazır sıvı kolajen peptiti", timing: "Akşam", instruction: "Gece kullanmayı tercih ediyorsanız ürün etiketindeki porsiyonu doğrudan tüketiniz; saklama ve kullanım talimatını izleyiniz." }),
+          "Tablet": () => ({ doseText: "", subText: "Standart hidrolize kolajen tableti", timing: "Akşam", instruction: "Akşam öğünü sonrasında kullanmayı planlıyorsanız, C vitaminiyle birlikte kullanımın uygunluğunu ürün etiketi ve kişisel planınıza göre doğrulayınız." })
         }
       },
       "Kreatin": {
@@ -228,8 +228,8 @@ const KDSSRuleEngine = {
         defaultForm: "Toz",
         reviewDays: 28,
         forms: {
-          "Toz": (weight) => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Mikronize kreatin monohidrat tozu (Sporcu Desteği)", timing: "Öğle", instruction: "Böbrek süzme hızınız (eGFR) ve kreatinin değeriniz normal ise kullanılabilir. Mutlaka hekiminize danışınız ve günde bol su içiniz." }),
-          "Kapsül": () => ({ doseText: "Günlük miktarı “Nasıl alacaksınız?” bölümüne girin", subText: "Pratik taşıma formu", timing: "Öğle", instruction: "Bol su eşliğinde yutunuz. Hekim gözetiminde alınız." })
+          "Toz": (weight) => ({ doseText: "", subText: "Mikronize kreatin monohidrat tozu (Sporcu Desteği)", timing: "Öğle", instruction: "Böbrek süzme hızınız (eGFR) ve kreatinin değeriniz normal ise kullanılabilir. Mutlaka hekiminize danışınız ve günde bol su içiniz." }),
+          "Kapsül": () => ({ doseText: "", subText: "Pratik taşıma formu", timing: "Öğle", instruction: "Bol su eşliğinde yutunuz. Hekim gözetiminde alınız." })
         }
       }
     };

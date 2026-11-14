@@ -7,7 +7,7 @@
       const opening = !card.classList.contains("is-open");
       card.classList.toggle("is-open", opening);
       if (more) more.classList.toggle("hidden", !opening);
-      card.querySelectorAll(".vsc-main, .vsc-chev").forEach(el => el.setAttribute("aria-expanded", opening ? "true" : "false"));
+      card.querySelectorAll(".vsc-name, .vsc-chev").forEach(el => el.setAttribute("aria-expanded", opening ? "true" : "false"));
       const chev = card.querySelector(".vsc-chev");
       if (chev) chev.setAttribute("aria-label", opening ? "Ayrıntıları gizle" : "Ayrıntıları göster");
       const id = card.dataset.supId;
@@ -138,65 +138,10 @@
               }
             }
 
-            let formSelectorHtml = "";
-            if (item.formKey && FORM_DOSAGE_CONFIG[item.formKey]) {
-              const cfg = FORM_DOSAGE_CONFIG[item.formKey];
-              const formKeys = Object.keys(cfg.forms);
-
-              const getFormIcon = (f) => {
-                if (f === "Damla") return "💧";
-                if (f.includes("Kapsul") || f.includes("Kapsül")) return "💊";
-                if (f.includes("Sprey")) return "💨";
-                if (f.includes("Saşe")) return "✉️";
-                if (f.includes("Toz")) return "🥄";
-                if (f.includes("Sıvı")) return "🧪";
-                return "🔘";
-              };
-
-              formSelectorHtml = `
-                <div class="mt-3 p-2.5 bg-gradient-to-r from-teal-50/90 to-emerald-50/60 border border-teal-200/90 rounded-xl">
-                  <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
-                    <label class="text-[11px] font-black text-teal-950 flex items-center gap-1.5">
-                      <i class="fa-solid fa-shapes text-teal-600"></i>
-                      <span>Farmasötik Form Seçici:</span>
-                    </label>
-                    <span class="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-300">
-                      Aktif: ${escapeHtmlText(item.selectedForm ? item.selectedForm.replace('_', ' ') : 'Standart')}
-                    </span>
-                  </div>
-
-                  <div class="flex flex-wrap gap-1 mt-1">
-                    ${formKeys.map(f => `
-                      <button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); changeDailySupplementForm(${safeJsStringAttribute(item.id)}, ${safeJsStringAttribute(f)})" class="px-2.5 py-1 rounded-lg text-[10px] font-black transition flex items-center gap-1 cursor-pointer ${
-                        item.selectedForm === f 
-                          ? 'bg-teal-600 text-white shadow-sm ring-1 ring-teal-700' 
-                          : 'bg-white hover:bg-teal-100 text-teal-900 border border-teal-200'
-                      }">
-                        <span>${getFormIcon(f)}</span>
-                        <span>${escapeHtmlText(f.replace('_', ' '))}</span>
-                      </button>
-                    `).join('')}
-                  </div>
-                </div>
-              `;
-            }
 
             const itemInteractions = (typeof getSupplementItemInteractions === "function")
               ? getSupplementItemInteractions(item)
               : [];
-            const itemInteractionHtml = itemInteractions.length > 0 ? `
-              <div class="mt-2.5 space-y-1.5">
-                ${itemInteractions.map(ix => `
-                  <div class="p-2.5 rounded-xl border ${ix.severity === 'danger' ? 'bg-rose-50 border-rose-300 text-rose-950' : 'bg-amber-50 border-amber-300 text-amber-950'} text-[11px]">
-                    <div class="flex flex-wrap items-center justify-between gap-1">
-                      <strong class="font-black">${escapeHtmlText(ix.title)}</strong>
-                      <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/80 border ${ix.severity === 'danger' ? 'border-rose-200 text-rose-800' : 'border-amber-200 text-amber-800'}">${escapeHtmlText(ix.severityLabel || 'Etkileşim')}</span>
-                    </div>
-                    <p class="text-[10px] mt-0.5 leading-relaxed opacity-90">${escapeHtmlText(ix.actionText)}</p>
-                  </div>
-                `).join("")}
-              </div>
-            ` : "";
 
             // Misantha Tipi Kutu, Stok ve Kalan Gün Sayacı (Pill & Days Counter)
             normalizeSupplementStockFields(item);
@@ -205,16 +150,14 @@
             const gunlukDoz = item.gunlukDoz;
             const kalanGun = Math.floor(kalanAdet / gunlukDoz);
             const isCriticalStock = kalanGun <= 3;
+            // Sade stok satırı: "Stok: 29 gün yetecek. Günlük doz: 1" — hemen altında "+Stok".
             const stockBadgeHtml = isCriticalStock
-              ? `<span class="misantha-stock-critical-badge" data-testid="critical-stock-badge"><i class="fa-solid fa-triangle-exclamation"></i><span>Kritik Stok: ${kalanGun} gün yetecek (${kalanAdet} tablet kaldı)</span></span>`
-              : `<span class="misantha-stock-normal-badge" data-testid="normal-stock-badge"><i class="fa-solid fa-boxes-stacked"></i><span>Stok: ${kalanAdet}/${toplamKutuAdedi} tablet · ${kalanGun} gün yetecek (Günlük doz: ${gunlukDoz})</span></span>`;
+              ? `<span class="misantha-stock-critical-badge" data-testid="critical-stock-badge"><i class="fa-solid fa-triangle-exclamation"></i><span>Kritik stok: ${kalanGun} gün yetecek. Günlük doz: ${gunlukDoz}</span></span>`
+              : `<span class="misantha-stock-normal-badge" data-testid="normal-stock-badge"><i class="fa-solid fa-boxes-stacked"></i><span>Stok: ${kalanGun} gün yetecek. Günlük doz: ${gunlukDoz}</span></span>`;
 
             const misanthaStockBarHtml = `
-              <div class="misantha-stock-bar">
-                <div class="flex flex-wrap items-center gap-1.5">
-                  ${stockBadgeHtml}
-                  ${item.doseText ? `<span class="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">${escapeHtmlText(item.doseText)}</span>` : ""}
-                </div>
+              <div class="vsc-stock">
+                ${stockBadgeHtml}
                 <button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); refillSupplementBox(${safeJsStringAttribute(item.id)})" class="misantha-refill-btn" title="Biten kutuyu yenile (+${toplamKutuAdedi} adet ekle)">
                   <i class="fa-solid fa-box-open"></i>
                   <span>Yeni Kutu Ekle (+Stok)</span>
@@ -233,10 +176,13 @@
             card.innerHTML = `
               <div class="vsc-row">
                 <input type="checkbox" ${item.taken ? "checked" : ""} onchange="if(window.SoundEffects) SoundEffects.playClick(); toggleSupplementStatus(${safeJsStringAttribute(item.id)})" class="h-5 w-5 rounded text-teal-600 focus:ring-teal-500 cursor-pointer flex-shrink-0" title="İçtim / Alındı olarak işaretle" aria-label="${escapeHtmlText(item.name)} alındı">
-                <button type="button" class="vsc-main" aria-expanded="${isOpen ? "true" : "false"}" aria-controls="vscMore_${escapeHtmlText(item.id)}" onclick="toggleSupplementCardDetails(this)">
-                  <span class="vsc-name ${item.taken ? 'line-through text-slate-400' : 'text-navy-900'}">${escapeHtmlText(item.name)}</span>
+                <div class="vsc-main" onclick="if(!event.target.closest('.vsc-info')) toggleSupplementCardDetails(this)">
+                  <span class="vsc-title">
+                    <button type="button" class="vsc-name ${item.taken ? 'line-through text-slate-400' : 'text-navy-900'}" aria-expanded="${isOpen ? "true" : "false"}" aria-controls="vscMore_${escapeHtmlText(item.id)}">${escapeHtmlText(item.name)}</button>
+                    <button type="button" class="vsc-info" aria-label="${escapeHtmlText(item.name)}: nasıl kullanılır?" title="Nasıl kullanılır?" onclick="openVitaUsageInfo(this, 'sup', ${safeJsStringAttribute(item.id)})">!</button>
+                  </span>
                   <span class="vsc-meta"><i class="fa-regular fa-clock"></i>${escapeHtmlText(getSupplementTimeLabel(item))} · ${escapeHtmlText(getSupplementScheduleDaysLabel(item))}${headerFlags}</span>
-                </button>
+                </div>
                 ${criticalWarningIconHtml}
                 <button type="button" class="vsc-chev" aria-label="Ayrıntıları ${isOpen ? "gizle" : "göster"}" aria-expanded="${isOpen ? "true" : "false"}" onclick="toggleSupplementCardDetails(this)"><i class="fa-solid fa-chevron-down"></i></button>
                 <button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); deleteSupplementItem(${safeJsStringAttribute(item.id)})" title="Listeden Çıkar" aria-label="${escapeHtmlText(item.name)} listeden çıkar" class="vsc-del"><i class="fa-solid fa-trash-can"></i></button>
@@ -244,11 +190,10 @@
               ${deprescribingBadgeHtml}
               <div class="vsc-more${isOpen ? "" : " hidden"}" id="vscMore_${escapeHtmlText(item.id)}">
                 ${misanthaStockBarHtml}
-                ${item.instruction ? `<p class="vsc-instruction"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> ${escapeHtmlText(item.instruction)}</p>` : ""}
-                ${itemInteractionHtml}
-                ${formSelectorHtml}
               </div>
             `;
+            /* Kaldırılanlar (tekrar ve yoğunluk): etkileşim metin kutuları (üstteki Emniyet Kalkanı'nda; kartta ⚡ sayısı kalır),
+               form seçici ("Takviye ekle" penceresinde), uzun talimat metni (adın yanındaki "!" düğmesinde kısa özet). */
             if (isOpen) card.classList.add("is-open");
             groupEl.appendChild(card);
           });
@@ -1196,7 +1141,7 @@
       const evaluated = cfg.forms[chosenForm](w);
 
       const dosePrev = document.getElementById("modalDosePreview");
-      if (dosePrev) dosePrev.textContent = `${evaluated.doseText} (${evaluated.timing})`;
+      if (dosePrev) dosePrev.textContent = evaluated.doseText ? `${evaluated.doseText} (${evaluated.timing})` : `${evaluated.timing} · miktar: aşağıdaki "Nasıl alacaksınız?"`;
       const instPrev = document.getElementById("modalInstructionPreview");
       if (instPrev) instPrev.textContent = evaluated.instruction;
 
