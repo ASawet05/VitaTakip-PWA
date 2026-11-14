@@ -52,7 +52,7 @@ await p.evaluate(today => {
   plus.click();
   manualSupBoxCount.value = '90'; manualSupBoxCount.dispatchEvent(new Event('input'));
   manualSupRemainingCount.value = '90'; manualSupRemainingCount.dispatchEvent(new Event('input'));
-  const ins = document.querySelectorAll('#vspClocks input'); ins[0].value = '09:00'; ins[0].dispatchEvent(new Event('change', { bubbles: true })); ins[1].value = '21:00'; ins[1].dispatchEvent(new Event('change', { bubbles: true }));
+  VitaSupPage.setClock('Sabah', '09:00'); VitaSupPage.setClock('Akşam', '21:00');
   manualSupHungerNote.value = 'Tok karnına'; manualSupHungerNote.dispatchEvent(new Event('change'));
   document.querySelector('[data-freq="days"]').click();
   document.querySelector(`#vspDays [data-day="${today}"]`).click();
@@ -99,7 +99,7 @@ await p.evaluate(() => { openAddSupplementModal(); manualSupName.value = 'Ferro 
 const cf1 = await p.evaluate(() => { const c = document.getElementById('vspConflict'); return { shown: !c.classList.contains('hidden'), text: c.innerText.replace(/\s+/g, ' ') }; });
 log('Demir sabah 08:00 ↔ Kalsiyum 08:30: "aralarına en az 2 saat bırakın" uyarısı', cf1.shown && /Kalsiyum 600 mg/.test(cf1.text) && /en az 2 saat/.test(cf1.text), cf1.text.slice(0, 160));
 await p.evaluate(() => document.querySelector('#vspConflict [data-shift-vakit]').click()); await sleep(150);
-const cf2 = await p.evaluate(() => ({ clock: document.querySelector('#vspClocks input').value, hidden: document.getElementById('vspConflict').classList.contains('hidden') }));
+const cf2 = await p.evaluate(() => ({ clock: VitaSupPage.getPlan().vakits[0].clock, hidden: document.getElementById('vspConflict').classList.contains('hidden') }));
 log('"…e kaydır" saati 2 saat sonrasına alır ve uyarı kalkar', cf2.clock === '10:30' && cf2.hidden, JSON.stringify(cf2));
 const noGreen = await p.evaluate(() => !/Çakışma Saptanmadı/.test(document.getElementById('view-add-supplement').innerText));
 log('Çelişen "Çakışma saptanmadı" kutusu gösterilmez', noGreen);

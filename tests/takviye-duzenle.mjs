@@ -29,7 +29,7 @@ await p.evaluate(() => {
   manualSupFormText.value = 'Kapsül'; manualSupFormText.dispatchEvent(new Event('input'));
   manualSupDose.value = '1000 mg';
   document.querySelector('#vspVakits [data-vakit="Akşam"]').click();
-  const ins = document.querySelectorAll('#vspClocks input'); ins[1].value = '21:00'; ins[1].dispatchEvent(new Event('change', { bubbles: true }));
+  VitaSupPage.setClock('Akşam', '21:00');
   manualSupHungerNote.value = 'Tok karnına'; manualSupHungerNote.dispatchEvent(new Event('change'));
   manualSupBoxCount.value = '60'; manualSupBoxCount.dispatchEvent(new Event('input'));
   commitManualSupplement();

@@ -1701,8 +1701,14 @@ function getDoctorReportMode() {
         const pendingItems = state.supplements.filter(item => getSupplementTimeLabel(item) === currentHM && isSupplementScheduledToday(item, now) && !item.taken && !(typeof isSupplementSkippedToday === "function" && isSupplementSkippedToday(item, now)));
         if (pendingItems.length) {
           safeLocalStorageSetItem(firedKey, "true");
-          const names = pendingItems.map(item => `${item.name} (${item.doseText || 'Doz bilgisi yok'})`).join(", ");
-          vitaShowNotification(`⏰ VitaTakip: ${currentHM} takviye zamanı`, `Çizelgenizdeki takviyeler: ${names}. Kutu/prospektüs ve hekim/eczacı talimatlarına uyun.`, `vita-sup-${currentHM}`);
+          // "Demir (Fe) alma zamanı — Aç karnına 1 kapsül": aç/tok bilgisi ve miktar bildirimin içinde.
+          const howTo = item => {
+            const amount = Number(item.gunlukDoz) > 0 && item.dozBirimi ? `${item.gunlukDoz} ${item.dozBirimi}` : String(item.doseText || "").split(" • ")[0];
+            return [item.aclikDurumu, amount].filter(Boolean).join(" ");
+          };
+          const lines = pendingItems.map(item => `${item.name} alma zamanı${howTo(item) ? ` — ${howTo(item)}` : ""}`);
+          const title = pendingItems.length === 1 ? `⏰ ${pendingItems[0].name} alma zamanı (${currentHM})` : `⏰ VitaTakip: ${currentHM} takviye zamanı`;
+          vitaShowNotification(title, `${lines.join("; ")}.`, `vita-sup-${currentHM}`);
         }
       }
 

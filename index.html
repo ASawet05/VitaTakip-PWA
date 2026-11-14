@@ -24,11 +24,11 @@
 <!-- Uses Inter when already available; otherwise falls back immediately to the system UI font. -->
 <!-- Font Awesome 6 CDN -->
 <!-- build:css -->
-<link rel="stylesheet" href="./css/app.css?v=f08b5d22c6">
-<script defer src="./js/app.1.js?v=f08b5d22c6"></script>
-<script defer src="./js/app.2.js?v=f08b5d22c6"></script>
-<script defer src="./js/app.3.js?v=f08b5d22c6"></script>
-<script defer src="./js/app.4.js?v=f08b5d22c6"></script>
+<link rel="stylesheet" href="./css/app.css?v=f498a26b45">
+<script defer src="./js/app.1.js?v=f498a26b45"></script>
+<script defer src="./js/app.2.js?v=f498a26b45"></script>
+<script defer src="./js/app.3.js?v=f498a26b45"></script>
+<script defer src="./js/app.4.js?v=f498a26b45"></script>
 <!-- /build:css -->
 <!-- Chart.js loads only if a trend chart is needed. -->
 <!-- PDF.js loads only when a user selects a PDF for analysis. -->
@@ -1790,14 +1790,15 @@ Anahtar girerseniz Vita AI sohbeti ve kutu fotoğrafı tanıma Google Gemini ile
 </div>
 <button class="vita-pwa-btn vita-pwa-btn--settings" id="pwaInstallSettingsBtn" onclick="VitaPwaInstall.install()" type="button"><i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i><span>Cihaza Yükle</span></button>
 </div>
-<div class="py-2.5 flex items-center justify-between gap-3">
+<div class="py-2.5 space-y-2" id="settingsTimeModeRow">
 <div>
-<div class="font-bold text-navy-900">Buzdolabı çizelgesi</div>
-<div class="text-[11px] text-slate-500">Günlük takviye ve su planınızı A4 olarak yazdırın.</div>
+<div class="font-bold text-navy-900" id="settingsTimeModeTitle">Saat seçim düzeni</div>
+<div class="text-[11px] text-slate-500">Takviye saatlerini nasıl girmek istersiniz?</div>
 </div>
-<button class="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold text-xs transition cursor-pointer shrink-0" onclick="if(window.SoundEffects) SoundEffects.playClick(); printFridgeSchedule()" type="button">
-Çizelgeyi Yazdır
-</button>
+<div class="vsp-seg" role="radiogroup" aria-labelledby="settingsTimeModeTitle">
+<button type="button" class="vsp-segbtn" data-timemode="digital" role="radio" aria-checked="true">Dijital kutucuk (SS : DD)</button>
+<button type="button" class="vsp-segbtn" data-timemode="dial" role="radio" aria-checked="false">Klasik saat tekerleği</button>
+</div>
 </div>
 </div>
 </div>
@@ -1903,19 +1904,36 @@ Verileri Sil
 <span id="addSupDbBadge"></span>
 </div>
 </section>
+<!-- Hazır şablonlar: seçince ürün adı, etken madde, form, vakit, aç/tok ve öneri otomatik dolar -->
+<details class="vsp-card vsp-tpl" id="addSupMoreDetails">
+<summary><span><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Hazır şablonlar <small id="vspTplChosen">(isteğe bağlı)</small></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></summary>
+<div class="vsp-tchips" id="vspTplChips" role="group" aria-label="Hazır şablonlar">
+<button type="button" class="vsp-tchip" data-tpl="D3_K2">☀️ D3 + K2</button><button type="button" class="vsp-tchip" data-tpl="Omega3">🐟 Omega-3</button><button type="button" class="vsp-tchip" data-tpl="Demir">🩸 Demir (Fe)</button><button type="button" class="vsp-tchip" data-tpl="B12">🧠 B12</button><button type="button" class="vsp-tchip" data-tpl="Magnezyum">⚡ Magnezyum</button><button type="button" class="vsp-tchip" data-tpl="Folat">🌱 Folat</button><button type="button" class="vsp-tchip" data-tpl="Çinko">🛡️ Çinko</button><button type="button" class="vsp-tchip" data-tpl="Kolajen">🧬 Kolajen</button><button type="button" class="vsp-tchip" data-tpl="Kreatin">💧 Kreatin</button>
+</div>
+<div class="vsa-legacy" aria-hidden="true">
+<select id="modalCatalogSelect" tabindex="-1" onchange="onCatalogSelectChange(this.value)">
+<option value="custom">Şablon yok</option><option value="D3_K2">D3 + K2 Vitamini</option><option value="Omega3">Omega-3 Balık Yağı</option><option value="Demir">Demir (Fe)</option><option value="B12">B12 Vitamini</option><option value="Magnezyum">Magnezyum</option><option value="Folat">Folat / Metilfolat</option><option value="Çinko">Çinko</option><option value="Kolajen">Kolajen</option><option value="Kreatin">Kreatin</option>
+</select>
+</div>
+<div class="hidden vsa-formbox" id="modalFormSelectorContainer">
+<div class="vsa-legacy" aria-hidden="true"><select class="form-selector" id="modalFormSelect" tabindex="-1" onchange="onModalFormOptionChange(this.value)"></select><div id="modalFormQuickPills"></div></div>
+<div class="vsa-formline"><span>Şablon önerisi:</span><b id="modalDosePreview">-</b></div>
+<p id="modalInstructionPreview">-</p>
+</div>
+</details>
 <!-- 1) Ürün bilgisi (barkod/yapay zekâ ile dolar; hepsi düzenlenebilir) -->
 <section class="vsp-card" id="modalCustomNameContainer" aria-labelledby="vspProductTitle">
 <h2 class="vsp-h" id="vspProductTitle"><i class="fa-solid fa-capsules" aria-hidden="true"></i> Ürün bilgisi</h2>
 <label class="vsp-field"><span class="vsp-lbl">Ürün adı *</span>
 <input autocomplete="off" id="manualSupName" maxlength="120" oninput="if(typeof updateModalLiveInteractionPreview === 'function') updateModalLiveInteractionPreview(); if(window.VitaSupPage) VitaSupPage.refresh()" placeholder="Örn: Ocean Vitamin D3 1000 IU" type="text"/></label>
 <div aria-live="polite" class="hidden vsp-advice" id="vspAdvice"></div>
-<div class="vsp-grid2" id="modalCustomDoseContainer">
+<div id="modalCustomDoseContainer">
 <label class="vsp-field"><span class="vsp-lbl">Marka / etken madde</span>
 <input id="manualSupBrandActive" oninput="if(typeof updateModalLiveInteractionPreview === 'function') updateModalLiveInteractionPreview(); if(window.VitaSupPage) VitaSupPage.refresh()" placeholder="Örn: Orzax — Kolekalsiferol" type="text"/></label>
-<label class="vsp-field"><span class="vsp-lbl">Form</span>
-<input id="manualSupFormText" list="vspFormList" oninput="if(window.VitaSupPage) VitaSupPage.syncUnitFromForm()" placeholder="Tablet, kapsül, damla…" type="text"/></label>
 </div>
-<datalist id="vspFormList"><option value="Tablet"></option><option value="Kapsül"></option><option value="Yumuşak kapsül"></option><option value="Damla"></option><option value="Sprey"></option><option value="Saşe"></option><option value="Toz"></option><option value="Şurup"></option><option value="Efervesan tablet"></option></datalist>
+<div class="vsp-field"><span class="vsp-lbl" id="vspFormLbl">Form</span>
+<div class="vsp-forms" id="vspForms" role="group" aria-labelledby="vspFormLbl"></div>
+<input id="manualSupFormText" oninput="if(window.VitaSupPage) VitaSupPage.syncUnitFromForm()" type="hidden" value=""/></div>
 <label class="vsp-field"><span class="vsp-lbl">Etiketteki miktar <small>(1 adette)</small></span>
 <input id="manualSupDose" oninput="if(typeof updateModalLiveInteractionPreview === 'function') updateModalLiveInteractionPreview(); if(window.VitaSupPage) VitaSupPage.refresh()" placeholder="Örn: 1000 IU veya 500 mg" type="text"/></label>
 </section>
@@ -1923,9 +1941,9 @@ Verileri Sil
 <fieldset class="vsp-card vsa-dose" id="modalDoseFieldset">
 <legend>Nasıl alacaksınız?</legend>
 <div class="vsp-grid2">
-<div class="vsp-field"><span class="vsp-lbl">Günde kaç adet?</span><div class="vsp-step"><button type="button" class="vsp-stepbtn" data-step="-1" data-target="manualSupDailyDose" aria-label="Günde kaç adet?: azalt">−</button><input id="manualSupDailyDose" inputmode="numeric" max="20" min="1" type="number" value="1" oninput="updateManualModalStockPreview(false); if(window.VitaSupPage) VitaSupPage.refresh()"/><button type="button" class="vsp-stepbtn" data-step="1" data-target="manualSupDailyDose" aria-label="Günde kaç adet?: artır">+</button></div></div>
+<div class="vsp-field"><span class="vsp-lbl" id="vspDailyLbl">Günde kaç adet?</span><div class="vsp-step"><button type="button" class="vsp-stepbtn" data-step="-1" data-target="manualSupDailyDose" aria-label="Günde kaç adet?: azalt">−</button><input id="manualSupDailyDose" inputmode="numeric" max="100" min="1" type="number" value="1" oninput="updateManualModalStockPreview(false); if(window.VitaSupPage) VitaSupPage.refresh()"/><button type="button" class="vsp-stepbtn" data-step="1" data-target="manualSupDailyDose" aria-label="Günde kaç adet?: artır">+</button></div></div>
 <label class="vsp-field"><span class="vsp-lbl">Birim</span>
-<select id="manualSupDoseUnit" onchange="if(window.VitaSupPage) VitaSupPage.refresh()">
+<select id="manualSupDoseUnit" onchange="if(window.VitaSupPage) VitaSupPage.setUnit(this.value)">
 <option value="tablet">tablet</option>
 <option value="kapsül">kapsül</option>
 <option value="damla">damla</option>
@@ -1962,37 +1980,14 @@ Verileri Sil
 <details class="vsp-card vsp-stockd" id="modalMisanthaStockBox">
 <summary class="vsp-hrow"><span class="vsp-h" id="vspStockTitle"><i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i> Stok</span><span class="vsp-sumr"><b class="vsp-badge" id="modalMisanthaDaysPreviewBadge">30 gün yetecek</b><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></span></summary>
 <div class="vsp-grid2">
-<div class="vsp-field"><span class="vsp-lbl">Kutudaki adet</span><div class="vsp-step"><button type="button" class="vsp-stepbtn" data-step="-1" data-target="manualSupBoxCount" aria-label="Kutudaki adet: azalt">−</button><input id="manualSupBoxCount" inputmode="numeric" max="1000" min="1" type="number" value="30" oninput="updateManualModalStockPreview(true)"/><button type="button" class="vsp-stepbtn" data-step="1" data-target="manualSupBoxCount" aria-label="Kutudaki adet: artır">+</button></div></div>
-<div class="vsp-field"><span class="vsp-lbl">Kalan adet</span><div class="vsp-step"><button type="button" class="vsp-stepbtn" data-step="-1" data-target="manualSupRemainingCount" aria-label="Kalan adet: azalt">−</button><input id="manualSupRemainingCount" inputmode="numeric" max="1000" min="0" type="number" value="30" oninput="updateManualModalStockPreview(false)"/><button type="button" class="vsp-stepbtn" data-step="1" data-target="manualSupRemainingCount" aria-label="Kalan adet: artır">+</button></div></div>
+<div class="vsp-field"><span class="vsp-lbl" id="vspBoxLbl">Kutudaki adet</span><div class="vsp-step"><button type="button" class="vsp-stepbtn" data-step="-1" data-target="manualSupBoxCount" aria-label="Kutudaki adet: azalt">−</button><input id="manualSupBoxCount" inputmode="numeric" max="5000" min="1" type="number" value="30" oninput="updateManualModalStockPreview(true)"/><button type="button" class="vsp-stepbtn" data-step="1" data-target="manualSupBoxCount" aria-label="Kutudaki adet: artır">+</button></div></div>
+<div class="vsp-field"><span class="vsp-lbl" id="vspRemLbl">Kalan adet</span><div class="vsp-step"><button type="button" class="vsp-stepbtn" data-step="-1" data-target="manualSupRemainingCount" aria-label="Kalan adet: azalt">−</button><input id="manualSupRemainingCount" inputmode="numeric" max="5000" min="0" type="number" value="30" oninput="updateManualModalStockPreview(false)"/><button type="button" class="vsp-stepbtn" data-step="1" data-target="manualSupRemainingCount" aria-label="Kalan adet: artır">+</button></div></div>
 </div>
-<p class="vsp-note">Kutuyu daha önce açtıysanız kalan adedi düzeltin.</p>
+<p class="vsp-note" id="vspStockNote">Kutuyu daha önce açtıysanız kalan adedi düzeltin.</p>
 </details>
 <!-- 4) Uyarılar: mevcut takviyelerle zamanlama çakışması + ilaç etkileşimi -->
 <div aria-live="polite" class="hidden vsp-conflict" id="vspConflict" role="status"></div>
 <div class="hidden vsa-live" id="modalLiveInteractionWarning" role="status" aria-live="polite"></div>
-<!-- İsteğe bağlı: hazır şablondan doldur -->
-<details class="vsp-card vsp-tpl" id="addSupMoreDetails">
-<summary><span><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Hazır şablondan doldur <small>(isteğe bağlı)</small></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></summary>
-<label class="vsp-field"><span class="vsp-lbl">Hazır şablon</span>
-<select id="modalCatalogSelect" onchange="if(window.SoundEffects) SoundEffects.playClick(); onCatalogSelectChange(this.value)">
-<option value="custom">Şablon yok (kendim yazacağım)</option>
-<option value="D3_K2">☀️ D3 + K2 Vitamini</option>
-<option value="Omega3">🐟 Omega-3 Balık Yağı</option>
-<option value="Demir">🩸 Demir (Fe)</option>
-<option value="B12">🧠 B12 Vitamini</option>
-<option value="Magnezyum">⚡ Magnezyum</option>
-<option value="Folat">🌱 Folat / Metilfolat</option>
-<option value="Kolajen">🧬 Kolajen</option>
-<option value="Kreatin">💧 Kreatin</option>
-</select></label>
-<div class="hidden vsa-formbox" id="modalFormSelectorContainer">
-<label class="vsp-field"><span class="vsp-lbl">Hangi formda alacaksınız?</span>
-<select class="form-selector" id="modalFormSelect" onchange="if(window.SoundEffects) SoundEffects.playClick(); onModalFormOptionChange(this.value)"></select></label>
-<div class="vsa-pills" id="modalFormQuickPills"></div>
-<div class="vsa-formline"><span>Öneri:</span><b id="modalDosePreview">-</b></div>
-<p id="modalInstructionPreview">-</p>
-</div>
-</details>
 <div class="vsp-submitbar"><button class="vsa-submit" id="btnCommitSupplement" onclick="if(window.SoundEffects) SoundEffects.playClick(); commitManualSupplement()" type="button"><i class="fa-solid fa-plus"></i><span>Takviyeyi ekle</span></button></div>
 </div>
 </section>

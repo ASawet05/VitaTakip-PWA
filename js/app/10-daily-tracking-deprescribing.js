@@ -209,7 +209,7 @@
                     <button type="button" class="vsc-name ${item.taken ? 'line-through text-slate-400' : 'text-navy-900'}" aria-expanded="${isOpen ? "true" : "false"}" aria-controls="vscMore_${escapeHtmlText(item.id)}">${escapeHtmlText(item.name)}</button>
                     <button type="button" class="vsc-info" aria-label="${escapeHtmlText(item.name)}: nasıl kullanılır?" title="Nasıl kullanılır?" onclick="openVitaUsageInfo(this, 'sup', ${safeJsStringAttribute(item.id)})">!</button>
                   </span>
-                  <span class="vsc-meta"><i class="fa-regular fa-clock"></i>${escapeHtmlText(getSupplementTimeLabel(item))} · ${escapeHtmlText(getSupplementScheduleDaysLabel(item))}${headerFlags}</span>
+                  <span class="vsc-meta"><i class="fa-regular fa-clock"></i>${escapeHtmlText(getSupplementTimeLabel(item))} · ${escapeHtmlText(getSupplementScheduleDaysLabel(item))}${item.aclikDurumu ? `<span class="vsc-hunger vsc-hunger--${/aç karnına/i.test(item.aclikDurumu) ? "empty" : (/tok|yemek/i.test(item.aclikDurumu) ? "full" : "any")}">${escapeHtmlText(item.aclikDurumu)}</span>` : ""}${headerFlags}</span>
                 </div>
                 ${criticalWarningIconHtml}
                 <button type="button" class="vsc-chev" aria-label="Ayrıntıları ${isOpen ? "gizle" : "göster"}" aria-expanded="${isOpen ? "true" : "false"}" onclick="toggleSupplementCardDetails(this)"><i class="fa-solid fa-chevron-down"></i></button>
@@ -291,7 +291,7 @@
         saveState();
         renderDailyTab();
         const after = getSupplementGroupStock(item);
-        showToast("Yeni Kutu Eklendi (+Stok)", `${item.name} stoğuna +${add} adet eklendi. Güncel stok: ${after.remaining} adet (${after.days} gün yetecek).`, "success");
+        showToast("Yeni Kutu Eklendi (+Stok)", `${item.name} stoğuna +${add} ${item.dozBirimi || "adet"} eklendi. Güncel stok: ${after.remaining} ${item.dozBirimi || "adet"} (${after.days} gün yetecek).`, "success");
         return;
       }
       normalizeSupplementStockFields(item);
@@ -307,7 +307,7 @@
       const kalanGun = Math.floor(item.kalanAdet / item.gunlukDoz);
       showToast(
         "Yeni Kutu Eklendi (+Stok)",
-        `${item.name} stoğuna +${addCount} adet eklendi. Güncel stok: ${item.kalanAdet} tablet (${kalanGun} gün yetecek).`,
+        `${item.name} stoğuna +${addCount} ${item.dozBirimi || "adet"} eklendi. Güncel stok: ${item.kalanAdet} ${item.dozBirimi || "adet"} (${kalanGun} gün yetecek).`,
         "success"
       );
     }
@@ -453,7 +453,7 @@
         showToast(
           item.taken ? "İçtim / Alındı İşaretlendi" : "İşaret Kaldırıldı",
           item.taken
-            ? `${item.name}: Kalan stok ${item.kalanAdet} tablet (${kalanGun} gün yetecek).`
+            ? `${item.name}: Kalan stok ${item.kalanAdet} ${item.dozBirimi || "adet"} (${kalanGun} gün yetecek).`
             : `${item.name} durumu geri alındı (Stok: ${item.kalanAdet}).`,
           item.taken ? (kalanGun <= 3 ? "warning" : "success") : "info"
         );
@@ -757,6 +757,8 @@
       }
       const unitSelect = document.getElementById("manualSupDoseUnit");
       if (unitSelect) unitSelect.value = guessVitaDoseUnit(item.form || "");
+      // Kutudaki miktar üründen geldi: form/birim değişse de varsayılan stokla ezilmez.
+      if (window.VitaSupPage && window.VitaSupPage.markStockTouched && Number(item.kutuAdedi) > 0) window.VitaSupPage.markStockTouched();
 
       updateManualModalStockPreview(false);
       updateVitaSupplementDosePreview();
@@ -1257,9 +1259,11 @@
       const doseInput = document.getElementById("manualSupDose");
       const hungerInput = document.getElementById("manualSupHungerNote");
       if (nameInput) nameInput.value = cfg.name;
-      if (formInput) formInput.value = chosenForm.replace('_', ' ');
+      if (formInput) formInput.value = window.VitaSupPage && window.VitaSupPage.formLabel ? window.VitaSupPage.formLabel(chosenForm) : chosenForm.replace(/_/g, ' ');
       if (doseInput) doseInput.value = evaluated.doseText;
-      if (evaluated.timing && window.VitaSupPage) window.VitaSupPage.setVakits([evaluated.timing]);
+      // Kullanıcı vakitleri kendisi seçtiyse şablon/form değişikliği onları ezmez.
+      if (evaluated.timing && window.VitaSupPage && !(window.VitaSupPage.isVakitTouched && window.VitaSupPage.isVakitTouched())) window.VitaSupPage.setVakits([evaluated.timing]);
+      else if (window.VitaSupPage) window.VitaSupPage.refresh();
       // Uzun şablon talimatı "aç/tok" seçimine yazılmaz; yalnızca vakit önerisi aktarılır.
 
       if (typeof updateModalLiveInteractionPreview === "function") updateModalLiveInteractionPreview();
