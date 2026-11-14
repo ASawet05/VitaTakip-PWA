@@ -997,13 +997,14 @@
       if (window.SoundEffects) SoundEffects.playClick();
       const name = String(document.getElementById("manualSupName")?.value || lastAddSupAiItem?.urunAdi || "").trim();
       if (!name) return;
-      const quickInput = document.getElementById("quickAddMedInput");
-      if (quickInput && typeof addQuickMedicationFromInput === "function") {
-        closeAddSupplementModal();
-        quickInput.value = name;
-        addQuickMedicationFromInput();
-        const drawer = document.getElementById("dailyProtocolMedicationsDrawer");
-        if (drawer) { drawer.open = true; window.setTimeout(() => drawer.scrollIntoView({ behavior: "smooth", block: "center" }), 150); }
+      // İlaçlar sade "İlaç ekle" penceresinde kaydedilir: ad doldurulur, kullanıcı alım saatini/sıklığını seçer.
+      closeAddSupplementModal();
+      if (typeof openAddMedicationModal === "function") {
+        openAddMedicationModal();
+        const nameEl = document.getElementById("addMedName"); if (nameEl) nameEl.value = name;
+        if (typeof window.applyVitaMedicationCatalogName === "function") window.applyVitaMedicationCatalogName(name);
+      } else if (typeof addVitaMedication === "function") {
+        addVitaMedication({ name });
       }
     }
     window.applyAiBoxResultToSupplementForm = applyAiBoxResultToSupplementForm;

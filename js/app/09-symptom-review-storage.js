@@ -328,6 +328,7 @@ function checkPendingSymptomReviews() {
         supplements: cloneVitaJson(Array.isArray(state.supplements) ? state.supplements : [], []),
         medications: cloneVitaJson(Array.isArray(state.medications) ? state.medications : [], []),
         medTaken: cloneVitaJson(state.medTaken || null, null),
+        profilePhoto: window.VitaProfilePhoto ? (window.VitaProfilePhoto.get(String(userId)) || null) : null,
         hydration: cloneVitaJson(state.hydration || { current: 0, target: 2450 }, { current: 0, target: 2450 }),
         labHistory: cloneVitaJson(Array.isArray(state.labHistory) ? state.labHistory : [], []),
         labValues: cloneVitaJson(state.labValues || {}, {}),
@@ -399,6 +400,7 @@ function checkPendingSymptomReviews() {
             if (Array.isArray(stored.medications)) state.medications = stored.medications.map(normalizeVitaMedication).filter(Boolean);
             if (stored.medTaken && typeof stored.medTaken === "object") state.medTaken = stored.medTaken;
             if (typeof reconcileVitaMedicationsWithProfile === "function") reconcileVitaMedicationsWithProfile();
+            if (window.VitaProfilePhoto && stored.profilePhoto && window.VitaProfilePhoto.isValid(stored.profilePhoto) && !window.VitaProfilePhoto.get(normalizedUserId)) window.VitaProfilePhoto.set(stored.profilePhoto, normalizedUserId);
             if (stored.hydration && typeof stored.hydration === "object") state.hydration = stored.hydration;
             if (stored.supplementReviews && typeof stored.supplementReviews === "object") state.supplementReviews = stored.supplementReviews;
             if (stored.lastCDSS && typeof stored.lastCDSS === "object") state.lastCDSS = stored.lastCDSS;
@@ -1093,7 +1095,7 @@ function checkPendingSymptomReviews() {
 
     /* G6 — Çoklu sekme: başka bir sekmede bu hesabın verisi değişirse bu sekme yeniden yüklenir.
        Böylece eski veriyle yapılan bir sonraki kayıt diğer sekmedeki değişiklikleri silmez. */
-    const VITA_SYNCED_KEY_PREFIXES = ["vitatakip_user_", "vitatakip_supplements_", "vitatakip_medications_", "vitatakip_med_taken_", "vitatakip_hydration_", "vitatakip_labs_",
+    const VITA_SYNCED_KEY_PREFIXES = ["vitatakip_user_", "vitatakip_supplements_", "vitatakip_medications_", "vitatakip_med_taken_", "vitatakip_avatar_", "vitatakip_hydration_", "vitatakip_labs_",
       "vitatakip_labreferences_", "vitatakip_labhistory_", "vitatakip_symptoms_", "vitatakip_resolved_symptoms_", "vitatakip_reviews_", "vitatakip_notes_"];
     let vitaCrossTabTimer = null;
     window.addEventListener("storage", event => {

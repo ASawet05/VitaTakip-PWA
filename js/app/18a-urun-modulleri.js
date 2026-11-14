@@ -271,14 +271,37 @@
        ========================================================================= */
     const VITA_MED_TIMES = ["Sabah", "Öğle", "Akşam", "Gece"];
     const VITA_WEEKDAY_NAMES = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
+    /* Her doz bir alım saatidir ("09:00"); hatırlatma bu saatte, "Aldım" işareti de bu saate göre tutulur.
+       Sabah/Öğle/Akşam/Gece grubu saatten türetilir. */
+    const VITA_MED_BLOCK_CLOCK = { "Sabah": "09:00", "Öğle": "13:00", "Akşam": "20:00", "Gece": "22:30" };
     const VITA_MED_FREQUENCIES = {
-      gunde1: { label: "Günde 1 kez", doses: m => [VITA_MED_TIMES.includes(m.times?.[0]) ? m.times[0] : "Sabah"] },
-      gunde2: { label: "Günde 2 kez", doses: () => ["Sabah", "Akşam"] },
-      gunde3: { label: "Günde 3 kez", doses: () => ["Sabah", "Öğle", "Akşam"] },
-      haftada1: { label: "Haftada 1 kez", doses: m => [VITA_MED_TIMES.includes(m.times?.[0]) ? m.times[0] : "Sabah"], weekly: true },
-      gerektiginde: { label: "Gerektiğinde", doses: () => [] }
+      gunde1: { label: "Günde 1 kez", count: 1, defaults: ["09:00"] },
+      gunde2: { label: "Günde 2 kez", count: 2, defaults: ["09:00", "20:00"] },
+      gunde3: { label: "Günde 3 kez", count: 3, defaults: ["09:00", "13:00", "19:00"] },
+      haftada1: { label: "Haftada 1 kez", count: 1, defaults: ["09:00"], weekly: true },
+      gerektiginde: { label: "Gerektiğinde", count: 0, defaults: [] }
     };
     window.VITA_MED_FREQUENCIES = VITA_MED_FREQUENCIES;
+
+    function isVitaClock(v) { return /^([01]\d|2[0-3]):[0-5]\d$/.test(String(v || "")); }
+    function vitaBlockFromClock(clock) {
+      const h = Number(String(clock || "09:00").slice(0, 2));
+      if (h >= 4 && h < 11) return "Sabah";
+      if (h >= 11 && h < 16) return "Öğle";
+      if (h >= 16 && h < 21) return "Akşam";
+      return "Gece";
+    }
+    window.vitaBlockFromClock = vitaBlockFromClock;
+    /* Saatler: verilen saatler (geçerli olanlar) → yoksa eski blok adlarından → yoksa sıklığın varsayılanları. */
+    function resolveVitaMedClocks(frequency, raw) {
+      const def = VITA_MED_FREQUENCIES[frequency] || VITA_MED_FREQUENCIES.gunde1;
+      const given = (Array.isArray(raw.clocks) ? raw.clocks : []).filter(isVitaClock);
+      const fromBlocks = (Array.isArray(raw.times) ? raw.times : []).map(t => VITA_MED_BLOCK_CLOCK[t]).filter(Boolean);
+      const out = [];
+      for (let i = 0; i < def.count; i++) out.push(given[i] || (def.count === 1 || fromBlocks.length === def.count ? fromBlocks[i] : "") || def.defaults[i]);
+      // Aynı saat iki kez olmasın (işaret anahtarı saattir)
+      return [...new Set(out)].sort();
+    }
 
     function vitaMedId() { return `med_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`; }
 
@@ -287,7 +310,8 @@
       const name = String(raw.name || raw.urunAdi || "").replace(/\s+/g, " ").trim().slice(0, 120);
       if (!name) return null;
       const frequency = VITA_MED_FREQUENCIES[raw.frequency] ? raw.frequency : "gunde1";
-      const times = (Array.isArray(raw.times) ? raw.times : []).filter(t => VITA_MED_TIMES.includes(t)).slice(0, 3);
+      const clocks = resolveVitaMedClocks(frequency, raw);
+      const times = clocks.map(vitaBlockFromClock);
       const weekday = Number.isInteger(Number(raw.weekday)) && Number(raw.weekday) >= 0 && Number(raw.weekday) <= 6 ? Number(raw.weekday) : new Date().getDay();
       return {
         id: /^med_[a-z0-9_]+$/i.test(String(raw.id || "")) ? String(raw.id) : vitaMedId(),
@@ -296,7 +320,8 @@
         etkenMadde: String(raw.etkenMadde || "").trim().slice(0, 160),
         kategori: String(raw.kategori || "").trim().slice(0, 120),
         frequency,
-        times: times.length ? times : ["Sabah"],
+        clocks,
+        times,
         weekday,
         addedAt: Number(raw.addedAt) > 0 ? Number(raw.addedAt) : Date.now()
       };
@@ -316,15 +341,15 @@
     function getVitaMedicationDoses(med, date = new Date()) {
       const def = VITA_MED_FREQUENCIES[med.frequency] || VITA_MED_FREQUENCIES.gunde1;
       if (def.weekly && Number(med.weekday) !== date.getDay()) return [];
-      return def.doses(med);
+      return Array.isArray(med.clocks) ? med.clocks.slice() : [];
     }
     window.getVitaMedicationDoses = getVitaMedicationDoses;
 
     function describeVitaMedicationSchedule(med) {
       const def = VITA_MED_FREQUENCIES[med.frequency] || VITA_MED_FREQUENCIES.gunde1;
       if (med.frequency === "gerektiginde") return def.label;
-      if (med.frequency === "haftada1") return `${def.label} · ${VITA_WEEKDAY_NAMES[med.weekday]} ${med.times[0] || "Sabah"}`;
-      return `${def.label} · ${def.doses(med).join(", ")}`;
+      if (med.frequency === "haftada1") return `${def.label} · ${VITA_WEEKDAY_NAMES[med.weekday]} ${med.clocks?.[0] || "09:00"}`;
+      return `${def.label} · ${(med.clocks || []).join(", ")}`;
     }
     window.describeVitaMedicationSchedule = describeVitaMedicationSchedule;
 
@@ -347,7 +372,7 @@
           }
         }
         if (rec) {
-          const doses = (VITA_MED_FREQUENCIES[med.frequency] || VITA_MED_FREQUENCIES.gunde1).doses(med);
+          const doses = (med.clocks || []).map(vitaBlockFromClock);
           records.push({ ...rec, urunAdi: med.name, gunlukDoz: Math.max(1, doses.length || 1), dozPeriyodu: med.frequency === "haftada1" ? "haftalik" : "gunluk", zamanBloku: doses[0] || rec.zamanBloku || "Sabah", barcode: med.barcode || rec.barcode || "" });
         }
       });
@@ -419,7 +444,7 @@
       if (existing) {
         Object.assign(existing, {
           barcode: med.barcode || existing.barcode, etkenMadde: med.etkenMadde || existing.etkenMadde, kategori: med.kategori || existing.kategori,
-          ...(options.keepSchedule ? {} : { frequency: med.frequency, times: med.times, weekday: med.weekday })
+          ...(options.keepSchedule ? {} : { frequency: med.frequency, clocks: med.clocks, times: med.times, weekday: med.weekday })
         });
         saved = existing;
       } else {
@@ -468,8 +493,8 @@
       (state.medications || []).forEach(med => {
         getVitaMedicationDoses(med, today).forEach(dose => rows.push({ med, dose, taken: Boolean(log.doses[med.id]?.[dose]) }));
       });
-      const order = t => VITA_MED_TIMES.indexOf(t);
-      return rows.sort((a, b) => order(a.dose) - order(b.dose) || a.med.name.localeCompare(b.med.name, "tr"));
+      // Saat sırasıyla (doz anahtarı "HH:MM" olduğu için metin sıralaması saat sırasıdır)
+      return rows.sort((a, b) => a.dose.localeCompare(b.dose) || a.med.name.localeCompare(b.med.name, "tr"));
     }
     window.getTodayVitaMedicationDoses = getTodayVitaMedicationDoses;
 
@@ -479,22 +504,44 @@
       const list = document.getElementById("todayMedsList");
       if (!card || !list) return;
       const meds = Array.isArray(state.medications) ? state.medications : [];
-      card.classList.toggle("hidden", !activeUserId || meds.length === 0);
-      if (!meds.length) { list.innerHTML = ""; return; }
+      // "Bugünkü ilaçlarım" takviye kartı gibi her zaman görünür; ilaç yoksa boş durum + "İlaç Ekle".
+      card.classList.toggle("hidden", !activeUserId);
+      const counter = document.getElementById("todayMedsCounter");
+      if (!meds.length) {
+        if (counter) { counter.textContent = ""; counter.classList.add("hidden"); }
+        list.innerHTML = `<div class="vtm-empty"><i class="fa-solid fa-prescription-bottle-medical" aria-hidden="true"></i> Henüz ilaç yok. Düzenli veya geçici kullandığınız ilaçları "İlaç Ekle" ile ekleyin.</div>`;
+        const note0 = document.getElementById("todayMedsNote"); if (note0) note0.classList.add("hidden");
+        return;
+      }
       const rows = getTodayVitaMedicationDoses();
       const done = rows.filter(r => r.taken).length;
-      const counter = document.getElementById("todayMedsCounter");
       if (counter) {
+        counter.classList.remove("hidden");
         counter.textContent = rows.length ? `${done}/${rows.length} alındı` : "Bugün doz yok";
         counter.classList.toggle("is-complete", rows.length > 0 && done === rows.length);
       }
       const esc = value => escapeHtmlText(value);
+      const icons = { "Sabah": "fa-sun text-amber-500", "Öğle": "fa-utensils text-sky-500", "Akşam": "fa-moon text-indigo-500", "Gece": "fa-moon text-slate-500" };
+      const groups = VITA_MED_TIMES.map(block => ({ block, rows: rows.filter(r => vitaBlockFromClock(r.dose) === block) })).filter(g => g.rows.length);
       list.innerHTML = rows.length
-        ? rows.map(r => {
-            const id = `todayMed_${r.med.id}_${VITA_MED_TIMES.indexOf(r.dose)}`;
-            return `<li class="vtm-row${r.taken ? " is-taken" : ""}"><input id="${id}" type="checkbox" ${r.taken ? "checked" : ""} data-med-id="${esc(r.med.id)}" data-dose="${esc(r.dose)}" onchange="setVitaMedicationDoseTaken(this.dataset.medId, this.dataset.dose, this.checked)"/><label for="${id}"><b>${esc(r.med.name)}</b><small>${esc(r.dose)}${r.med.frequency === "haftada1" ? " · haftalık" : ""}</small></label><button type="button" class="vtm-info" aria-label="${esc(r.med.name)}: nasıl kullanılır?" title="Nasıl kullanılır?" onclick="openVitaUsageInfo(this, 'med', ${esc(JSON.stringify(r.med.id))})">!</button></li>`;
-          }).join("")
-        : `<li class="vtm-empty">Bugün alınması gereken ilaç yok.</li>`;
+        ? groups.map(g => `
+            <div class="space-y-2">
+              <div class="vsg-head"><i class="fa-solid ${icons[g.block]}" aria-hidden="true"></i><span class="vsg-label">${g.block}</span><span class="vsg-count">${g.rows.filter(r => r.taken).length}/${g.rows.length}</span>${g.rows.length > 1 ? `<button type="button" class="vsg-all" onclick="markVitaMedicationBlockTaken(${esc(JSON.stringify(g.block))})" aria-label="${g.block}: tüm ilaçları alındı işaretle"><i class="fa-solid fa-check-double" aria-hidden="true"></i> Tümü alındı</button>` : ""}</div>
+              ${g.rows.map(r => {
+                const id = `todayMed_${r.med.id}_${r.dose.replace(":", "")}`;
+                return `<div class="vsc-card vtm-row px-3 py-2.5 rounded-2xl border transition-all ${r.taken ? "bg-indigo-50/70 border-indigo-200 is-taken" : "bg-white border-slate-200 shadow-sm"}">
+                  <div class="vsc-row">
+                    <input id="${id}" type="checkbox" class="h-5 w-5 rounded cursor-pointer flex-shrink-0" ${r.taken ? "checked" : ""} data-med-id="${esc(r.med.id)}" data-dose="${esc(r.dose)}" aria-label="${esc(r.med.name)} ${esc(r.dose)}: aldım" title="Aldım" onchange="setVitaMedicationDoseTaken(this.dataset.medId, this.dataset.dose, this.checked)"/>
+                    <label class="vsc-main" for="${id}">
+                      <span class="vsc-title"><b class="vsc-name ${r.taken ? "line-through text-slate-400" : "text-navy-900"}">${esc(r.med.name)}</b><button type="button" class="vtm-info" aria-label="${esc(r.med.name)}: nasıl kullanılır?" title="Nasıl kullanılır?" onclick="event.preventDefault(); openVitaUsageInfo(this, 'med', ${esc(JSON.stringify(r.med.id))})">!</button></span>
+                      <span class="vsc-meta"><i class="fa-regular fa-clock" aria-hidden="true"></i>${esc(r.dose)}${r.med.frequency === "haftada1" ? " · haftalık" : ""}${r.taken ? " · aldım" : ""}</span>
+                    </label>
+                    <button type="button" class="vsc-del" title="İlacı listeden çıkar" aria-label="${esc(r.med.name)} listeden çıkar" onclick="confirmRemoveVitaMedication(${esc(JSON.stringify(r.med.id))})"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
+                  </div>
+                </div>`;
+              }).join("")}
+            </div>`).join("")
+        : `<div class="vtm-empty">Bugün alınması gereken ilaç yok.</div>`;
       const prn = meds.filter(m => m.frequency === "gerektiginde").map(m => m.name);
       const weeklyOther = meds.filter(m => m.frequency === "haftada1" && !getVitaMedicationDoses(m).length).map(m => `${m.name} (${VITA_WEEKDAY_NAMES[m.weekday]})`);
       const note = document.getElementById("todayMedsNote");
@@ -507,6 +554,26 @@
       }
     }
     window.renderTodayMedications = renderTodayMedications;
+
+    function markVitaMedicationBlockTaken(block) {
+      getTodayVitaMedicationDoses().filter(r => vitaBlockFromClock(r.dose) === block && !r.taken).forEach(r => {
+        const log = readVitaMedTaken();
+        log.doses[r.med.id] = { ...(log.doses[r.med.id] || {}), [r.dose]: Date.now() };
+      });
+      saveState();
+      renderTodayMedications();
+      if (window.SoundEffects && typeof SoundEffects.playSuccess === "function") SoundEffects.playSuccess();
+    }
+    window.markVitaMedicationBlockTaken = markVitaMedicationBlockTaken;
+
+    function confirmRemoveVitaMedication(id) {
+      const med = findVitaMedication(id);
+      if (!med) return;
+      if (typeof window.confirm === "function" && !window.confirm(`"${med.name}" ilaç listenizden çıkarılsın mı?`)) return;
+      removeVitaMedication(med.id);
+      showToast("İlaç çıkarıldı", `${med.name} listeden kaldırıldı.`, "info");
+    }
+    window.confirmRemoveVitaMedication = confirmRemoveVitaMedication;
 
     /* Gece 00:00'da "alındı" işaretleri kendiliğinden sıfırlanır (uygulama açık kalsa bile). */
     let vitaMidnightTimer = null;
@@ -551,7 +618,7 @@
       vitaMedLookup = null;
       ["addMedSearchInput", "addMedName", "addMedBarcode"].forEach(id => { const el = vitaMedEl(id); if (el) el.value = ""; });
       const freq = vitaMedEl("addMedFrequency"); if (freq) freq.value = "gunde1";
-      const time = vitaMedEl("addMedTime"); if (time) time.value = "Sabah";
+      renderAddMedClockInputs(VITA_MED_FREQUENCIES.gunde1.defaults);
       const day = vitaMedEl("addMedWeekday"); if (day) day.value = String(new Date().getDay());
       updateAddMedFrequencyUI();
       setAddMedStatus("");
@@ -620,7 +687,7 @@
       if (rule && !meta.keepSchedule) {
         const f = frequencyFromRxRecord(rule);
         const freq = vitaMedEl("addMedFrequency"); if (freq) freq.value = f.frequency;
-        const time = vitaMedEl("addMedTime"); if (time) time.value = f.times[0] || "Sabah";
+        renderAddMedClockInputs(f.times.map(t => VITA_MED_BLOCK_CLOCK[t] || "09:00"));
         updateAddMedFrequencyUI();
       }
       const details = [item.etkenMadde, item.kategori].filter(Boolean).join(" · ");
@@ -691,15 +758,41 @@
       if (!t.closest("#addMedicationModal .vsa-search, #addMedSuggest")) clearAddMedSuggest();
     });
 
+    /* Alım saatleri: sıklığa göre 1–3 saat kutusu (varsayılanlar düzenlenebilir). Var olan değerler korunur. */
+    function renderAddMedClockInputs(preset) {
+      const box = vitaMedEl("addMedClocks");
+      if (!box) return;
+      const f = vitaMedEl("addMedFrequency")?.value || "gunde1";
+      const def = VITA_MED_FREQUENCIES[f] || VITA_MED_FREQUENCIES.gunde1;
+      const current = Array.isArray(preset) ? preset : Array.from(box.querySelectorAll("input")).map(i => i.value);
+      const labels = def.count === 1 ? ["Saat"] : def.count === 2 ? ["1. doz", "2. doz"] : ["1. doz", "2. doz", "3. doz"];
+      box.innerHTML = Array.from({ length: def.count }, (_, i) => {
+        const v = isVitaClock(current[i]) && (current.length === def.count || def.count === 1) ? current[i] : def.defaults[i];
+        return `<label class="vam-clock"><span>${labels[i]}</span><input type="time" step="300" value="${v}" data-clock-index="${i}" aria-label="${labels[i]} alım saati"/></label>`;
+      }).join("");
+      const lab = vitaMedEl("addMedClocksLabel");
+      if (lab) lab.textContent = def.count > 1 ? "Alım saatleri" : "Alım saati";
+    }
+    function readAddMedClocks() {
+      return Array.from(vitaMedEl("addMedClocks")?.querySelectorAll("input") || []).map(i => i.value).filter(isVitaClock);
+    }
+
     function updateAddMedFrequencyUI() {
       const f = vitaMedEl("addMedFrequency")?.value || "gunde1";
-      vitaMedEl("addMedTimeField")?.classList.toggle("hidden", !(f === "gunde1" || f === "haftada1"));
+      vitaMedEl("addMedTimeField")?.classList.toggle("hidden", f === "gerektiginde");
       vitaMedEl("addMedWeekdayField")?.classList.toggle("hidden", f !== "haftada1");
+      renderAddMedClockInputs();
       const hint = vitaMedEl("addMedScheduleHint");
       if (hint) {
-        const map = { gunde2: "Sabah ve akşam dozları ayrı ayrı işaretlenir.", gunde3: "Sabah, öğle ve akşam dozları ayrı ayrı işaretlenir.", gerektiginde: "Günlük listede gösterilmez; gerektiğinde kullandığınız ilaçlar için." };
+        const map = { gunde2: "Her doz ayrı ayrı \"Aldım\" olarak işaretlenir.", gunde3: "Her doz ayrı ayrı \"Aldım\" olarak işaretlenir.", gerektiginde: "Günlük listede gösterilmez ve hatırlatma gönderilmez; gerektiğinde kullandığınız ilaçlar için." };
         hint.textContent = map[f] || "";
         hint.classList.toggle("hidden", !map[f]);
+      }
+      // Hatırlatma: bildirimler kapalıysa açma önerisi
+      const notif = vitaMedEl("addMedNotifHint");
+      if (notif) {
+        const enabled = typeof isNotificationEnabled === "function" && isNotificationEnabled() && typeof isNotificationPermissionGranted === "function" && isNotificationPermissionGranted();
+        notif.classList.toggle("hidden", enabled || f === "gerektiginde" || !("Notification" in window));
       }
     }
     window.updateAddMedFrequencyUI = updateAddMedFrequencyUI;
@@ -713,14 +806,13 @@
       }
       const barcode = vitaBarcodeKey(vitaMedEl("addMedBarcode")?.value || "");
       const frequency = vitaMedEl("addMedFrequency")?.value || "gunde1";
-      const time = vitaMedEl("addMedTime")?.value || "Sabah";
+      const clocks = readAddMedClocks();
       const weekday = Number(vitaMedEl("addMedWeekday")?.value ?? new Date().getDay());
       const rule = typeof window.findPrescriptionDrugInDb === "function" ? window.findPrescriptionDrugInDb(name) : null;
       const catalogItem = searchVitaProducts("medication", name, 1)[0];
       const sameName = catalogItem && vitaFold(catalogItem.urunAdi) === vitaFold(name) ? catalogItem : null;
       const med = addVitaMedication({
-        name, barcode, frequency, weekday,
-        times: frequency === "gunde2" ? ["Sabah", "Akşam"] : frequency === "gunde3" ? ["Sabah", "Öğle", "Akşam"] : [time],
+        name, barcode, frequency, weekday, clocks,
         etkenMadde: sameName?.etkenMadde || rule?.etkenMadde || "", kategori: sameName?.kategori || rule?.kategori || ""
       });
       if (!med) return null;

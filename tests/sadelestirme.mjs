@@ -67,7 +67,7 @@ const tFe = await tip('.vsc-card[data-sup-id="fe"] .vsc-info');
 log('Demir "!" → "Aç karnına veya yemeklerden 2 saat sonra… Süt, peynir, çay ve kahve…"', tFe && /Aç karnına veya yemeklerden 2 saat sonra alınız\. Süt, peynir, çay ve kahve ile birlikte tüketmeyiniz\./.test(tFe.text), tFe?.text);
 const cardStayedClosed = await p.evaluate(() => !document.querySelector('.vsc-card[data-sup-id="fe"]').classList.contains('is-open'));
 log('"!" düğmesi kartın çekmecesini açmaz', cardStayedClosed);
-const tMed = await tip('#todayMedsList .vtm-row:first-child .vtm-info');
+const tMed = await tip('#todayMedsList .vtm-info');
 log('İlaç listesinde de "!" var ve kısa kullanım özeti gösterir', tMed && /alınız/.test(tMed.text), tMed?.text);
 await p.keyboard.press('Escape'); await sleep(100);
 log('Esc ile bilgi penceresi kapanır', await p.evaluate(() => !document.getElementById('vitaUsagePop')));

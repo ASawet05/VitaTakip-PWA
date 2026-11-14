@@ -143,6 +143,7 @@ function checkMidnightReset(userId) {
       const backupPayload = {
         app: "VitaTakip", version: "9.4.0", exportDate: new Date().toISOString(),
         user: state.user, supplements: state.supplements, medications: Array.isArray(state.medications) ? state.medications : [], hydration: state.hydration,
+        profilePhoto: window.VitaProfilePhoto ? (window.VitaProfilePhoto.get() || null) : null,
         labValues: state.labValues, labReferences: state.labReferences || {}, labHistory: state.labHistory,
         selectedSymptoms: Array.from(state.selectedSymptoms),
         resolvedSymptoms: Array.from(state.resolvedSymptoms),
@@ -278,6 +279,10 @@ function checkMidnightReset(userId) {
             state.medications = Array.isArray(parsed.medications) && typeof normalizeVitaMedication === "function" ? parsed.medications.map(normalizeVitaMedication).filter(Boolean).slice(0, 200) : [];
             state.medTaken = null;
             if (typeof reconcileVitaMedicationsWithProfile === "function") reconcileVitaMedicationsWithProfile();
+            /* Profil fotoğrafı (yedekte varsa): yalnızca geçerli küçük görsel veri URL'i kabul edilir. */
+            if (window.VitaProfilePhoto && Object.prototype.hasOwnProperty.call(parsed, "profilePhoto")) {
+              window.VitaProfilePhoto.set(window.VitaProfilePhoto.isValid(parsed.profilePhoto) ? parsed.profilePhoto : null);
+            }
             if (parsed.hydration && typeof parsed.hydration === "object") {
               const current = vitaNumberInRange(parsed.hydration.current, 0, 20000);
               state.hydration = { ...state.hydration, current: current !== null ? current : 0 };

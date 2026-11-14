@@ -1671,32 +1671,51 @@ function getDoctorReportMode() {
       }
     }
 
+    /* Bildirim gösterimi: önce servis çalışanı (Android Chrome'da "new Notification()" yasak, yalnızca bu yol çalışır),
+       olmazsa klasik Notification. Aynı "tag" ile tekrar eden bildirim üst üste binmez. */
+    async function vitaShowNotification(title, body, tag) {
+      if (!("Notification" in window) || Notification.permission !== "granted") return false;
+      const options = { body, tag, icon: "./icons/icon-192.png", badge: "./icons/icon-192.png", renotify: false, data: { url: "./#view-home" } };
+      try {
+        if (navigator.serviceWorker && typeof navigator.serviceWorker.getRegistration === "function") {
+          const reg = await navigator.serviceWorker.getRegistration();
+          if (reg && typeof reg.showNotification === "function") { await reg.showNotification(title, options); return true; }
+        }
+      } catch (_) { /* klasik yola düş */ }
+      try { new Notification(title, options); return true; } catch (_) { return false; }
+    }
+    window.vitaShowNotification = vitaShowNotification;
+
+    /* Uygulama açıkken (veya arka planda sekme canlıyken) 30 sn'de bir: takviye ve ilaç alım saatleri.
+       İlaç: "İlaç Vakti: [ad] alma zamanınız geldi" — "Aldım" işaretlenmiş dozlar için gönderilmez. */
     function checkAndFireScheduledNotifications() {
       if (!isNotificationEnabled() || !isNotificationPermissionGranted()) return;
-      if (!state.supplements || state.supplements.length === 0) return;
-
       const now = new Date();
       const hours = String(now.getHours()).padStart(2, "0");
       const minutes = String(now.getMinutes()).padStart(2, "0");
       const currentHM = `${hours}:${minutes}`;
       const todayStr = now.toLocaleDateString("tr-TR");
-      const firedKey = `vitatakip_notif_fired_${activeUserId || 'guest'}_${todayStr}_${currentHM}`;
-      if (safeLocalStorageGetItem(firedKey) === "true") return;
 
-      const pendingItems = state.supplements.filter(item => getSupplementTimeLabel(item) === currentHM && isSupplementScheduledToday(item, now) && !item.taken);
-      if (!pendingItems.length) return;
-      safeLocalStorageSetItem(firedKey, "true");
-      const names = pendingItems.map(item => `${item.name} (${item.doseText || 'Doz bilgisi yok'})`).join(", ");
-      const notifTitle = `⏰ VitaTakip: ${currentHM} takviye zamanı`;
-      const notifBody = `Çizelgenizdeki takviyeler: ${names}. Kutu/prospektüs ve hekim/eczacı talimatlarına uyun.`;
-      try {
-        if ("Notification" in window && Notification.permission === "granted") {
-          new Notification(notifTitle, {
-            body: notifBody
-          });
+      const firedKey = `vitatakip_notif_fired_${activeUserId || 'guest'}_${todayStr}_${currentHM}`;
+      if (Array.isArray(state.supplements) && state.supplements.length && safeLocalStorageGetItem(firedKey) !== "true") {
+        const pendingItems = state.supplements.filter(item => getSupplementTimeLabel(item) === currentHM && isSupplementScheduledToday(item, now) && !item.taken);
+        if (pendingItems.length) {
+          safeLocalStorageSetItem(firedKey, "true");
+          const names = pendingItems.map(item => `${item.name} (${item.doseText || 'Doz bilgisi yok'})`).join(", ");
+          vitaShowNotification(`⏰ VitaTakip: ${currentHM} takviye zamanı`, `Çizelgenizdeki takviyeler: ${names}. Kutu/prospektüs ve hekim/eczacı talimatlarına uyun.`, `vita-sup-${currentHM}`);
         }
-      } catch (e) {}
+      }
+
+      if (typeof getTodayVitaMedicationDoses === "function") {
+        const medKey = `vitatakip_med_notif_fired_${activeUserId || 'guest'}_${todayStr}_${currentHM}`;
+        if (safeLocalStorageGetItem(medKey) === "true") return;
+        const dueMeds = getTodayVitaMedicationDoses().filter(r => r.dose === currentHM && !r.taken);
+        if (!dueMeds.length) return;
+        safeLocalStorageSetItem(medKey, "true");
+        dueMeds.forEach(r => vitaShowNotification(`💊 İlaç Vakti: ${r.med.name}`, `İlaç Vakti: ${r.med.name} alma zamanınız geldi (${currentHM}).`, `vita-med-${r.med.id}-${currentHM}`));
+      }
     }
+    window.checkAndFireScheduledNotifications = checkAndFireScheduledNotifications;
 
     function startNotificationScheduler() {
       if (notificationSchedulerInterval) clearInterval(notificationSchedulerInterval);

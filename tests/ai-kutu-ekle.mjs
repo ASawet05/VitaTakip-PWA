@@ -106,7 +106,11 @@ await feed('addSupAiPhotoInput'); await sleep(3500);
 const u1 = await p.evaluate(() => ({ btns: Array.from(document.querySelectorAll('#addSupAiResultCard button')).map(x => x.innerText.trim()), warn: document.querySelector('#addSupAiResultCard .vita-ai-card-warn')?.innerText || '' }));
 log('Takviye ekle: pencere yeniden açılınca eski sonuç kartı temizlenir', cardReset);
 log('Takviye ekle: ilaç tanınınca uyarı ve "İlaç listeme ekle" önerilir', /ilaç/.test(u1.warn) && u1.btns[0] === 'İlaç listeme ekle', JSON.stringify(u1));
-await p.evaluate(() => document.querySelector('#addSupAiResultCard .vita-ai-act-med').click()); await sleep(1200);
+// "İlaç listeme ekle" sade İlaç ekle penceresini adı dolu açar; kullanıcı alım saatini seçip kaydeder.
+await p.evaluate(() => document.querySelector('#addSupAiResultCard .vita-ai-act-med').click()); await sleep(600);
+const medModal = await p.evaluate(() => ({ open: !document.getElementById('addMedicationModal').classList.contains('hidden'), name: document.getElementById('addMedName').value }));
+log('Takviye penceresindeki "İlaç listeme ekle" İlaç ekle penceresini adı dolu açar', medModal.open && medModal.name === 'Glucophage 1000 mg', JSON.stringify(medModal));
+await p.evaluate(() => commitAddMedication()); await sleep(800);
 const u2 = await p.evaluate(() => ({ meds: JSON.stringify(state.user.medications || []) + JSON.stringify(state.user.chronic || []) + JSON.stringify(state.user.prescriptionDrugRecords || []), closed: document.getElementById('addSupplementModal').classList.contains('hidden'), sups: state.supplements.some(s => /Glucophage/.test(s.name)) }));
 log('Takviye ekle: "İlaç listeme ekle" ilacı tanınan dozuyla (1000 mg) ilaç listesine işler, takviyelere eklemez', /"Glucophage 1000 mg"/.test(u2.meds) && !/Glucophage 850/.test(u2.meds) && /metformin/.test(u2.meds) && u2.closed && !u2.sups, u2.meds.slice(0, 200));
 

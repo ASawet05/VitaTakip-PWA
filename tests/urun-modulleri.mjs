@@ -90,21 +90,21 @@ log('Gemini "emin değilim" derse ürün uydurulmaz', g4 === false);
 await p.evaluate(() => { clearGeminiApiKeyFromSettings(); localStorage.removeItem(`vita_ai_consent_${activeUserId}`); navigateToView('view-home'); });
 
 /* 6) Sade İlaç ekle: yalnızca ilaç kataloğu, sıklık, "Ben bu ilacı kullanıyorum" */
-await p.evaluate(() => document.getElementById('btnOpenMedicationScannerModal').click()); await sleep(400);
+await p.evaluate(() => document.getElementById('btnOpenAddMedication').click()); await sleep(400);
 const m0 = await p.evaluate(() => ({ open: !document.getElementById('addMedicationModal').classList.contains('hidden'), oldClosed: document.getElementById('barcodeScannerModal').classList.contains('hidden'), btn: document.getElementById('btnCommitAddMedication').innerText.trim() }));
-log('İlaç çekmecesindeki düğme sade "İlaç ekle" penceresini açar', m0.open && m0.oldClosed && m0.btn === 'Ben bu ilacı kullanıyorum', JSON.stringify(m0));
+log('"Bugünkü ilaçlarım" kartındaki "İlaç Ekle" sade ilaç penceresini açar', m0.open && m0.oldClosed && m0.btn === 'Ben bu ilacı kullanıyorum', JSON.stringify(m0));
 await p.type('#addMedSearchInput', 'euthy'); await sleep(300);
 const m1 = await p.evaluate(() => Array.from(document.querySelectorAll('#addMedSuggest b')).map(x => x.textContent));
 log('İlaç penceresi araması yalnızca ilaçları getirir', m1.length > 0 && m1.every(x => /Euthyrox/i.test(x)), JSON.stringify(m1));
 await p.evaluate(() => document.querySelector('#addMedSuggest [data-med-pick]').click()); await sleep(200);
 await p.evaluate(() => { const f = document.getElementById('addMedFrequency'); f.value = 'gunde2'; f.dispatchEvent(new Event('change')); });
-const ui2 = await p.evaluate(() => ({ time: document.getElementById('addMedTimeField').classList.contains('hidden'), hint: document.getElementById('addMedScheduleHint').innerText }));
+const ui2 = await p.evaluate(() => ({ clocks: Array.from(document.querySelectorAll('#addMedClocks input')).map(i => i.value), hint: document.getElementById('addMedScheduleHint').innerText }));
 await p.evaluate(() => commitAddMedication()); await sleep(500);
 const m2 = await p.evaluate(() => {
   const med = state.medications.find(m => /Euthyrox/.test(m.name));
   return { med, stored: JSON.parse(localStorage.getItem(`vitatakip_medications_${activeUserId}`) || '[]').some(m => /Euthyrox/.test(m.name)), names: state.user.medications, rec: (state.user.prescriptionDrugRecords || []).find(r => /Euthyrox/.test(r.urunAdi)), closed: document.getElementById('addMedicationModal').classList.contains('hidden') };
 });
-log('"Ben bu ilacı kullanıyorum" ilacı ayrı ilaç kaydına (vitatakip_medications_) sıklığıyla kaydeder', m2.med && m2.med.frequency === 'gunde2' && m2.med.times.join() === 'Sabah,Akşam' && m2.stored && m2.closed && ui2.time && /Sabah ve akşam/.test(ui2.hint), JSON.stringify(m2.med));
+log('"Ben bu ilacı kullanıyorum" ilacı ayrı ilaç kaydına (vitatakip_medications_) sıklığıyla kaydeder', m2.med && m2.med.frequency === 'gunde2' && m2.med.clocks.join() === '09:00,20:00' && m2.med.times.join() === 'Sabah,Akşam' && m2.stored && m2.closed && ui2.clocks.join() === '09:00,20:00' && /ayrı ayrı/.test(ui2.hint), JSON.stringify(m2.med));
 log('Etkileşim motoru için profil ilaç alanları ilaç listesinden üretilir (günde 2 doz)', m2.names.includes(m2.med.name) && m2.rec && m2.rec.gunlukDoz === 2 && /Levotiroksin/i.test(m2.rec.etkenMadde || ''), JSON.stringify({ rec: m2.rec?.urunAdi, doz: m2.rec?.gunlukDoz }));
 
 // Barkodla katalogdan, bilinmeyen barkodu elle (haftalık, bugün) ekle → ilaç önbelleğine öğrenilir
@@ -117,7 +117,7 @@ await p.evaluate(() => closeAddMedicationModal());
 await p.evaluate(() => openAddMedicationModal()); await sleep(200);
 await p.evaluate(() => lookupAddMedBarcode('8699999999994')); await sleep(500);
 const m4 = await p.evaluate(() => document.getElementById('addMedStatus').innerText);
-await p.evaluate(() => { document.getElementById('addMedName').value = 'Testilaç 5 mg'; const f = document.getElementById('addMedFrequency'); f.value = 'haftada1'; f.dispatchEvent(new Event('change')); document.getElementById('addMedWeekday').value = String(new Date().getDay()); document.getElementById('addMedTime').value = 'Akşam'; commitAddMedication(); }); await sleep(400);
+await p.evaluate(() => { document.getElementById('addMedName').value = 'Testilaç 5 mg'; const f = document.getElementById('addMedFrequency'); f.value = 'haftada1'; f.dispatchEvent(new Event('change')); document.getElementById('addMedWeekday').value = String(new Date().getDay()); document.querySelector('#addMedClocks input').value = '20:30'; commitAddMedication(); }); await sleep(400);
 const m5 = await p.evaluate(() => ({ med: JSON.parse(localStorage.getItem('vita_custom_medication_barcodes') || '{}')['8699999999994'], sup: JSON.parse(localStorage.getItem('vita_custom_supplement_barcodes') || '{}')['8699999999994'] }));
 log('Bulunamayan ilaç barkodu: dış kataloğa sorulmaz; elle eklenince YALNIZCA ilaç önbelleğine öğrenilir', /ilaç listesinde yok/.test(m4) && NET.off.length === 0 && m5.med?.urunAdi === 'Testilaç 5 mg' && !m5.sup, JSON.stringify(m5));
 const m6 = await p.evaluate(async () => { const r = await lookupVitaBarcode('medication', '8699999999994'); return { src: r.source, name: r.item?.urunAdi, inSup: (await lookupVitaBarcode('supplement', '8699999999994', { ai: false, openFacts: false })).found }; });
@@ -130,17 +130,17 @@ const t1 = await p.evaluate(() => ({
   rows: Array.from(document.querySelectorAll('#todayMedsList .vtm-row')).map(r => r.innerText.replace(/\s+/g, ' ').trim()),
   counter: document.getElementById('todayMedsCounter').innerText, note: document.getElementById('todayMedsNote').innerText
 }));
-log('Kart görünür: Euthyrox sabah + akşam, haftalık ilaç (bugün) akşam; "gerektiğinde" listede değil, notta', t1.visible && t1.rows.length === 3 && t1.rows.filter(r => /Euthyrox/.test(r)).length === 2 && t1.rows.some(r => /Testilaç/.test(r) && /Akşam/.test(r)) && !t1.rows.some(r => /Parol/.test(r)) && /Gerektiğinde: Parol/.test(t1.note) && t1.counter === '0/3 alındı', JSON.stringify(t1));
-await p.evaluate(() => document.querySelector('#todayMedsList input[data-dose="Sabah"]').click()); await sleep(300);
+log('Kart görünür: Euthyrox 09:00 + 20:00, haftalık ilaç (bugün) 20:30; "gerektiğinde" listede değil, notta', t1.visible && t1.rows.length === 3 && t1.rows.filter(r => /Euthyrox/.test(r)).length === 2 && t1.rows.some(r => /Testilaç/.test(r) && /20:30/.test(r)) && !t1.rows.some(r => /Parol/.test(r)) && /Gerektiğinde: Parol/.test(t1.note) && t1.counter === '0/3 alındı', JSON.stringify(t1));
+await p.evaluate(() => document.querySelector('#todayMedsList input[data-dose="09:00"]').click()); await sleep(300);
 const t2 = await p.evaluate(() => { const saved = JSON.parse(localStorage.getItem(`vitatakip_med_taken_${activeUserId}`)); return { counter: document.getElementById('todayMedsCounter').innerText, saved, today: saved?.date === vitaLocalToday() }; });
 log('Onay kutusuyla doz "alındı" işaretlenir ve kaydedilir', t2.counter === '1/3 alındı' && t2.today, JSON.stringify(t2).slice(0, 160));
 await p.reload({ waitUntil: 'networkidle2' }); await sleep(2500);
 await p.evaluate(() => { try { closeProfileModal(); } catch (e) {} try { finishVitaSpotlightTour(true); } catch (e) {} });
-const t3 = await p.evaluate(() => ({ counter: document.getElementById('todayMedsCounter').innerText, checked: document.querySelector('#todayMedsList input[data-dose="Sabah"]')?.checked, meds: state.medications.length }));
+const t3 = await p.evaluate(() => ({ counter: document.getElementById('todayMedsCounter').innerText, checked: document.querySelector('#todayMedsList input[data-dose="09:00"]')?.checked, meds: state.medications.length }));
 log('Sayfa yenilenince ilaçlar ve bugünkü işaretler korunur', t3.counter === '1/3 alındı' && t3.checked === true && t3.meds === 3, JSON.stringify(t3));
 await p.evaluate(() => { const k = `vitatakip_med_taken_${activeUserId}`; const v = JSON.parse(localStorage.getItem(k)); v.date = '2000-01-01'; localStorage.setItem(k, JSON.stringify(v)); state.medTaken = v; document.dispatchEvent(new Event('visibilitychange')); });
 await sleep(300);
-const t4 = await p.evaluate(() => ({ counter: document.getElementById('todayMedsCounter').innerText, checked: document.querySelector('#todayMedsList input[data-dose="Sabah"]')?.checked, date: state.medTaken.date === vitaLocalToday() }));
+const t4 = await p.evaluate(() => ({ counter: document.getElementById('todayMedsCounter').innerText, checked: document.querySelector('#todayMedsList input[data-dose="09:00"]')?.checked, date: state.medTaken.date === vitaLocalToday() }));
 log('Gün değişince (00:00) "alındı" işaretleri sıfırlanır, ilaçlar kalır', t4.counter === '0/3 alındı' && t4.checked === false && t4.date, JSON.stringify(t4));
 const timer = await p.evaluate(() => typeof scheduleVitaMidnightRefresh === 'function' && /setTimeout/.test(String(scheduleVitaMidnightRefresh)));
 log('Uygulama açıkken gece yarısı için zamanlayıcı kurulur', timer);

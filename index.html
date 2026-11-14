@@ -24,11 +24,11 @@
 <!-- Uses Inter when already available; otherwise falls back immediately to the system UI font. -->
 <!-- Font Awesome 6 CDN -->
 <!-- build:css -->
-<link rel="stylesheet" href="./css/app.css?v=65943b6bb2">
-<script defer src="./js/app.1.js?v=65943b6bb2"></script>
-<script defer src="./js/app.2.js?v=65943b6bb2"></script>
-<script defer src="./js/app.3.js?v=65943b6bb2"></script>
-<script defer src="./js/app.4.js?v=65943b6bb2"></script>
+<link rel="stylesheet" href="./css/app.css?v=444b1399fa">
+<script defer src="./js/app.1.js?v=444b1399fa"></script>
+<script defer src="./js/app.2.js?v=444b1399fa"></script>
+<script defer src="./js/app.3.js?v=444b1399fa"></script>
+<script defer src="./js/app.4.js?v=444b1399fa"></script>
 <!-- /build:css -->
 <!-- Chart.js loads only if a trend chart is needed. -->
 <!-- PDF.js loads only when a user selects a PDF for analysis. -->
@@ -79,8 +79,11 @@
 <!-- Çekmece Profil Kartı (Aktif Kullanıcı — Tıklanınca Düzenleme Açar) -->
 <div class="p-3.5 mx-4 mt-2.5 rounded-2xl bg-navy-800/90 border border-slate-700 cursor-pointer hover:border-teal-400/50 transition group" onclick="closeAppDrawer(); openProfileModal(true)" title="Profil Bilgilerinizi Düzenleyin">
 <div class="flex items-center gap-3">
-<div class="w-10 h-10 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center justify-center font-bold text-sm flex-shrink-0" id="drawerUserAvatar">
+<div class="vpf-wrap">
+<div class="w-10 h-10 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center justify-center font-bold text-sm flex-shrink-0 overflow-hidden" id="drawerUserAvatar">
 <i class="fa-solid fa-user"></i>
+</div>
+<button type="button" class="vpf-edit" aria-label="Profil fotoğrafını değiştir" title="Profil fotoğrafı" onclick="VitaProfilePhoto.pick(event)"><i class="fa-solid fa-camera" aria-hidden="true"></i></button>
 </div>
 <div class="min-w-0 flex-1">
 <div class="flex items-center justify-between">
@@ -115,6 +118,17 @@
 <i class="fa-solid fa-file-waveform text-rose-400 w-5 text-center text-sm"></i>
 <span>Doktora Götürülecek Rapor</span>
 </button>
+<div class="pt-2.5 mt-2 border-t border-navy-800/90 space-y-1" id="drawerSectionMedsSupps">
+<div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 py-1">İlaçlar &amp; Takviyeler</div>
+<button class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-200 hover:text-white hover:bg-navy-800 transition text-left cursor-pointer" id="drawer-add-supplement" onclick="closeAppDrawer(); navigateToView('view-home'); openAddSupplementModal()" type="button">
+<i class="fa-solid fa-capsules text-emerald-400 w-5 text-center text-sm" aria-hidden="true"></i>
+<span>+ Takviye Ekle</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-200 hover:text-white hover:bg-navy-800 transition text-left cursor-pointer" id="drawer-add-medication" onclick="closeAppDrawer(); navigateToView('view-home'); openAddMedicationModal()" type="button">
+<i class="fa-solid fa-prescription-bottle-medical text-indigo-300 w-5 text-center text-sm" aria-hidden="true"></i>
+<span>+ İlaç Ekle</span>
+</button>
+</div>
 <div class="pt-2.5 mt-2 border-t border-navy-800/90 space-y-1">
 <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 py-1">Yönetim &amp; Araçlar</div>
 <button class="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl text-slate-200 hover:text-white hover:bg-navy-800 transition text-left cursor-pointer" id="drawer-nav-view-settings" onclick="navigateToView('view-settings')" type="button">
@@ -242,7 +256,7 @@
 </div>
 <div class="relative" id="headerProfileMenuWrapper">
 <button aria-expanded="false" aria-haspopup="menu" class="flex items-center gap-1.5 bg-navy-800 hover:bg-slate-800 text-slate-200 px-2.5 sm:px-3 h-10 rounded-xl border border-slate-700 transition text-xs font-medium cursor-pointer" id="headerProfileButton" onclick="if(window.SoundEffects) SoundEffects.playClick(); toggleHeaderProfileMenu(event)" type="button">
-<div class="w-6 h-6 rounded-full bg-teal-500/20 text-teal-300 flex items-center justify-center font-bold text-[11px] flex-shrink-0" id="headerUserAvatar">
+<div class="w-6 h-6 rounded-full bg-teal-500/20 text-teal-300 flex items-center justify-center font-bold text-[11px] flex-shrink-0 overflow-hidden" id="headerUserAvatar">
 <i class="fa-solid fa-user"></i>
 </div>
 <span class="font-bold text-white text-xs hidden md:inline truncate max-w-[90px]" id="headerUserName">Kullanıcı</span>
@@ -374,11 +388,6 @@
 <button aria-hidden="true" class="hidden px-3.5 py-1.5 rounded-xl text-xs font-bold bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-300 transition items-center gap-1.5 cursor-pointer shadow-sm" id="btnHomeScanSupplementBarcode" onclick="if(window.SoundEffects) SoundEffects.playClick(); openAddSupplementModal()" style="display:none !important" title="Kamerayla barkod okutarak veya kutu fotoğrafı yükleyerek yalnızca vitamin ve gıda takviyesi ekle" type="button">
 <i class="fa-solid fa-barcode text-sky-700"></i> <span>Barkod ile Takviye Ekle</span>
 </button>
-<button class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 transition flex items-center gap-1.5 cursor-pointer shadow-sm" id="btnQuickMedShieldTrigger" onclick="if(window.SoundEffects) SoundEffects.playClick(); toggleMedShieldDrawer(true)" title="Gerçek Zamanlı İlaç–Besin Etkileşim Kalkanını Aç / İlaç Seç" type="button">
-<i class="fa-solid fa-circle-exclamation text-rose-600"></i>
-<span>İlaç Kalkanı</span>
-<span class="px-1.5 py-0.2 rounded-full bg-white text-[10px] font-black text-rose-700 border border-amber-200" id="headerMedShieldCountBadge">0</span>
-</button>
 </div>
 </div>
 <!-- Günlük Protokol İçi Canlı İlaç-Besin Etkileşim Uyarısı (Yalnızca Çakışma Varsa Görünür) -->
@@ -386,46 +395,20 @@
 <!-- Bugün Alınması Gereken Takviyeler Listesi (Doğrudan Üstte) -->
 <div class="mt-4 space-y-4" id="supplementChecklistContainer"></div>
 </div>
-<!-- İlaç modülü: bugün alınması gereken ilaçlar (gece 00:00'da sıfırlanır) -->
-<section class="hidden vtm-card" id="todayMedsCard" aria-labelledby="todayMedsTitle">
-<div class="vtm-head">
-<h2 id="todayMedsTitle"><i class="fa-solid fa-prescription-bottle-medical" aria-hidden="true"></i> Bugün Alınması Gereken İlaçlar</h2>
+<!-- Bugünkü ilaçlarım: takviye kartıyla aynı düzen; "Aldım" işaretleri her gece 00:00'da sıfırlanır. Etkileşim denetimi arka planda (Emniyet Kalkanı). -->
+<div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200/80 vtm-card" id="todayMedsCard">
+<div class="flex items-start justify-between gap-3 pb-4 border-b border-slate-100">
+<div class="min-w-0">
+<h2 class="text-base font-bold text-navy-900 flex items-center gap-2" id="todayMedsTitle"><i class="fa-solid fa-prescription-bottle-medical text-indigo-600" aria-hidden="true"></i> Bugünkü ilaçlarım</h2>
+<p class="text-[11px] text-slate-500 mt-0.5">Aldıklarınızı işaretleyin. Liste her gün 00:00'da yenilenir.</p>
+</div>
+<button class="shrink-0 px-3.5 py-1.5 min-h-10 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm" id="btnOpenAddMedication" onclick="openAddMedicationModal()" type="button"><i class="fa-solid fa-plus text-indigo-200" aria-hidden="true"></i> <span>İlaç Ekle</span></button>
+</div>
 <span class="vtm-counter" id="todayMedsCounter" aria-live="polite"></span>
-</div>
-<ul class="vtm-list" id="todayMedsList"></ul>
+<div class="mt-4 space-y-4" id="todayMedsList"></div>
 <p class="hidden vtm-note" id="todayMedsNote"></p>
-<button class="vtm-add" onclick="openAddMedicationModal()" type="button"><i class="fa-solid fa-plus" aria-hidden="true"></i> İlaç ekle</button>
-</section>
-<!-- Alt Açılır Çekmece: Gerçek Zamanlı İlaç–Besin Etkileşim Kalkanı (En Alt Kısımda, Kalabalık Yapmayan Çekmece) -->
-<!-- İlaç kontrolü (ilaç–besin etkileşim kalkanı): sade çekmece -->
-<details class="vsd" id="dailyProtocolMedicationsDrawer">
-<summary class="vsd-sum">
-<span class="vsd-ico" id="medShieldDrawerIconBox"><i class="fa-solid fa-shield-heart" aria-hidden="true"></i></span>
-<span class="vsd-title">
-<b>İlaç kontrolü</b>
-<small id="medShieldDrawerSummarySubtext">Kullandığınız ilaçlar takviyelerinizle karşılaştırılır.</small>
-</span>
-<span class="vsd-cta"><i class="fa-solid fa-prescription-bottle-medical" aria-hidden="true"></i> İlaç ekle</span>
-<i class="fa-solid fa-chevron-down vsd-chev" aria-hidden="true"></i>
-</summary>
-<div class="vsd-body" id="dailyProtocolMedicationsBar">
-<!-- Ekle: ad yaz veya barkod okut -->
-<div class="vsd-add">
-<div class="vsd-input">
-<i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-<input autocomplete="off" id="quickAddMedInput" inputmode="search" onkeydown="if(event.key==='Enter'){event.preventDefault(); addQuickMedicationFromInput();}" oninput="vsMedSearch(this.value)" placeholder="İlaç adı yazın (Örn: Euthyrox, Glucophage)" type="text"/>
-</div>
-<button class="vsd-btn vsd-btn-scan" id="btnOpenMedicationScannerModal" onclick="openAddMedicationModal(document.getElementById('quickAddMedInput')?.value || '')" type="button" aria-label="İlaç ekle (barkod, ad veya kutu fotoğrafı)"><i class="fa-solid fa-barcode"></i><span>Barkod</span></button>
-</div>
-<div class="vsd-suggest hidden" id="vsMedSuggest" role="listbox"></div>
-<!-- Seçili ilaç grupları -->
-<div class="vsd-label">Kullandığım ilaçlar</div>
-<div class="flex flex-wrap gap-1.5" id="dailyProtocolQuickMedChips"></div>
-<!-- Etkileşim sonucu -->
 <div class="hidden" id="drugDepletionMiniModal" role="region" aria-label="İlaç-vitamin tüketim analizi"></div>
-<div class="vsd-legacy" aria-hidden="true"><span id="dailyProtocolDbStatusBadge"></span></div>
 </div>
-</details>
 </div>
 <!-- Sağ Sütun: Emilim, Hidrasyon & Aktif Profil -->
 <details class="space-y-4 rounded-2xl border border-slate-200 bg-white p-4">
@@ -2393,6 +2376,14 @@ Verileri Sil
 <p><strong>Hesabınız oluşturuldu.</strong> Devam etmek için temel profil bilgilerinizi tamamlayın. Bu adım, kişisel özetlerin ve güvenlik kontrollerinin doğru gösterilmesine yardımcı olur.</p>
 </div>
 <div class="mt-6 space-y-4 text-xs">
+<div class="vpf-row" id="profilePhotoRow">
+<div class="vpf-preview" id="profilePhotoPreview"><i class="fa-solid fa-user" aria-hidden="true"></i></div>
+<div class="vpf-actions">
+<b>Profil fotoğrafı <small>(isteğe bağlı)</small></b>
+<div class="vpf-btns"><button type="button" class="vpf-btn" onclick="VitaProfilePhoto.pick(event)"><i class="fa-solid fa-camera" aria-hidden="true"></i> Fotoğraf seç</button><button type="button" class="vpf-btn vpf-btn-rm hidden" id="btnRemoveProfilePhoto" onclick="VitaProfilePhoto.remove(event)">Kaldır</button></div>
+<small class="vpf-note">Yalnızca bu cihazda saklanır, hiçbir sunucuya gönderilmez.</small>
+</div>
+</div>
 <div>
 <label class="font-bold text-slate-700 block mb-1">Adınız / Rumuzunuz <span class="text-rose-500">*</span></label>
 <input class="w-full font-semibold px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-teal-500" id="modalInputName" placeholder="Örn: Ayşe Yılmaz" type="text"/>
@@ -2564,19 +2555,14 @@ Verileri Sil
 <label class="vsa-field"><span>Kullanım sıklığı</span>
 <select id="addMedFrequency" onchange="updateAddMedFrequencyUI()">
 <option value="gunde1">Günde 1 kez</option>
-<option value="gunde2">Günde 2 kez (sabah–akşam)</option>
-<option value="gunde3">Günde 3 kez (sabah–öğle–akşam)</option>
+<option value="gunde2">Günde 2 kez</option>
+<option value="gunde3">Günde 3 kez</option>
 <option value="haftada1">Haftada 1 kez</option>
 <option value="gerektiginde">Gerektiğinde</option>
 </select></label>
-<label class="vsa-field" id="addMedTimeField"><span>Ne zaman?</span>
-<select id="addMedTime">
-<option value="Sabah">Sabah</option>
-<option value="Öğle">Öğle</option>
-<option value="Akşam">Akşam</option>
-<option value="Gece">Gece</option>
-</select></label>
 </div>
+<div class="vsa-field" id="addMedTimeField"><span id="addMedClocksLabel">Alım saati</span>
+<div class="vam-clocks" id="addMedClocks"></div></div>
 <label class="hidden vsa-field" id="addMedWeekdayField"><span>Hangi gün?</span>
 <select id="addMedWeekday">
 <option value="1">Pazartesi</option>
@@ -2588,6 +2574,7 @@ Verileri Sil
 <option value="0">Pazar</option>
 </select></label>
 <p class="hidden vam-hint" id="addMedScheduleHint"></p>
+<p class="hidden vam-notif" id="addMedNotifHint"><i class="fa-solid fa-bell" aria-hidden="true"></i> <span>Saatinde "İlaç Vakti" hatırlatması için bildirimleri açın.</span> <button type="button" onclick="toggleBrowserNotifications().then(() => updateAddMedFrequencyUI())">Bildirimleri aç</button></p>
 <label class="vsa-field"><span>Barkod <small>(isteğe bağlı)</small></span>
 <input autocomplete="off" id="addMedBarcode" inputmode="numeric" maxlength="32" placeholder="Taranınca otomatik dolar" type="text"/></label>
 </div>
@@ -3053,5 +3040,6 @@ Verileri Sil
 <!-- build:js -->
 <!-- Betikler <head> içinde defer ile yüklenir (yukarıdaki build:css bloğu). -->
 <!-- /build:js -->
+<input accept="image/*" class="hidden" id="profilePhotoInput" onchange="VitaProfilePhoto.onFile(event)" type="file" aria-hidden="true" tabindex="-1"/>
 </body>
   </html>

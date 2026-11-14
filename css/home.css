@@ -330,3 +330,36 @@
 .vds-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .vds-grid > div{padding:12px !important}
 .vds-foot{margin:10px 2px 0;font-size:10.5px;color:#64748b}
+/* "Bugünkü ilaçlarım": takviye kartıyla aynı düzen */
+#todayMedsCard.vtm-card{margin-top:0;background:#fff;border-color:rgba(226,232,240,.8)}
+#todayMedsCard .vtm-counter{display:inline-block;margin-top:10px}
+#todayMedsCard .vtm-counter.hidden{display:none}
+#todayMedsCard .vtm-row{display:block;padding:10px 12px}
+#todayMedsCard .vtm-row input[type=checkbox]{accent-color:#4f46e5}
+#todayMedsCard .vsc-main{cursor:pointer}
+.vtm-empty{padding:12px;border:1px dashed #c7d2fe;border-radius:14px;background:#f8fafc;font-size:12px;color:#475569;text-align:center}
+.vtm-empty i{color:#6366f1;margin-right:4px}
+/* İlaç ekle: alım saatleri + bildirim önerisi */
+.vam-clocks{display:flex;flex-wrap:wrap;gap:8px}
+.vam-clock{flex:1 1 90px;display:flex;flex-direction:column;gap:3px;font-size:10.5px;font-weight:800;color:#64748b}
+.vam-clock input{height:42px;padding:0 10px;border:1.5px solid #e2e8f0;border-radius:12px;background:#f8fafc;font-size:16px;font-weight:800;color:#0f172a}
+.vam-clock input:focus{outline:none;border-color:#6366f1;background:#fff}
+.vsa-field.hidden,#addMedTimeField.hidden{display:none}
+.vam-notif{margin:0;padding:8px 10px;border-radius:12px;background:#eef2ff;border:1px solid #c7d2fe;font-size:11.5px;color:#3730a3;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.vam-notif.hidden{display:none}
+.vam-notif button{margin-left:auto;min-height:34px;padding:4px 10px;border-radius:10px;border:0;background:#4f46e5;color:#fff;font-size:11px;font-weight:900;cursor:pointer}
+/* Profil fotoğrafı */
+.vpf-wrap{position:relative;flex:0 0 auto}
+.vpf-edit{position:absolute;right:-4px;bottom:-4px;width:22px;height:22px;border-radius:999px;border:2px solid #0f172a;background:#14b8a6;color:#042f2e;font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.vpf-img{width:100%;height:100%;object-fit:cover;border-radius:999px;display:block}
+.vpf-has-photo{background:transparent !important;border-color:transparent !important}
+.vpf-row{display:flex;align-items:center;gap:14px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:16px;background:#f8fafc}
+.vpf-preview{flex:0 0 72px;width:72px;height:72px;border-radius:999px;overflow:hidden;background:#ccfbf1;color:#0f766e;display:flex;align-items:center;justify-content:center;font-size:26px;border:2px solid #fff;box-shadow:0 2px 8px rgba(15,23,42,.12)}
+.vpf-actions{min-width:0;display:flex;flex-direction:column;gap:6px}
+.vpf-actions b{font-size:12px;color:#0f172a}
+.vpf-actions b small{font-weight:600;color:#94a3b8}
+.vpf-btns{display:flex;flex-wrap:wrap;gap:6px}
+.vpf-btn{min-height:38px;padding:6px 12px;border-radius:10px;border:1px solid #14b8a6;background:#fff;color:#0f766e;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.vpf-btn-rm{border-color:#fecdd3;color:#be123c}
+.vpf-btn.hidden{display:none}
+.vpf-note{font-size:10.5px;color:#64748b}
