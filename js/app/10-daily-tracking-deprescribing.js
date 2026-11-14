@@ -1,4 +1,22 @@
-function renderDailyTab() {
+/* Takviye kartlarında açık bırakılan ayrıntı çekmeceleri (yeniden çizimde açık kalsın). */
+    var vitaOpenSupplementCards = new Set();
+    function toggleSupplementCardDetails(trigger) {
+      const card = trigger && trigger.closest ? trigger.closest(".vsc-card") : null;
+      if (!card) return;
+      const more = card.querySelector(".vsc-more");
+      const opening = !card.classList.contains("is-open");
+      card.classList.toggle("is-open", opening);
+      if (more) more.classList.toggle("hidden", !opening);
+      card.querySelectorAll(".vsc-main, .vsc-chev").forEach(el => el.setAttribute("aria-expanded", opening ? "true" : "false"));
+      const chev = card.querySelector(".vsc-chev");
+      if (chev) chev.setAttribute("aria-label", opening ? "Ayrıntıları gizle" : "Ayrıntıları göster");
+      const id = card.dataset.supId;
+      if (id) { if (opening) vitaOpenSupplementCards.add(id); else vitaOpenSupplementCards.delete(id); }
+      if (window.SoundEffects) SoundEffects.playClick();
+    }
+    window.toggleSupplementCardDetails = toggleSupplementCardDetails;
+
+    function renderDailyTab() {
       if (!state.user) return;
       // "Bugün Alınması Gereken İlaçlar" kartı (ilaç modülü) — diğer bölümlerden bağımsız, her yenilemede güncellenir.
       if (typeof renderTodayMedications === "function") { try { renderTodayMedications(); } catch (error) { console.warn("İlaç listesi çizilemedi:", error); } }
@@ -74,11 +92,12 @@ function renderDailyTab() {
 
           g.items.forEach(item => {
             const card = document.createElement("div");
-            card.className = `p-3.5 sm:p-4 rounded-2xl border transition-all ${
-              item.taken 
-                ? "bg-teal-50/70 border-teal-200" 
+            card.className = `vsc-card px-3 py-2.5 rounded-2xl border transition-all ${
+              item.taken
+                ? "bg-teal-50/70 border-teal-200"
                 : "bg-white border-slate-200 hover:border-slate-300 shadow-sm"
             }`;
+            card.dataset.supId = String(item.id);
 
             const bioStatus = getSupplementBiomarkerStatus(item);
             let deprescribingBadgeHtml = "";
@@ -203,40 +222,34 @@ function renderDailyTab() {
               </div>
             `;
 
+            /* Kartvizit görünümü: varsayılanda yalnızca onay kutusu, ad, saat/sıklık ve silme.
+               Stok, +Stok, günlük doz, kullanım talimatı, etkileşim ayrıntısı ve form seçici akordeonda.
+               Güvenlik uyarıları gizlenmez: başlıkta küçük işaret kalır; "yasaklı" uyarısı her zaman görünür. */
+            const isOpen = vitaOpenSupplementCards.has(String(item.id));
+            const headerFlags = [
+              isCriticalStock ? `<span class="vsc-flag vsc-flag-stock" title="Kritik stok: ${kalanGun} gün yetecek"><i class="fa-solid fa-triangle-exclamation"></i>${kalanGun}g</span>` : "",
+              itemInteractions.length ? `<span class="vsc-flag vsc-flag-ix" title="${itemInteractions.length} etkileşim uyarısı — ayrıntılar için dokunun"><i class="fa-solid fa-bolt"></i>${itemInteractions.length}</span>` : ""
+            ].join("");
             card.innerHTML = `
-              <div class="flex items-start justify-between gap-2 sm:gap-3">
-                <div class="flex items-start gap-2.5 sm:gap-3 min-w-0 flex-1">
-                  <input type="checkbox" ${item.taken ? "checked" : ""} onchange="if(window.SoundEffects) SoundEffects.playClick(); toggleSupplementStatus(${safeJsStringAttribute(item.id)})" class="mt-1 h-4 w-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer flex-shrink-0" title="İçtim / Alındı olarak işaretle">
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-center justify-between gap-2">
-                      <h5 class="min-w-0 flex-1 break-words text-xs font-black sm:text-sm ${item.taken ? 'line-through text-slate-400' : 'text-navy-900'}">${escapeHtmlText(item.name)}</h5>
-                      ${criticalWarningIconHtml}
-                    </div>
-                    <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1">
-                      <span class="text-[10px] text-sky-800 font-bold bg-sky-50 px-2 py-0.5 rounded border border-sky-200"><i class="fa-regular fa-clock mr-1"></i>${escapeHtmlText(getSupplementTimeLabel(item))}</span>
-                      <span class="text-[10px] text-slate-600 bg-slate-50 px-2 py-0.5 rounded border border-slate-200"><i class="fa-regular fa-calendar mr-1"></i>${escapeHtmlText(getSupplementScheduleDaysLabel(item))}</span>
-                    </div>
-                    ${misanthaStockBarHtml}
-                    ${item.instruction ? `
-                      <div class="mt-2">
-                        <button type="button" aria-expanded="false" onclick="if(window.SoundEffects) SoundEffects.playClick(); const info=this.nextElementSibling; const opening=info.classList.contains('hidden'); info.classList.toggle('hidden'); this.setAttribute('aria-expanded', String(opening));" class="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-300">
-                          <i class="fa-solid fa-circle-exclamation text-amber-600" aria-hidden="true"></i>
-                          Kullanım bilgisi
-                        </button>
-                        <div class="hidden mt-2 rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-sm leading-relaxed text-slate-700">
-                          ${escapeHtmlText(item.instruction)}
-                        </div>
-                      </div>` : ''}
-                    ${itemInteractionHtml}
-                    ${deprescribingBadgeHtml}
-                    ${formSelectorHtml}
-                  </div>
-                </div>
-                <button onclick="if(window.SoundEffects) SoundEffects.playClick(); deleteSupplementItem(${safeJsStringAttribute(item.id)})" title="Listeden Çıkar" class="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg text-xs transition cursor-pointer">
-                  <i class="fa-solid fa-trash-can"></i>
+              <div class="vsc-row">
+                <input type="checkbox" ${item.taken ? "checked" : ""} onchange="if(window.SoundEffects) SoundEffects.playClick(); toggleSupplementStatus(${safeJsStringAttribute(item.id)})" class="h-5 w-5 rounded text-teal-600 focus:ring-teal-500 cursor-pointer flex-shrink-0" title="İçtim / Alındı olarak işaretle" aria-label="${escapeHtmlText(item.name)} alındı">
+                <button type="button" class="vsc-main" aria-expanded="${isOpen ? "true" : "false"}" aria-controls="vscMore_${escapeHtmlText(item.id)}" onclick="toggleSupplementCardDetails(this)">
+                  <span class="vsc-name ${item.taken ? 'line-through text-slate-400' : 'text-navy-900'}">${escapeHtmlText(item.name)}</span>
+                  <span class="vsc-meta"><i class="fa-regular fa-clock"></i>${escapeHtmlText(getSupplementTimeLabel(item))} · ${escapeHtmlText(getSupplementScheduleDaysLabel(item))}${headerFlags}</span>
                 </button>
+                ${criticalWarningIconHtml}
+                <button type="button" class="vsc-chev" aria-label="Ayrıntıları ${isOpen ? "gizle" : "göster"}" aria-expanded="${isOpen ? "true" : "false"}" onclick="toggleSupplementCardDetails(this)"><i class="fa-solid fa-chevron-down"></i></button>
+                <button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); deleteSupplementItem(${safeJsStringAttribute(item.id)})" title="Listeden Çıkar" aria-label="${escapeHtmlText(item.name)} listeden çıkar" class="vsc-del"><i class="fa-solid fa-trash-can"></i></button>
+              </div>
+              ${deprescribingBadgeHtml}
+              <div class="vsc-more${isOpen ? "" : " hidden"}" id="vscMore_${escapeHtmlText(item.id)}">
+                ${misanthaStockBarHtml}
+                ${item.instruction ? `<p class="vsc-instruction"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> ${escapeHtmlText(item.instruction)}</p>` : ""}
+                ${itemInteractionHtml}
+                ${formSelectorHtml}
               </div>
             `;
+            if (isOpen) card.classList.add("is-open");
             groupEl.appendChild(card);
           });
           checklistContainer.appendChild(groupEl);
@@ -690,13 +703,64 @@ function renderDailyTab() {
         }
       }
       if (hungerInput && item.aclikDurumu) {
-        hungerInput.value = item.aclikDurumu;
+        setVitaSelectValueLoose(hungerInput, item.aclikDurumu);
       }
+      const unitSelect = document.getElementById("manualSupDoseUnit");
+      if (unitSelect) unitSelect.value = guessVitaDoseUnit(item.form || "");
 
       updateManualModalStockPreview(false);
+      updateVitaSupplementDosePreview();
       if (typeof updateModalLiveInteractionPreview === "function") {
         updateModalLiveInteractionPreview();
       }
+    }
+
+    /* Seçim kutusuna listede olmayan bir değer gelirse (ör. katalogdaki "Tok (Yağlı Kahvaltı İle)") seçenek olarak eklenir; bilgi kaybolmaz. */
+    function setVitaSelectValueLoose(select, value) {
+      const v = String(value || "").trim();
+      if (!select) return;
+      if (!v) { select.value = ""; return; }
+      const match = Array.from(select.options).find(o => o.value.toLocaleLowerCase("tr-TR") === v.toLocaleLowerCase("tr-TR"));
+      if (match) { select.value = match.value; return; }
+      const opt = document.createElement("option");
+      opt.value = v.slice(0, 60);
+      opt.textContent = v.slice(0, 60);
+      opt.dataset.dynamic = "true";
+      select.appendChild(opt);
+      select.value = opt.value;
+    }
+
+    /* Ürün formundan günlük miktar birimi tahmini (kullanıcı değiştirebilir). */
+    function guessVitaDoseUnit(form) {
+      const f = String(form || "").toLocaleLowerCase("tr-TR");
+      if (/damla/.test(f)) return "damla";
+      if (/sprey|puf/.test(f)) return "puf";
+      if (/saşe|sase/.test(f)) return "saşe";
+      if (/toz|ölçek|olcek/.test(f)) return "ölçek";
+      if (/şurup|surup|sıvı|sivi|shot|ml\b/.test(f)) return "mL";
+      if (/kapsül|kapsul|softgel|pellet/.test(f)) return "kapsül";
+      return "tablet";
+    }
+
+    /* "Günde 2 kapsül (1000 IU) · Tok karnına" — kullanıcının neyi nereye girdiğini anında gösterir. */
+    function getVitaSupplementDoseSummary() {
+      const daily = Math.max(1, parseInt(document.getElementById("manualSupDailyDose")?.value, 10) || 1);
+      const unit = document.getElementById("manualSupDoseUnit")?.value || "tablet";
+      const strength = String(document.getElementById("manualSupDose")?.value || "").trim();
+      const hunger = String(document.getElementById("manualSupHungerNote")?.value || "").trim();
+      return { daily, unit, strength, hunger, text: `Günde ${daily} ${unit}${strength ? ` (${strength})` : ""}${hunger ? ` · ${hunger}` : ""}` };
+    }
+    function updateVitaSupplementDosePreview() {
+      const preview = document.getElementById("manualSupDosePreview");
+      if (preview) preview.textContent = getVitaSupplementDoseSummary().text;
+    }
+    window.updateVitaSupplementDosePreview = updateVitaSupplementDosePreview;
+
+    /* Hazır şablonlarda doz hesaplanmaz; kayda kullanıcının girdiği günlük miktar yazılır. */
+    function vitaTemplateDoseText(templateText, gunlukDoz) {
+      if (templateText && !/Etiket \/ hekim planındaki|Günlük miktarı/.test(templateText)) return templateText;
+      const s = getVitaSupplementDoseSummary();
+      return `Günde ${Math.max(1, Number(gunlukDoz) || s.daily)} ${s.unit}${s.strength ? ` (${s.strength})` : ""}`;
     }
 
     function handleAddSupBarcodeDecoded(decodedText) {
@@ -1041,7 +1105,8 @@ function renderDailyTab() {
       if (brandActiveInput) brandActiveInput.value = "";
       if (formInput) formInput.value = "";
       if (doseInput) doseInput.value = "";
-      if (hungerInput) hungerInput.value = "";
+      if (hungerInput) { hungerInput.querySelectorAll("option[data-dynamic]").forEach(o => o.remove()); hungerInput.value = ""; }
+      const unitReset = document.getElementById("manualSupDoseUnit"); if (unitReset) unitReset.value = "tablet";
       if (timingSelect) timingSelect.value = "Sabah";
 
       const boxInput = document.getElementById("manualSupBoxCount");
@@ -1050,6 +1115,7 @@ function renderDailyTab() {
       if (boxInput) boxInput.value = "30";
       if (remInput) remInput.value = "30";
       if (dailyDoseInput) dailyDoseInput.value = "1";
+      updateVitaSupplementDosePreview();
       updateManualModalStockPreview(false);
 
       const catalogSelect = document.getElementById("modalCatalogSelect");
@@ -1161,7 +1227,9 @@ function renderDailyTab() {
         const name = (document.getElementById("manualSupName")?.value || "").trim();
         const brandActive = (document.getElementById("manualSupBrandActive")?.value || "").trim();
         const timing = document.getElementById("manualSupTiming")?.value || "Sabah";
-        const dose = (document.getElementById("manualSupDose")?.value || "").trim() || "Etiket / hekim planındaki miktarı girin";
+        // Günlük miktar açıkça: "Günde 2 kapsül (1000 IU)". Eski belirsiz "Etiket / hekim planındaki miktarı girin" yazısı kalktı.
+        const doseSummary = getVitaSupplementDoseSummary();
+        const dose = `Günde ${doseSummary.daily} ${doseSummary.unit}${doseSummary.strength ? ` (${doseSummary.strength})` : ""}`;
         const customForm = (document.getElementById("manualSupFormText")?.value || "").trim() || null;
         const hungerNote = (document.getElementById("manualSupHungerNote")?.value || "").trim();
         const barcodeVal = (document.getElementById("addSupBarcodeInput")?.value || "").trim() || null;
@@ -1184,6 +1252,7 @@ function renderDailyTab() {
           selectedForm: customForm,
           timing,
           doseText: hungerNote ? `${dose} • ${hungerNote}` : dose,
+          dozBirimi: doseSummary.unit,
           aclikDurumu: hungerNote || null,
           toplamKutuAdedi,
           kalanAdet,
@@ -1220,7 +1289,7 @@ function renderDailyTab() {
         const existing = state.supplements.find(s => s.formKey === catalogKey);
         if (existing) {
           existing.selectedForm = chosenForm;
-          existing.doseText = evaluated.doseText;
+          existing.doseText = vitaTemplateDoseText(evaluated.doseText, gunlukDoz);
           existing.subText = evaluated.subText;
           existing.timing = evaluated.timing;
           existing.instruction = evaluated.instruction;
@@ -1232,7 +1301,7 @@ function renderDailyTab() {
           state.supplements.push({
             id: `sup_cat_${Date.now()}`,
             name: cfg.name, formKey: catalogKey, selectedForm: chosenForm,
-            timing: evaluated.timing, doseText: evaluated.doseText,
+            timing: evaluated.timing, doseText: vitaTemplateDoseText(evaluated.doseText, gunlukDoz),
             toplamKutuAdedi, kalanAdet, gunlukDoz,
             subText: evaluated.subText, instruction: evaluated.instruction,
             addedDate: Date.now(), taken: false, scheduleDays, scheduledDate: todayIso

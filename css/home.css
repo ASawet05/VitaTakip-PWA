@@ -205,3 +205,65 @@
 .vam-hint{margin:-4px 0 0;font-size:11px;color:#4338ca;font-weight:700}
 .vam-hint.hidden,.vsa-field.hidden{display:none}
 .vam-foot{margin:8px 2px 0;font-size:10.5px;color:#64748b;line-height:1.4}
+/* Ana sayfa üst düğmeleri: tek satırda iki sütun */
+#homeHeroActions .vh-act{min-height:44px;font-size:11.5px}
+@media (min-width:640px){#homeHeroActions{grid-template-columns:repeat(2,minmax(170px,auto))}}
+/* Takviye kartları: kartvizit görünümü + ayrıntı çekmecesi */
+.vsc-card{position:relative}
+.vsc-row{display:flex;align-items:center;gap:8px;min-height:40px}
+.vsc-main{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:2px 0;border:0;background:none;text-align:left;cursor:pointer}
+.vsc-name{font-size:13px;font-weight:900;line-height:1.25;word-break:break-word}
+.vsc-meta{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:#0369a1}
+.vsc-meta .fa-clock{font-size:10px}
+.vsc-flag{display:inline-flex;align-items:center;gap:3px;padding:0 6px;border-radius:999px;font-size:10px;font-weight:900;line-height:16px}
+.vsc-flag-stock{background:#fee2e2;color:#991b1b}
+.vsc-flag-ix{background:#fef3c7;color:#92400e}
+.vsc-chev,.vsc-del{flex:0 0 32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:none;color:#94a3b8;cursor:pointer;font-size:12px}
+.vsc-chev:hover{background:#f1f5f9;color:#0f766e}
+.vsc-del:hover{background:#fff1f2;color:#e11d48}
+.vsc-chev i{transition:transform .2s}
+.vsc-card.is-open .vsc-chev i{transform:rotate(180deg)}
+.vsc-more{margin-top:6px;padding-top:6px;border-top:1px dashed #e2e8f0}
+.vsc-more.hidden{display:none}
+.vsc-more .misantha-stock-bar{margin-top:0}
+.vsc-instruction{margin:8px 0 0;padding:8px 10px;border-radius:10px;background:#fffbeb;border:1px solid #fde68a;font-size:12px;line-height:1.45;color:#334155}
+.vsc-instruction i{color:#d97706}
+@media (prefers-reduced-motion:reduce){.vsc-chev i{transition:none}}
+/* Takviye ekle: "Nasıl alacaksınız?" */
+.vsa-dose{margin:0;padding:10px 12px 12px;border:1.5px solid #99f6e4;border-radius:14px;background:#f0fdfa;display:flex;flex-direction:column;gap:8px;min-width:0}
+.vsa-dose legend{padding:0 6px;font-size:12px;font-weight:900;color:#115e59}
+.vsa-dose-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.vsa-dose-preview{margin:0;padding:6px 10px;border-radius:10px;background:#fff;border:1px solid #ccfbf1;font-size:12.5px;font-weight:900;color:#0f766e}
+.vsa-dose-note{margin:0;font-size:10.5px;color:#64748b}
+.vsa-field small{font-weight:600;color:#94a3b8}
+/* Ayarlar: katlanabilir bölümler */
+.vst-section .vst-head{border-bottom:0 !important;padding-bottom:0 !important}
+.vst-section.vst-open .vst-head{border-bottom:1px solid #f1f5f9 !important;padding-bottom:10px !important}
+.vst-title{margin:0;flex:1;min-width:0}
+.vst-toggle{width:100%;display:flex;align-items:center;gap:10px;padding:2px 0;border:0;background:none;text-align:left;cursor:pointer;color:inherit}
+.vst-ico{flex:0 0 28px;height:28px;border-radius:9px;background:#f1f5f9;display:flex;align-items:center;justify-content:center}
+.vst-ico i{font-size:13px}
+.vst-text{flex:1;min-width:0;display:flex;flex-direction:column}
+.vst-name{font-size:13.5px;font-weight:900;color:#0b1f3a}
+.vst-summary{font-size:11px;font-weight:700;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vst-summary:empty{display:none}
+.vst-chev{flex:0 0 auto;color:#94a3b8;font-size:12px;transition:transform .2s}
+.vst-open .vst-chev{transform:rotate(180deg)}
+.vst-body{margin-top:12px}
+.vst-body[hidden]{display:none}
+.vst-section{padding-top:12px !important;padding-bottom:12px !important}
+@media (prefers-reduced-motion:reduce){.vst-chev{transition:none}}
+/* Geri bildirim: direkt gönderim durumu */
+.vita-fb-status.hidden{display:none}
+.vita-fb-ok{background:#ecfdf5;border-color:#6ee7b7;color:#065f46;animation:vitaFbIn .25s ease-out both}
+.vita-fb-ok i{color:#059669}
+.vita-fb-error{background:#fff1f2;border-color:#fda4af;color:#9f1239;animation:vitaFbIn .25s ease-out both}
+.vita-fb-actions{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+.vita-fb-actions button{min-height:36px;padding:6px 11px;border-radius:10px;border:1px solid #fda4af;background:#fff;color:#9f1239;font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.vita-fb-actions button:hover{background:#ffe4e6}
+#btnSubmitVitaFeedback:disabled{opacity:.75;cursor:progress}
+@keyframes vitaFbIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.vita-fb-ok,.vita-fb-error{animation:none}}
+.vst-head{flex-wrap:nowrap !important}
+.vst-status{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px}
+.vst-status > div{display:flex;flex-wrap:wrap;gap:6px}

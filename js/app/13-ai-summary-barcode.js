@@ -1912,7 +1912,7 @@ window.VitaAIChat = VitaAIChat;
         const dateLabel = item.createdAt ? new Date(item.createdAt).toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" }) : "Tarih belirtilmemiş";
         const stars = "★".repeat(Math.max(1, Math.min(5, Number(item.rating) || 3)));
         return `<article class="rounded-xl border border-slate-200 bg-white p-3 vita-feedback-enter">
-          <div class="flex items-start justify-between gap-2"><div><p class="text-[11px] font-black text-navy-900">${escapeHtmlText(item.type || "Geri bildirim")} · ${escapeHtmlText(item.area || "Genel")}</p><p class="mt-0.5 text-[10px] text-slate-400">${escapeHtmlText(dateLabel)} · <span class="text-slate-500 font-bold">Cihazda kayıtlı</span></p></div><button type="button" onclick="deleteVitaFeedback(${safeJsStringAttribute(item.id)})" class="min-h-8 min-w-8 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-700" aria-label="Bu geri bildirimi sil"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button></div>
+          <div class="flex items-start justify-between gap-2"><div><p class="text-[11px] font-black text-navy-900">${escapeHtmlText(item.type || "Geri bildirim")} · ${escapeHtmlText(item.area || "Genel")}</p><p class="mt-0.5 text-[10px] text-slate-400">${escapeHtmlText(dateLabel)} · <span class="${item.delivered === "direct" ? "text-emerald-700" : "text-slate-500"} font-bold">${item.delivered === "direct" ? "Geliştiriciye iletildi" : item.delivered === "mailto" ? "E-posta uygulamasıyla" : "Cihazda kayıtlı"}</span></p></div><button type="button" onclick="deleteVitaFeedback(${safeJsStringAttribute(item.id)})" class="min-h-8 min-w-8 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-700" aria-label="Bu geri bildirimi sil"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button></div>
           <p class="mt-2 whitespace-pre-wrap break-words text-xs leading-relaxed text-slate-700">${escapeHtmlText(item.message || "")}</p><p class="mt-2 text-[10px] font-bold text-amber-600" aria-label="Kolaylık puanı ${Number(item.rating) || 3} / 5">${stars} <span class="text-slate-400">${Math.max(1, Math.min(5, Number(item.rating) || 3))}/5</span></p>
         </article>`;
       }).join("");
@@ -1920,6 +1920,8 @@ window.VitaAIChat = VitaAIChat;
 
     /* Geri bildirim alıcısı: arayüzde hiçbir yerde gösterilmez (yalnızca gönderim hedefi). */
     const VITA_DEVELOPER_FEEDBACK_EMAIL = "sxgsawet@gmail.com";
+    // Direkt gönderim: FormSubmit.co AJAX uç noktası (ilk gönderimde adrese gelen e-postayla bir kez etkinleştirilir).
+    const VITA_FEEDBACK_ENDPOINT = `https://formsubmit.co/ajax/${VITA_DEVELOPER_FEEDBACK_EMAIL}`;
     const VITA_FEEDBACK_APP_VERSION = "9.6.0";
     const VITA_FEEDBACK_MAX_ATTEMPTS = 8;
 
@@ -1969,23 +1971,118 @@ window.VitaAIChat = VitaAIChat;
         createdAt: new Date().toISOString()
       };
 
-      const entries = getVitaFeedbackEntries();
-      entries.unshift(entry);
-      if (!storeVitaFeedbackEntries(entries.slice(0, 100))) return;
-
-      sendVitaFeedbackViaEmailClient();
-
-      const form = document.getElementById("vitaFeedbackForm");
-      if (form) form.reset();
-      const count = document.getElementById("vitaFeedbackCount");
-      if (count) count.textContent = "0/800";
-      if (statusBox) {
-        statusBox.classList.remove("hidden");
-        statusBox.className = "rounded-xl p-3 text-xs font-bold border bg-teal-50 text-teal-900 border-teal-300";
-        statusBox.innerHTML = `<i class="fa-solid fa-circle-check text-teal-600 mr-1.5"></i>Geri bildiriminiz bu cihaza kaydedildi. Göndermek için açılan e-posta uygulamanızda onaylayın.`;
-      }
-      renderVitaFeedbackHistory();
+      return sendVitaFeedbackDirect(entry);
     }
+
+    /* DİREKT GÖNDER: FormSubmit.co AJAX ile arka planda geliştiricinin e-postasına iletilir
+       (harici e-posta uygulaması açılmaz, sayfa yenilenmez). Yalnızca formdaki alanlar gönderilir;
+       sağlık verisi eklenmez. Başarısız olursa form korunur ve klasik e-posta seçeneği sunulur. */
+    let vitaFeedbackSending = false;
+    async function sendVitaFeedbackDirect(entry) {
+      if (vitaFeedbackSending) return false;
+      const button = document.getElementById("btnSubmitVitaFeedback");
+      const statusBox = document.getElementById("vitaFeedbackDeliveryStatus");
+      const original = button ? button.innerHTML : "";
+      vitaFeedbackSending = true;
+      if (button) {
+        button.disabled = true;
+        button.setAttribute("aria-busy", "true");
+        button.innerHTML = '<i aria-hidden="true" class="fa-solid fa-circle-notch fa-spin"></i> Gönderiliyor...';
+      }
+      if (statusBox) statusBox.classList.add("hidden");
+      const payload = {
+        "Gönderen": entry.sender,
+        "Kullanım kolaylığı puanı": `${entry.rating} / 5`,
+        "Bildirim türü": entry.type,
+        "İlgili bölüm": entry.area,
+        "Açıklama": entry.message,
+        "Uygulama sürümü": entry.appVersion,
+        "Gönderim zamanı": new Date(entry.createdAt).toLocaleString("tr-TR"),
+        _subject: "[VitaTakip] Yeni Geri Bildirim",
+        _template: "table",
+        _captcha: "false"
+      };
+      let result = { ok: false, reason: "network" };
+      try {
+        const controller = typeof AbortController === "function" ? new AbortController() : null;
+        const timer = controller ? setTimeout(() => controller.abort(), 15000) : null;
+        const response = await fetch(VITA_FEEDBACK_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify(payload),
+          signal: controller ? controller.signal : undefined,
+          credentials: "omit",
+          referrerPolicy: "no-referrer"
+        });
+        if (timer) clearTimeout(timer);
+        const data = await response.json().catch(() => ({}));
+        const success = response.ok && String(data.success) !== "false";
+        result = success
+          ? { ok: true }
+          : { ok: false, reason: /activat/i.test(String(data.message || "")) ? "activation" : "server", message: String(data.message || `HTTP ${response.status}`) };
+      } catch (error) {
+        result = { ok: false, reason: typeof navigator !== "undefined" && navigator.onLine === false ? "offline" : "network" };
+      } finally {
+        vitaFeedbackSending = false;
+        if (button) { button.disabled = false; button.removeAttribute("aria-busy"); button.innerHTML = original; }
+      }
+
+      if (result.ok) {
+        // Başarılı: bu tarayıcıdaki geçmişe de kaydedilir ve form sıfırlanır.
+        const entries = getVitaFeedbackEntries();
+        entries.unshift({ ...entry, delivered: "direct" });
+        storeVitaFeedbackEntries(entries.slice(0, 100));
+        const form = document.getElementById("vitaFeedbackForm");
+        if (form) form.reset();
+        const count = document.getElementById("vitaFeedbackCount");
+        if (count) count.textContent = "0/800";
+        if (statusBox) {
+          statusBox.className = "vita-fb-status vita-fb-ok rounded-xl p-3 text-xs font-bold border";
+          statusBox.innerHTML = `<i class="fa-solid fa-circle-check mr-1.5" aria-hidden="true"></i>Geri bildiriminiz doğrudan geliştiriciye iletildi. Teşekkürler!`;
+          statusBox.classList.remove("hidden");
+        }
+        renderVitaFeedbackHistory();
+        if (window.SoundEffects && typeof SoundEffects.playSuccess === "function") SoundEffects.playSuccess();
+        return true;
+      }
+
+      // Hata: form korunur; kırmızı uyarı + yedek olarak klasik e-posta.
+      const reasons = {
+        offline: "İnternet bağlantısı yok gibi görünüyor; geri bildirim gönderilemedi.",
+        network: "Sunucuya ulaşılamadı; geri bildirim gönderilemedi.",
+        server: "Gönderim servisi şu an yanıt vermedi; geri bildirim gönderilemedi.",
+        activation: "Gönderim servisi henüz etkinleştirilmemiş; geri bildirim iletilemedi."
+      };
+      if (statusBox) {
+        statusBox.className = "vita-fb-status vita-fb-error rounded-xl p-3 text-xs font-bold border";
+        statusBox.innerHTML = `<div><i class="fa-solid fa-triangle-exclamation mr-1.5" aria-hidden="true"></i>${escapeHtmlText(reasons[result.reason] || reasons.network)} Yazdıklarınız silinmedi.</div>`
+          + `<div class="vita-fb-actions"><button type="button" onclick="document.getElementById('vitaFeedbackForm').requestSubmit()"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Tekrar dene</button>`
+          + `<button type="button" onclick="sendVitaFeedbackViaEmailClientAndSave()"><i class="fa-solid fa-envelope" aria-hidden="true"></i> E-posta uygulamasıyla gönder</button></div>`;
+        statusBox.classList.remove("hidden");
+      }
+      return false;
+    }
+    window.sendVitaFeedbackDirect = sendVitaFeedbackDirect;
+
+    /* Yedek yol: klasik e-posta uygulaması (mailto). Kayıt bu tarayıcıya da eklenir. */
+    function sendVitaFeedbackViaEmailClientAndSave() {
+      const message = String(document.getElementById("vitaFeedbackMessage")?.value || "").trim();
+      if (message.length >= 8) {
+        const entries = getVitaFeedbackEntries();
+        entries.unshift({
+          id: `fb_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          type: document.getElementById("vitaFeedbackType")?.value || "Diğer",
+          area: document.getElementById("vitaFeedbackArea")?.value || "Genel",
+          rating: Math.max(1, Math.min(5, Number(document.getElementById("vitaFeedbackRating")?.value) || 3)),
+          sender: getVitaFeedbackSenderName(), message: message.slice(0, 800), appVersion: VITA_FEEDBACK_APP_VERSION,
+          createdAt: new Date().toISOString(), delivered: "mailto"
+        });
+        storeVitaFeedbackEntries(entries.slice(0, 100));
+        renderVitaFeedbackHistory();
+      }
+      sendVitaFeedbackViaEmailClient();
+    }
+    window.sendVitaFeedbackViaEmailClientAndSave = sendVitaFeedbackViaEmailClientAndSave;
 
     function sendVitaFeedbackViaEmailClient() {
       const messageInput = document.getElementById("vitaFeedbackMessage");

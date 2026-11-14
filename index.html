@@ -3,7 +3,7 @@
 <html lang="tr">
 <head>
 <!-- Gizlilik: sayfa yalnızca kendi adresine ve (kullanıcı kendi anahtarını girerse) Google Gemini API'ye bağlanabilir. Sunucu yok. -->
-<meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://generativelanguage.googleapis.com https://world.openfoodfacts.org https://world.openproductsfacts.org; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://generativelanguage.googleapis.com https://world.openfoodfacts.org https://world.openproductsfacts.org https://formsubmit.co; form-action 'self'">
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 <!-- Ana ekrana eklenebilir web sayfası (PWA): sunucu yok; servis çalışanı yalnızca bu sitenin dosyalarını önbelleğe alır -->
 <link rel="manifest" href="./manifest.json">
@@ -24,11 +24,11 @@
 <!-- Uses Inter when already available; otherwise falls back immediately to the system UI font. -->
 <!-- Font Awesome 6 CDN -->
 <!-- build:css -->
-<link rel="stylesheet" href="./css/app.css?v=eacbd7fb10">
-<script defer src="./js/app.1.js?v=eacbd7fb10"></script>
-<script defer src="./js/app.2.js?v=eacbd7fb10"></script>
-<script defer src="./js/app.3.js?v=eacbd7fb10"></script>
-<script defer src="./js/app.4.js?v=eacbd7fb10"></script>
+<link rel="stylesheet" href="./css/app.css?v=81c36e73a1">
+<script defer src="./js/app.1.js?v=81c36e73a1"></script>
+<script defer src="./js/app.2.js?v=81c36e73a1"></script>
+<script defer src="./js/app.3.js?v=81c36e73a1"></script>
+<script defer src="./js/app.4.js?v=81c36e73a1"></script>
 <!-- /build:css -->
 <!-- Chart.js loads only if a trend chart is needed. -->
 <!-- PDF.js loads only when a user selects a PDF for analysis. -->
@@ -265,11 +265,11 @@
 <h1 class="text-xl sm:text-3xl font-black tracking-tight" id="homeGreetingName">Merhaba!</h1>
 <p class="text-xs sm:text-sm text-teal-100/90 mt-1 max-w-2xl font-medium leading-relaxed" id="homeGreetingDesc">Bugünkü planınızı takip edin veya belirtilerinizi değerlendirmek için kısa anamnezi başlatın.</p>
 </div>
-<div class="flex flex-wrap items-center gap-2.5 shrink-0">
-<button class="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition flex items-center gap-2 cursor-pointer whitespace-nowrap" onclick="if(window.SoundEffects) SoundEffects.playClick(); printFridgeSchedule()" type="button">
+<div class="grid grid-cols-2 gap-2 w-full sm:w-auto shrink-0" id="homeHeroActions">
+<button class="vh-act px-3 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition flex items-center justify-center gap-2 cursor-pointer text-center leading-tight" onclick="if(window.SoundEffects) SoundEffects.playClick(); printFridgeSchedule()" type="button">
 <i class="fa-solid fa-print text-sm"></i><span>Buzdolabı Çizelgesi Yazdır</span>
 </button>
-<button class="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition flex items-center gap-2 cursor-pointer whitespace-nowrap" onclick="if(window.SoundEffects) SoundEffects.playClick(); navigateToView('view-neyim')" type="button">
+<button class="vh-act px-3 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition flex items-center justify-center gap-2 cursor-pointer text-center leading-tight" onclick="if(window.SoundEffects) SoundEffects.playClick(); navigateToView('view-neyim')" type="button">
 <i class="fa-solid fa-clipboard-question text-amber-300"></i><span>Belirtilerimi değerlendir</span>
 </button>
 </div>
@@ -1993,7 +1993,7 @@ Verileri Sil
 <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 border-t border-slate-100 pt-3">
 <button class="min-h-10 rounded-xl px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100" onclick="closeVitaFeedback()" type="button">Kapat</button>
 <div class="flex flex-wrap items-center gap-2">
-<button class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2 text-xs font-black text-white shadow-sm hover:bg-teal-800 cursor-pointer" id="btnSubmitVitaFeedback" type="submit"><i aria-hidden="true" class="fa-solid fa-envelope"></i> Kaydet &amp; E-postayla Gönder</button>
+<button class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2 text-xs font-black text-white shadow-sm hover:bg-teal-800 cursor-pointer" id="btnSubmitVitaFeedback" type="submit"><i aria-hidden="true" class="fa-solid fa-paper-plane"></i> Direkt Gönder</button>
 </div>
 </div>
 </form>
@@ -2666,11 +2666,36 @@ Verileri Sil
 <input id="manualSupBrandActive" oninput="if(typeof updateModalLiveInteractionPreview === 'function') updateModalLiveInteractionPreview()" placeholder="Örn: Orzaks — Kolekalsiferol" type="text"/></label>
 <label class="vsa-field"><span>Form</span>
 <input id="manualSupFormText" placeholder="Tablet, kapsül, damla…" type="text"/></label>
-<label class="vsa-field"><span>Birim doz</span>
-<input id="manualSupDose" oninput="if(typeof updateModalLiveInteractionPreview === 'function') updateModalLiveInteractionPreview()" placeholder="Örn: 1000 IU" type="text"/></label>
-<label class="vsa-field"><span>Aç / tok</span>
-<input id="manualSupHungerNote" placeholder="Örn: Tok karnına" type="text"/></label>
 </div>
+<fieldset class="vsa-dose" id="modalDoseFieldset">
+<legend>Nasıl alacaksınız?</legend>
+<div class="vsa-dose-row">
+<label class="vsa-field"><span>Günde kaç adet?</span>
+<input id="manualSupDailyDose" inputmode="numeric" max="50" min="1" oninput="updateManualModalStockPreview(false); updateVitaSupplementDosePreview()" type="number" value="1"/></label>
+<label class="vsa-field"><span>Birim</span>
+<select id="manualSupDoseUnit" onchange="updateVitaSupplementDosePreview()">
+<option value="tablet">tablet</option>
+<option value="kapsül">kapsül</option>
+<option value="damla">damla</option>
+<option value="ölçek">ölçek</option>
+<option value="saşe">saşe</option>
+<option value="puf">puf (sprey)</option>
+<option value="mL">mL</option>
+</select></label>
+</div>
+<label class="vsa-field"><span>Etiketteki miktar <small>(1 adette · isteğe bağlı)</small></span>
+<input id="manualSupDose" oninput="if(typeof updateModalLiveInteractionPreview === 'function') updateModalLiveInteractionPreview(); updateVitaSupplementDosePreview()" placeholder="Örn: 1000 IU veya 500 mg" type="text"/></label>
+<label class="vsa-field"><span>Aç mı, tok mu?</span>
+<select id="manualSupHungerNote" onchange="updateVitaSupplementDosePreview()">
+<option value="">Belirtilmedi</option>
+<option value="Aç karnına">Aç karnına</option>
+<option value="Tok karnına">Tok karnına</option>
+<option value="Yemekle birlikte">Yemekle birlikte</option>
+<option value="Fark etmez">Fark etmez</option>
+</select></label>
+<p class="vsa-dose-preview" id="manualSupDosePreview" aria-live="polite">Günde 1 tablet</p>
+<p class="vsa-dose-note">Miktarı kutu etiketine veya hekiminizin/eczacınızın söylediğine göre girin.</p>
+</fieldset>
 <label class="vsa-field"><span>Hazır şablon</span>
 <select id="modalCatalogSelect" onchange="if(window.SoundEffects) SoundEffects.playClick(); onCatalogSelectChange(this.value)">
 <option value="custom">Şablon yok (kendim yazacağım)</option>
@@ -2692,10 +2717,9 @@ Verileri Sil
 </div>
 <div class="vsa-stock" id="modalMisanthaStockBox">
 <div class="vsa-stock-head"><span><i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i> Stok takibi</span><b id="modalMisanthaDaysPreviewBadge">30 gün yetecek</b></div>
-<div class="vsa-grid3">
-<label class="vsa-field"><span>Kutu adedi</span><input id="manualSupBoxCount" max="1000" min="1" oninput="updateManualModalStockPreview(true)" type="number" value="30"/></label>
-<label class="vsa-field"><span>Kalan</span><input id="manualSupRemainingCount" max="1000" min="0" oninput="updateManualModalStockPreview(false)" type="number" value="30"/></label>
-<label class="vsa-field"><span>Günlük doz</span><input id="manualSupDailyDose" max="50" min="1" oninput="updateManualModalStockPreview(false)" type="number" value="1"/></label>
+<div class="vsa-grid">
+<label class="vsa-field"><span>Kutudaki adet</span><input id="manualSupBoxCount" max="1000" min="1" oninput="updateManualModalStockPreview(true)" type="number" value="30"/></label>
+<label class="vsa-field"><span>Kalan adet</span><input id="manualSupRemainingCount" max="1000" min="0" oninput="updateManualModalStockPreview(false)" type="number" value="30"/></label>
 </div>
 </div>
 </div>

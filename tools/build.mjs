@@ -26,7 +26,7 @@ const JS = [
   'js/lab-trend.js', 'js/recharts-lab-dashboard.js', 'js/app/19-app-startup.js',
   'js/legal-onboarding.js', 'js/medical-drawer.js', 'js/doctor-tests.js', 'js/clinical-simple.js', 'js/report-simple.js',
   'js/age-stage.js', 'js/day-compact.js', 'js/add-sup-simple.js', 'js/scanner-simple.js', 'js/ui-enhancements.js',
-  'js/compact-labs-neyim.js', 'js/neyimvar-final-tidy.js', 'js/simplify-ui.js', 'js/evidence-guide.js',
+  'js/compact-labs-neyim.js', 'js/neyimvar-final-tidy.js', 'js/simplify-ui.js', 'js/ayarlar-akordeon.js', 'js/evidence-guide.js',
   'js/neyim-wizard.js', 'js/visual-reference.js', 'js/egfr-calculator.js', 'js/pwa-install.js'
 ];
 

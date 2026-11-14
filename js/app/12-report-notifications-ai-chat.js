@@ -1531,6 +1531,7 @@ function getDoctorReportMode() {
       }
       window.setTimeout(() => {
         const row = document.getElementById("settingsCameraPermissionRow") || document.getElementById("settingsSectionNotifications");
+        if (row && typeof window.openSettingsSectionFor === "function") window.openSettingsSectionFor(row);
         if (row) {
           try {
             row.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -2737,6 +2738,7 @@ ${context.length ? context.join("\n") : "Bu soruyla ilgili kişisel sağlık kay
         navigateToView("view-settings");
         window.setTimeout(() => {
           const box = document.getElementById(getGeminiApiKey() ? "aiHealthDataConsentSettings" : "drawerGeminiApiKeyInput");
+          if (box && typeof window.openSettingsSectionFor === "function") window.openSettingsSectionFor(box);
           if (!box) return;
           box.scrollIntoView({ behavior: "smooth", block: "center" });
           const card = document.getElementById("aiHealthDataConsentSettings");
@@ -3165,6 +3167,7 @@ YANIT BİÇİMİ (zorunlu): Sıradan bir kullanıcının anlayacağı sade dille
       }
 
       function sendPreset(type) {
+        finishVoiceInputForSend();
         if (window.SoundEffects) SoundEffects.playClick();
         const presets = {
           tahlil: "📊 Kayıtlı kan tahlillerimi, eksikliklerimi ve eGFR böbrek durumumu hekim konsültasyonu öncesi detaylı yorumlar mısın?",
@@ -3183,10 +3186,28 @@ YANIT BİÇİMİ (zorunlu): Sıradan bir kullanıcının anlayacağı sade dille
         const input = document.getElementById("ai-user-input");
         if (!input) return;
         const text = input.value.trim();
+        // Gönder'e basıldığında sesli dinleme kesin olarak kapanır; tekrar sesle yazmak için mikrofona yeniden basılır.
+        finishVoiceInputForSend();
         if (!text) return;
         input.value = "";
         if (window.SoundEffects) SoundEffects.playClick();
         processUserQuery(text);
+      }
+
+      /* Gönderim anında dinlemeyi bitir: tanıma oturumu kapatılır, geç gelen sonuçlar yok sayılır
+         (aksi hâlde gönderilen metin boşaltılan kutuya geri yazılabilirdi), mikrofon simgesi hemen pasife döner. */
+      function finishVoiceInputForSend() {
+        const active = speechRecognition;
+        if (!active && !voiceListening) return;
+        speechRecognition = null;
+        if (active) {
+          active.onresult = null;
+          active.onerror = null;
+          active.onend = null;
+          try { active.stop(); } catch (_) { /* oturum zaten bitmiş olabilir */ }
+          try { if (typeof active.abort === "function") active.abort(); } catch (_) {}
+        }
+        setVoiceInputState(false, "");
       }
 
       function getLocalFallbackReason(err) {
