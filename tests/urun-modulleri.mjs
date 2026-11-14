@@ -62,12 +62,12 @@ log('Katalogda olmayan takviye Open Food Facts\'ten bulunur (yalnızca barkod g�
 await p.evaluate(() => { openAddSupplementModal(); handleAddSupBarcodeDecoded('8697595999993'); }); await sleep(1500);
 const s3 = await p.evaluate(() => document.getElementById('addSupBarcodeFeedbackBox').innerText);
 log('Bulunamayan 869 barkodunda bilinen firma kodundan üretici tahmini (Orzax) gösterilir', /bulunamadı/.test(s3) && /8697595/.test(s3) && /Orzax/i.test(s3), s3.slice(0, 200));
-await p.evaluate(() => { document.getElementById('manualSupName').value = 'Ocean Test Çinko'; document.getElementById('manualSupTiming').value = 'Akşam'; commitManualSupplement(); }); await sleep(500);
+await p.evaluate(() => { document.getElementById('manualSupName').value = 'Ocean Test Çinko'; VitaSupPage.setVakits(['Akşam']); commitManualSupplement(); }); await sleep(500);
 const s4 = await p.evaluate(() => ({ sup: JSON.parse(localStorage.getItem('vita_custom_supplement_barcodes') || '{}')['8697595999993'], med: JSON.parse(localStorage.getItem('vita_custom_medication_barcodes') || '{}')['8697595999993'], added: state.supplements.some(s => s.name === 'Ocean Test Çinko') }));
 log('Elle eklenen takviyenin barkodu YALNIZCA takviye önbelleğine öğretilir', s4.added && s4.sup?.urunAdi === 'Ocean Test Çinko' && s4.sup?.zamanBloku === 'Akşam' && !s4.med, JSON.stringify(s4));
 NET.off.length = 0;
 await p.evaluate(() => { openAddSupplementModal(); handleAddSupBarcodeDecoded('8697595999993'); }); await sleep(800);
-const s5 = await p.evaluate(() => ({ fb: document.getElementById('addSupBarcodeFeedbackBox').innerText, name: document.getElementById('manualSupName').value, timing: document.getElementById('manualSupTiming').value }));
+const s5 = await p.evaluate(() => ({ fb: document.getElementById('addSupBarcodeFeedbackBox').innerText, name: document.getElementById('manualSupName').value, timing: VitaSupPage.getPlan().vakits.map(v => v.vakit).join() }));
 log('Öğretilen barkod bir dahaki taramada önbellekten (dış sorgu olmadan) tanınır', /daha önce kaydettiğiniz/.test(s5.fb) && s5.name === 'Ocean Test Çinko' && s5.timing === 'Akşam' && NET.off.length === 0, s5.fb.slice(0, 100));
 const crossMed = await p.evaluate(async () => (await lookupVitaBarcode('medication', '8697595999993', { ai: false })).found);
 log('Takviye önbelleğindeki barkod ilaç modülünde bulunmaz', crossMed === false);

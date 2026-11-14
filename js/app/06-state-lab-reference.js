@@ -227,11 +227,8 @@ let currentAuthMode = "login";
 
     function isSupplementScheduledToday(item, date = new Date()) {
       if (!item) return false;
-      const todayIso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-      const todayTr = date.toLocaleDateString("tr-TR");
-      if (item.scheduledDate && (item.scheduledDate === todayIso || item.scheduledDate === todayTr)) {
-        return true;
-      }
+      // Hasta güvenliği: yalnızca programdaki günler. (Eski sürümdeki "eklendiği gün her durumda göster" istisnası
+      // kaldırıldı; haftanın belirli günlerinde alınan takviye programı dışındaki bir günde listede görünmez.)
       const days = item?.scheduleDays;
       if (!Array.isArray(days) || days.length === 0) {
         return item?.explicitlyUnscheduled ? false : true;

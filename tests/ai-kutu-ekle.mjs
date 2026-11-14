@@ -67,7 +67,7 @@ await p.evaluate(() => document.querySelector('#barcodeAiResultActions .vita-ai-
 const s2 = await p.evaluate(() => ({
   supOpen: !document.getElementById('addSupplementModal').classList.contains('hidden'),
   scanHidden: document.getElementById('barcodeScannerModal').classList.contains('hidden'),
-  name: document.getElementById('manualSupName').value, timing: document.getElementById('manualSupTiming').value,
+  name: document.getElementById('manualSupName').value, timing: VitaSupPage.getPlan().vakits.map(v => v.vakit).join(),
   daily: document.getElementById('manualSupDailyDose').value, box: document.getElementById('manualSupBoxCount').value,
   card: !document.getElementById('addSupAiResultCard').classList.contains('hidden'),
   hunger: document.getElementById('manualSupHungerNote').value
@@ -85,7 +85,7 @@ await feed('addSupAiPhotoInput'); await sleep(3500);
 const t1 = await p.evaluate(() => ({
   name: document.getElementById('manualSupName').value, brand: document.getElementById('manualSupBrandActive').value,
   form: document.getElementById('manualSupFormText').value, dose: document.getElementById('manualSupDose').value,
-  hunger: document.getElementById('manualSupHungerNote').value, timing: document.getElementById('manualSupTiming').value,
+  hunger: document.getElementById('manualSupHungerNote').value, timing: VitaSupPage.getPlan().vakits.map(v => v.vakit).join(),
   box: document.getElementById('manualSupBoxCount').value, daily: document.getElementById('manualSupDailyDose').value,
   detailsOpen: document.getElementById('addSupMoreDetails').open,
   cardText: document.getElementById('addSupAiResultCard').innerText.replace(/\s+/g, ' '),

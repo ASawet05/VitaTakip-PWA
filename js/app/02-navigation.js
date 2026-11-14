@@ -108,10 +108,12 @@ function openAppDrawer() {
       if (window.SoundEffects) SoundEffects.playNavigate();
       closeAppDrawer();
       closeHeaderProfileMenu();
+      // Takviye Ekle sayfasından çıkılırken kamera kapanır (arka planda açık kalmasın).
+      if (state.activeTab === "view-add-supplement" && viewId !== "view-add-supplement" && typeof stopScanner === "function") stopScanner();
       state.activeTab = viewId;
       if (typeof markVitaGuideVisit === "function") markVitaGuideVisit(viewId);
 
-      const allViews = ["view-home", "view-labs", "view-neyim", "view-clinical-results", "view-report", "view-settings"];
+      const allViews = ["view-home", "view-labs", "view-neyim", "view-clinical-results", "view-report", "view-settings", "view-add-supplement"];
       allViews.forEach(v => {
         const el = document.getElementById(v);
         if (el) {
@@ -167,7 +169,8 @@ function openAppDrawer() {
           "view-neyim": "NeyimVar? Belirti değerlendirmesi",
           "view-clinical-results": "Klinik Karar Analizi Sonuçları",
           "view-report": "Doktor Görüşmesi İçin Hasta Özeti",
-          "view-settings": "Ayarlar & Uygulama Yönetimi"
+          "view-settings": "Ayarlar & Uygulama Yönetimi",
+          "view-add-supplement": "Takviye Ekle"
         };
         if (titleEl) titleEl.textContent = titles[viewId] || "Modül";
 

@@ -24,11 +24,11 @@
 <!-- Uses Inter when already available; otherwise falls back immediately to the system UI font. -->
 <!-- Font Awesome 6 CDN -->
 <!-- build:css -->
-<link rel="stylesheet" href="./css/app.css?v=444b1399fa">
-<script defer src="./js/app.1.js?v=444b1399fa"></script>
-<script defer src="./js/app.2.js?v=444b1399fa"></script>
-<script defer src="./js/app.3.js?v=444b1399fa"></script>
-<script defer src="./js/app.4.js?v=444b1399fa"></script>
+<link rel="stylesheet" href="./css/app.css?v=680194f3cf">
+<script defer src="./js/app.1.js?v=680194f3cf"></script>
+<script defer src="./js/app.2.js?v=680194f3cf"></script>
+<script defer src="./js/app.3.js?v=680194f3cf"></script>
+<script defer src="./js/app.4.js?v=680194f3cf"></script>
 <!-- /build:css -->
 <!-- Chart.js loads only if a trend chart is needed. -->
 <!-- PDF.js loads only when a user selects a PDF for analysis. -->
@@ -322,6 +322,7 @@
 <i class="fa-solid fa-clock" id="homeGreetingIcon"></i> <span id="homeGreetingTime">İyi Günler</span>
 </span>
 <span class="px-3 py-1 rounded-full text-xs font-bold bg-white/10 text-white border border-white/20" id="homeGreetingBmi">VKİ: Hesaplanıyor...</span>
+<span class="vday-badge vday-badge--hero" id="homeDayBadge" title="Bugün"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i> <span>—</span></span>
 </div>
 <h1 class="text-xl sm:text-3xl font-black tracking-tight" id="homeGreetingName">Merhaba!</h1>
 <p class="text-xs sm:text-sm text-teal-100/90 mt-1 max-w-2xl font-medium leading-relaxed" id="homeGreetingDesc">Bugünkü planınızı takip edin veya belirtilerinizi değerlendirmek için kısa anamnezi başlatın.</p>
@@ -378,7 +379,7 @@
 <h2 class="text-base font-bold text-navy-900 flex items-center gap-2" id="guideDailyProtocolTarget">
 <i class="fa-solid fa-clipboard-check text-medTeal-600"></i>
                   Bugünkü takviyelerim
-                </h2>
+                <span class="vday-badge" id="supDayBadge" title="Liste bu güne göre süzülür">—</span></h2>
 <p class="text-[11px] text-slate-500 mt-0.5">Aldıklarınızı işaretleyin. Liste her gün 00:00'da yenilenir.</p>
 </div>
 <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto">
@@ -1858,6 +1859,143 @@ Verileri Sil
 </div>
 </div>
 </section> <!-- view-settings Sonu -->
+<!-- ========================================================================= -->
+<!--   TAKVİYE EKLE: tam ekran sayfa (eski pencerenin yerine). id'ler korunur.   -->
+<!-- ========================================================================= -->
+<section class="hidden space-y-3 max-w-2xl mx-auto vsp" id="view-add-supplement" aria-labelledby="vsaTitle">
+<div class="vsp-page" id="addSupplementModal">
+<h1 class="sr-only" id="vsaTitle">Takviye Ekle</h1>
+<section class="vsa-find" id="addSupBoxBarcodeSection">
+<div class="vsa-search">
+<i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+<input autocomplete="off" id="addSupBarcodeInput" inputmode="search" maxlength="64" oninput="vsAddSearch(this.value)" onkeydown="vsAddSearchKey(event)" placeholder="Ürün adı veya barkod numarası" type="search"/>
+</div>
+<div class="vsa-suggest hidden" id="vsAddSuggest" role="listbox"></div>
+<div class="vsa-actions">
+<button class="vsa-btn vsa-btn-main" id="btnAddSupStartCamera" onclick="if(window.SoundEffects) SoundEffects.playClick(); startAddSupModalScanner()" type="button"><i class="fa-solid fa-barcode"></i><span>Barkod Tara</span></button>
+<button class="vsa-btn vsa-btn-stop hidden" id="btnAddSupStopCamera" onclick="if(window.SoundEffects) SoundEffects.playClick(); stopScanner()" type="button"><i class="fa-solid fa-stop"></i><span>Kamerayı Kapat</span></button>
+<button class="vsa-btn" id="btnAddSupAiBoxScan" onclick="if(window.SoundEffects) SoundEffects.playClick(); triggerGeminiBoxScan()" type="button" title="Kutunun fotoğrafını çekin: önce barkod okunur, okunamazsa yapay zekâ (Gemini) ürünü tanır ve formu doldurur."><i class="fa-solid fa-wand-magic-sparkles"></i><span>Yapay Zekâ ile Tanı</span></button>
+<input accept="image/*" capture="environment" class="hidden" id="addSupAiPhotoInput" onchange="handleAddSupAiPhotoInput(event)" type="file"/>
+</div>
+<div class="hidden vsa-cam" id="addSupCameraViewportWrapper">
+<div class="vsa-cam-box">
+<div id="addSupQrReader"></div>
+<video autoplay="" class="hidden" id="addSupCameraVideo" muted="" playsinline="" webkit-playsinline=""></video>
+<div class="vsa-frame" aria-hidden="true"></div>
+</div>
+<p id="addSupCameraLiveStatus">Barkodu çerçeveye hizalayın.</p>
+</div>
+<div aria-live="polite" class="hidden vsa-feedback" id="addSupBarcodeFeedbackBox"></div>
+<div aria-live="polite" class="hidden" id="addSupAiResultCard"></div>
+<div aria-live="assertive" class="hidden vsa-fallback" id="addSupFallbackConfirmBox">
+<p><i class="fa-solid fa-circle-question" aria-hidden="true"></i> Barkod bu cihazdaki ürün listesinde yok. Kutunun fotoğrafıyla yapay zekâ (Gemini) doldursun mu?</p>
+<div class="vsa-fb-actions">
+<button class="vsa-btn vsa-btn-main" data-vita-requires-gemini="" onclick="if(window.SoundEffects) SoundEffects.playClick(); triggerGeminiBoxScan()" type="button"><i class="fa-solid fa-camera-retro"></i><span>Evet, fotoğraf çek</span></button>
+<button class="vsa-btn" onclick="document.getElementById('addSupFallbackConfirmBox').classList.add('hidden'); document.getElementById('manualSupName')?.focus()" type="button">Tamam, elle yazacağım</button>
+</div>
+</div>
+<!-- Eski öğeler (kod uyumluluğu için duruyor, gizli) -->
+<div class="vsa-legacy" aria-hidden="true">
+<select id="addSupQuickDbSelect" tabindex="-1"><option value=""></option></select>
+<button id="btnAddSupLookupBarcode" tabindex="-1" onclick="handleAddSupBarcodeDecoded(document.getElementById('addSupBarcodeInput').value)" type="button">Sorgula</button>
+<button id="addSupModalCameraPermBadge" tabindex="-1" onclick="if(window.SoundEffects) SoundEffects.playClick(); handleModalCameraPermBadgeClick('addSupplementModal')" type="button"><span>Kamera İzni</span></button>
+<span id="addSupDbBadge"></span>
+</div>
+</section>
+<!-- 1) Ürün bilgisi (barkod/yapay zekâ ile dolar; hepsi düzenlenebilir) -->
+<section class="vsp-card" id="modalCustomNameContainer" aria-labelledby="vspProductTitle">
+<h2 class="vsp-h" id="vspProductTitle"><i class="fa-solid fa-capsules" aria-hidden="true"></i> Ürün bilgisi</h2>
+<label class="vsp-field"><span class="vsp-lbl">Ürün adı *</span>
+<input autocomplete="off" id="manualSupName" maxlength="120" oninput="if(typeof updateModalLiveInteractionPreview === 'function') updateModalLiveInteractionPreview(); if(window.VitaSupPage) VitaSupPage.refresh()" placeholder="Örn: Ocean Vitamin D3 1000 IU" type="text"/></label>
+<div aria-live="polite" class="hidden vsp-advice" id="vspAdvice"></div>
+<div class="vsp-grid2" id="modalCustomDoseContainer">
+<label class="vsp-field"><span class="vsp-lbl">Marka / etken madde</span>
+<input id="manualSupBrandActive" oninput="if(typeof updateModalLiveInteractionPreview === 'function') updateModalLiveInteractionPreview(); if(window.VitaSupPage) VitaSupPage.refresh()" placeholder="Örn: Orzax — Kolekalsiferol" type="text"/></label>
+<label class="vsp-field"><span class="vsp-lbl">Form</span>
+<input id="manualSupFormText" list="vspFormList" oninput="if(window.VitaSupPage) VitaSupPage.syncUnitFromForm()" placeholder="Tablet, kapsül, damla…" type="text"/></label>
+</div>
+<datalist id="vspFormList"><option value="Tablet"></option><option value="Kapsül"></option><option value="Yumuşak kapsül"></option><option value="Damla"></option><option value="Sprey"></option><option value="Saşe"></option><option value="Toz"></option><option value="Şurup"></option><option value="Efervesan tablet"></option></datalist>
+<label class="vsp-field"><span class="vsp-lbl">Etiketteki miktar <small>(1 adette)</small></span>
+<input id="manualSupDose" oninput="if(typeof updateModalLiveInteractionPreview === 'function') updateModalLiveInteractionPreview(); if(window.VitaSupPage) VitaSupPage.refresh()" placeholder="Örn: 1000 IU veya 500 mg" type="text"/></label>
+</section>
+<!-- 2) Kullanım: günde kaç adet, gün, vakit + saat, aç/tok -->
+<fieldset class="vsp-card vsa-dose" id="modalDoseFieldset">
+<legend>Nasıl alacaksınız?</legend>
+<div class="vsp-grid2">
+<div class="vsp-field"><span class="vsp-lbl">Günde kaç adet?</span><div class="vsp-step"><button type="button" class="vsp-stepbtn" data-step="-1" data-target="manualSupDailyDose" aria-label="Günde kaç adet?: azalt">−</button><input id="manualSupDailyDose" inputmode="numeric" max="20" min="1" type="number" value="1" oninput="updateManualModalStockPreview(false); if(window.VitaSupPage) VitaSupPage.refresh()"/><button type="button" class="vsp-stepbtn" data-step="1" data-target="manualSupDailyDose" aria-label="Günde kaç adet?: artır">+</button></div></div>
+<label class="vsp-field"><span class="vsp-lbl">Birim</span>
+<select id="manualSupDoseUnit" onchange="if(window.VitaSupPage) VitaSupPage.refresh()">
+<option value="tablet">tablet</option>
+<option value="kapsül">kapsül</option>
+<option value="damla">damla</option>
+<option value="ölçek">ölçek</option>
+<option value="saşe">saşe</option>
+<option value="puf">puf (sprey)</option>
+<option value="mL">mL</option>
+</select></label>
+</div>
+<div class="vsp-field"><span class="vsp-lbl">Hangi günler?</span>
+<div class="vsp-seg" role="radiogroup" aria-label="Kullanım sıklığı">
+<button type="button" class="vsp-segbtn is-on" data-freq="daily" role="radio" aria-checked="true">Her gün</button>
+<button type="button" class="vsp-segbtn" data-freq="days" role="radio" aria-checked="false">Haftanın belirli günleri</button>
+</div>
+<div class="hidden vsp-days" id="vspDays" role="group" aria-label="Haftanın günleri">
+<button type="button" class="vsp-chip" data-day="1" aria-pressed="false">Pzt</button><button type="button" class="vsp-chip" data-day="2" aria-pressed="false">Sal</button><button type="button" class="vsp-chip" data-day="3" aria-pressed="false">Çar</button><button type="button" class="vsp-chip" data-day="4" aria-pressed="false">Per</button><button type="button" class="vsp-chip" data-day="5" aria-pressed="false">Cum</button><button type="button" class="vsp-chip" data-day="6" aria-pressed="false">Cmt</button><button type="button" class="vsp-chip" data-day="0" aria-pressed="false">Paz</button>
+</div></div>
+<div class="vsp-field"><span class="vsp-lbl">Hangi vakitler? <small>(birden fazla seçilebilir)</small></span>
+<div class="vsp-vakits" id="vspVakits" role="group" aria-label="Vakitler">
+<button type="button" class="vsp-chip is-on" data-vakit="Sabah" aria-pressed="true"><i class="fa-solid fa-sun" aria-hidden="true"></i> Sabah</button><button type="button" class="vsp-chip" data-vakit="Öğle" aria-pressed="false"><i class="fa-solid fa-utensils" aria-hidden="true"></i> Öğle</button><button type="button" class="vsp-chip" data-vakit="Akşam" aria-pressed="false"><i class="fa-solid fa-moon" aria-hidden="true"></i> Akşam</button><button type="button" class="vsp-chip" data-vakit="Gece" aria-pressed="false"><i class="fa-regular fa-clock" aria-hidden="true"></i> Gece</button>
+</div>
+<div class="vsp-clocks" id="vspClocks"></div></div>
+<label class="vsp-field"><span class="vsp-lbl">Aç mı, tok mu?</span>
+<select id="manualSupHungerNote" onchange="if(window.VitaSupPage) VitaSupPage.refresh()">
+<option value="">Belirtilmedi</option>
+<option value="Aç karnına">Aç karnına</option>
+<option value="Tok karnına">Tok karnına</option>
+<option value="Yemekle birlikte">Yemekle birlikte</option>
+<option value="Fark etmez">Fark etmez</option>
+</select></label>
+<p class="vsa-dose-preview" id="manualSupDosePreview" aria-live="polite">Günde 1 tablet</p>
+</fieldset>
+<!-- 3) Stok -->
+<section class="vsp-card" id="modalMisanthaStockBox" aria-labelledby="vspStockTitle">
+<div class="vsp-hrow"><h2 class="vsp-h" id="vspStockTitle"><i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i> Stok</h2><b class="vsp-badge" id="modalMisanthaDaysPreviewBadge">30 gün yetecek</b></div>
+<div class="vsp-grid2">
+<div class="vsp-field"><span class="vsp-lbl">Kutudaki adet</span><div class="vsp-step"><button type="button" class="vsp-stepbtn" data-step="-1" data-target="manualSupBoxCount" aria-label="Kutudaki adet: azalt">−</button><input id="manualSupBoxCount" inputmode="numeric" max="1000" min="1" type="number" value="30" oninput="updateManualModalStockPreview(true)"/><button type="button" class="vsp-stepbtn" data-step="1" data-target="manualSupBoxCount" aria-label="Kutudaki adet: artır">+</button></div></div>
+<div class="vsp-field"><span class="vsp-lbl">Kalan adet</span><div class="vsp-step"><button type="button" class="vsp-stepbtn" data-step="-1" data-target="manualSupRemainingCount" aria-label="Kalan adet: azalt">−</button><input id="manualSupRemainingCount" inputmode="numeric" max="1000" min="0" type="number" value="30" oninput="updateManualModalStockPreview(false)"/><button type="button" class="vsp-stepbtn" data-step="1" data-target="manualSupRemainingCount" aria-label="Kalan adet: artır">+</button></div></div>
+</div>
+<p class="vsp-note">Kutuyu daha önce açtıysanız kalan adedi düzeltin.</p>
+</section>
+<!-- 4) Uyarılar: mevcut takviyelerle zamanlama çakışması + ilaç etkileşimi -->
+<div aria-live="polite" class="hidden vsp-conflict" id="vspConflict" role="status"></div>
+<div class="hidden vsa-live" id="modalLiveInteractionWarning" role="status" aria-live="polite"></div>
+<!-- İsteğe bağlı: hazır şablondan doldur -->
+<details class="vsp-card vsp-tpl" id="addSupMoreDetails">
+<summary><span><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Hazır şablondan doldur <small>(isteğe bağlı)</small></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></summary>
+<label class="vsp-field"><span class="vsp-lbl">Hazır şablon</span>
+<select id="modalCatalogSelect" onchange="if(window.SoundEffects) SoundEffects.playClick(); onCatalogSelectChange(this.value)">
+<option value="custom">Şablon yok (kendim yazacağım)</option>
+<option value="D3_K2">☀️ D3 + K2 Vitamini</option>
+<option value="Omega3">🐟 Omega-3 Balık Yağı</option>
+<option value="Demir">🩸 Demir (Fe)</option>
+<option value="B12">🧠 B12 Vitamini</option>
+<option value="Magnezyum">⚡ Magnezyum</option>
+<option value="Folat">🌱 Folat / Metilfolat</option>
+<option value="Kolajen">🧬 Kolajen</option>
+<option value="Kreatin">💧 Kreatin</option>
+</select></label>
+<div class="hidden vsa-formbox" id="modalFormSelectorContainer">
+<label class="vsp-field"><span class="vsp-lbl">Hangi formda alacaksınız?</span>
+<select class="form-selector" id="modalFormSelect" onchange="if(window.SoundEffects) SoundEffects.playClick(); onModalFormOptionChange(this.value)"></select></label>
+<div class="vsa-pills" id="modalFormQuickPills"></div>
+<div class="vsa-formline"><span>Öneri:</span><b id="modalDosePreview">-</b></div>
+<p id="modalInstructionPreview">-</p>
+</div>
+</details>
+<div class="vsp-submitbar"><button class="vsa-submit" id="btnCommitSupplement" onclick="if(window.SoundEffects) SoundEffects.playClick(); commitManualSupplement()" type="button"><i class="fa-solid fa-plus"></i><span>Takviyeyi ekle</span></button></div>
+</div>
+</section>
+
 </main>
 <!-- A4 Buzdolabı Takvim Çıktısı: yalnızca kullanıcı yazdırmayı seçtiğinde görünür. -->
 <section aria-label="Kişiye özel buzdolabı takviye çizelgesi" class="fridge-print-sheet" id="vitaFridgePrintSheet">
@@ -2580,140 +2718,6 @@ Verileri Sil
 </div>
 <button class="vsa-submit" id="btnCommitAddMedication" onclick="commitAddMedication()" type="button"><i class="fa-solid fa-check"></i><span>Ben bu ilacı kullanıyorum</span></button>
 <p class="vam-foot">İlaç barkodları yalnızca bu cihazda aranır; dış ürün kataloglarına gönderilmez. Kullanım sıklığı hekiminizin/prospektüsün talimatına göre seçilmelidir.</p>
-</div>
-</div>
-<div class="fixed inset-0 z-50 bg-navy-950/70 backdrop-blur-sm hidden items-center justify-center p-4" id="addSupplementModal" style="z-index:60" onclick="if(event.target===this) closeAddSupplementModal()">
-<div class="vsa-card" role="dialog" aria-modal="true" aria-labelledby="vsaTitle">
-<div class="vsa-head">
-<div>
-<h3 id="vsaTitle">Takviye ekle</h3>
-<p>Barkodu tarayın, adını arayın veya elle yazın.</p>
-</div>
-<button class="vsa-x" type="button" aria-label="Kapat" onclick="if(window.SoundEffects) SoundEffects.playClick(); closeAddSupplementModal()"><i class="fa-solid fa-xmark"></i></button>
-</div>
-
-<!-- Bul: ad veya barkod, kamera, fotoğraf -->
-<section class="vsa-find" id="addSupBoxBarcodeSection">
-<div class="vsa-search">
-<i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-<input autocomplete="off" id="addSupBarcodeInput" inputmode="search" maxlength="64" oninput="vsAddSearch(this.value)" onkeydown="vsAddSearchKey(event)" placeholder="Ürün adı veya barkod numarası" type="search"/>
-</div>
-<div class="vsa-suggest hidden" id="vsAddSuggest" role="listbox"></div>
-<div class="vsa-actions">
-<button class="vsa-btn vsa-btn-main" id="btnAddSupStartCamera" onclick="if(window.SoundEffects) SoundEffects.playClick(); startAddSupModalScanner()" type="button"><i class="fa-solid fa-barcode"></i><span>Barkod tara</span></button>
-<button class="vsa-btn vsa-btn-stop hidden" id="btnAddSupStopCamera" onclick="if(window.SoundEffects) SoundEffects.playClick(); stopScanner()" type="button"><i class="fa-solid fa-stop"></i><span>Kamerayı kapat</span></button>
-<button class="vsa-btn" id="btnAddSupAiBoxScan" onclick="if(window.SoundEffects) SoundEffects.playClick(); triggerGeminiBoxScan()" type="button" title="Kutunun fotoğrafını çekin: önce barkod okunur, okunamazsa yapay zekâ (Gemini) ürünü tanır ve formu doldurur."><i class="fa-solid fa-wand-magic-sparkles"></i><span>Yapay zekâ ile tanı</span></button>
-<input accept="image/*" capture="environment" class="hidden" id="addSupAiPhotoInput" onchange="handleAddSupAiPhotoInput(event)" type="file"/>
-</div>
-<div class="hidden vsa-cam" id="addSupCameraViewportWrapper">
-<div class="vsa-cam-box">
-<div id="addSupQrReader"></div>
-<video autoplay="" class="hidden" id="addSupCameraVideo" muted="" playsinline="" webkit-playsinline=""></video>
-<div class="vsa-frame" aria-hidden="true"></div>
-</div>
-<p id="addSupCameraLiveStatus">Barkodu çerçeveye hizalayın.</p>
-</div>
-<div aria-live="polite" class="hidden vsa-feedback" id="addSupBarcodeFeedbackBox"></div>
-<div aria-live="polite" class="hidden" id="addSupAiResultCard"></div>
-<div aria-live="assertive" class="hidden vsa-fallback" id="addSupFallbackConfirmBox">
-<p><i class="fa-solid fa-circle-question" aria-hidden="true"></i> Barkod bu cihazdaki ürün listesinde yok. Kutunun fotoğrafıyla yapay zekâ (Gemini) doldursun mu?</p>
-<div class="vsa-fb-actions">
-<button class="vsa-btn vsa-btn-main" data-vita-requires-gemini="" onclick="if(window.SoundEffects) SoundEffects.playClick(); triggerGeminiBoxScan()" type="button"><i class="fa-solid fa-camera-retro"></i><span>Evet, fotoğraf çek</span></button>
-<button class="vsa-btn" onclick="document.getElementById('addSupFallbackConfirmBox').classList.add('hidden'); document.getElementById('manualSupName')?.focus()" type="button">Tamam, elle yazacağım</button>
-</div>
-</div>
-<!-- Eski öğeler (kod uyumluluğu için duruyor, gizli) -->
-<div class="vsa-legacy" aria-hidden="true">
-<select id="addSupQuickDbSelect" tabindex="-1"><option value=""></option></select>
-<button id="btnAddSupLookupBarcode" tabindex="-1" onclick="handleAddSupBarcodeDecoded(document.getElementById('addSupBarcodeInput').value)" type="button">Sorgula</button>
-<button id="addSupModalCameraPermBadge" tabindex="-1" onclick="if(window.SoundEffects) SoundEffects.playClick(); handleModalCameraPermBadgeClick('addSupplementModal')" type="button"><span>Kamera İzni</span></button>
-<span id="addSupDbBadge"></span>
-</div>
-</section>
-
-<!-- Form: önce yalnızca ad ve zaman; kalan alanlar isteğe bağlı -->
-<div class="vsa-form" id="modalCustomNameContainer">
-<div class="vsa-row">
-<label class="vsa-field"><span>Ürün adı *</span>
-<input id="manualSupName" oninput="if(typeof updateModalLiveInteractionPreview === 'function') updateModalLiveInteractionPreview()" placeholder="Örn: D3 Vitamini" type="text"/></label>
-<label class="vsa-field vsa-field-sm"><span>Ne zaman?</span>
-<select id="manualSupTiming" onchange="if(typeof updateModalLiveInteractionPreview === 'function') updateModalLiveInteractionPreview()">
-<option value="Sabah">Sabah</option>
-<option value="Öğle">Öğle</option>
-<option value="Akşam">Akşam</option>
-<option value="Gece">Gece</option>
-</select></label>
-</div>
-<details class="vsa-more" id="addSupMoreDetails">
-<summary><span>Daha fazla bilgi <small>(isteğe bağlı)</small></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></summary>
-<div class="vsa-more-body">
-<div class="vsa-grid" id="modalCustomDoseContainer">
-<label class="vsa-field"><span>Marka / etken madde</span>
-<input id="manualSupBrandActive" oninput="if(typeof updateModalLiveInteractionPreview === 'function') updateModalLiveInteractionPreview()" placeholder="Örn: Orzaks — Kolekalsiferol" type="text"/></label>
-<label class="vsa-field"><span>Form</span>
-<input id="manualSupFormText" placeholder="Tablet, kapsül, damla…" type="text"/></label>
-</div>
-<fieldset class="vsa-dose" id="modalDoseFieldset">
-<legend>Nasıl alacaksınız?</legend>
-<div class="vsa-dose-row">
-<label class="vsa-field"><span>Günde kaç adet?</span>
-<input id="manualSupDailyDose" inputmode="numeric" max="50" min="1" oninput="updateManualModalStockPreview(false); updateVitaSupplementDosePreview()" type="number" value="1"/></label>
-<label class="vsa-field"><span>Birim</span>
-<select id="manualSupDoseUnit" onchange="updateVitaSupplementDosePreview()">
-<option value="tablet">tablet</option>
-<option value="kapsül">kapsül</option>
-<option value="damla">damla</option>
-<option value="ölçek">ölçek</option>
-<option value="saşe">saşe</option>
-<option value="puf">puf (sprey)</option>
-<option value="mL">mL</option>
-</select></label>
-</div>
-<label class="vsa-field"><span>Etiketteki miktar <small>(1 adette · isteğe bağlı)</small></span>
-<input id="manualSupDose" oninput="if(typeof updateModalLiveInteractionPreview === 'function') updateModalLiveInteractionPreview(); updateVitaSupplementDosePreview()" placeholder="Örn: 1000 IU veya 500 mg" type="text"/></label>
-<label class="vsa-field"><span>Aç mı, tok mu?</span>
-<select id="manualSupHungerNote" onchange="updateVitaSupplementDosePreview()">
-<option value="">Belirtilmedi</option>
-<option value="Aç karnına">Aç karnına</option>
-<option value="Tok karnına">Tok karnına</option>
-<option value="Yemekle birlikte">Yemekle birlikte</option>
-<option value="Fark etmez">Fark etmez</option>
-</select></label>
-<p class="vsa-dose-preview" id="manualSupDosePreview" aria-live="polite">Günde 1 tablet</p>
-<p class="vsa-dose-note">Miktarı kutu etiketine veya hekiminizin/eczacınızın söylediğine göre girin.</p>
-</fieldset>
-<label class="vsa-field"><span>Hazır şablon</span>
-<select id="modalCatalogSelect" onchange="if(window.SoundEffects) SoundEffects.playClick(); onCatalogSelectChange(this.value)">
-<option value="custom">Şablon yok (kendim yazacağım)</option>
-<option value="D3_K2">☀️ D3 + K2 Vitamini</option>
-<option value="Omega3">🐟 Omega-3 Balık Yağı</option>
-<option value="Demir">🩸 Demir (Fe)</option>
-<option value="B12">🧠 B12 Vitamini</option>
-<option value="Magnezyum">⚡ Magnezyum</option>
-<option value="Folat">🌱 Folat / Metilfolat</option>
-<option value="Kolajen">🧬 Kolajen</option>
-<option value="Kreatin">💧 Kreatin</option>
-</select></label>
-<div class="hidden vsa-formbox" id="modalFormSelectorContainer">
-<label class="vsa-field"><span>Hangi formda alacaksınız?</span>
-<select class="form-selector" id="modalFormSelect" onchange="if(window.SoundEffects) SoundEffects.playClick(); onModalFormOptionChange(this.value)"></select></label>
-<div class="vsa-pills" id="modalFormQuickPills"></div>
-<div class="vsa-formline"><span>Porsiyon:</span><b id="modalDosePreview">-</b></div>
-<p id="modalInstructionPreview">-</p>
-</div>
-<div class="vsa-stock" id="modalMisanthaStockBox">
-<div class="vsa-stock-head"><span><i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i> Stok takibi</span><b id="modalMisanthaDaysPreviewBadge">30 gün yetecek</b></div>
-<div class="vsa-grid">
-<label class="vsa-field"><span>Kutudaki adet</span><input id="manualSupBoxCount" max="1000" min="1" oninput="updateManualModalStockPreview(true)" type="number" value="30"/></label>
-<label class="vsa-field"><span>Kalan adet</span><input id="manualSupRemainingCount" max="1000" min="0" oninput="updateManualModalStockPreview(false)" type="number" value="30"/></label>
-</div>
-</div>
-</div>
-</details>
-</div>
-
-<div class="hidden vsa-live" id="modalLiveInteractionWarning" role="status" aria-live="polite"></div>
-<button class="vsa-submit" onclick="if(window.SoundEffects) SoundEffects.playClick(); commitManualSupplement()" type="button"><i class="fa-solid fa-plus"></i><span>Takviyeyi ekle</span></button>
 </div>
 </div>
 <!-- Gerçek kamera barkod okuyucu ve yerel fotoğraf ön incelemesi. İki modlu: 'supplement' (Takviye Ekle) ve 'medication' (İlaç Seç ve Denetle). -->

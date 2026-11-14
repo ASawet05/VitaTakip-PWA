@@ -25,7 +25,7 @@ await p.evaluate(() => { openAppDrawer(); document.getElementById('drawer-add-su
 const m1 = await p.evaluate(() => ({ sup: !document.getElementById('addSupplementModal').classList.contains('hidden'), title: document.getElementById('vsaTitle').innerText }));
 await p.evaluate(() => { closeAddSupplementModal(); openAppDrawer(); document.getElementById('drawer-add-medication').click(); }); await sleep(400);
 const m2 = await p.evaluate(() => ({ med: !document.getElementById('addMedicationModal').classList.contains('hidden'), title: document.getElementById('vamTitle').innerText, supClosed: document.getElementById('addSupplementModal').classList.contains('hidden') }));
-log('Menüden "+ Takviye Ekle" takviye penceresini, "+ İlaç Ekle" ayrı ilaç penceresini açar', m1.sup && m1.title === 'Takviye ekle' && m2.med && m2.title === 'İlaç ekle' && m2.supClosed, JSON.stringify({ m1, m2 }));
+log('Menüden "+ Takviye Ekle" tam ekran takviye sayfasını, "+ İlaç Ekle" ayrı ilaç penceresini açar', m1.sup && m1.title === 'Takviye Ekle' && m2.med && m2.title === 'İlaç ekle' && m2.supClosed, JSON.stringify({ m1, m2 }));
 await p.evaluate(() => closeAddMedicationModal());
 
 /* 2) Ana Sayfa: "İlaç Kalkanı" yok; "Bugünkü ilaçlarım" kartı, sağ üstte "+ İlaç Ekle"; "İlaç kontrolü" yok */

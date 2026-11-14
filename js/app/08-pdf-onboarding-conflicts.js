@@ -1217,12 +1217,14 @@ function applyParsedPdfValues() {
       const catalogSelect = document.getElementById("modalCatalogSelect");
       if (!previewEl || !catalogSelect) return;
 
-      const catalogKey = catalogSelect.value;
+      // Takviye Ekle sayfası: kayıt her zaman formdaki değerlerle yapılır (şablon yalnızca ön doldurma), vakit sayfadaki ilk vakittir.
+      const catalogKey = "custom";
       let candidate = null;
 
       if (catalogKey === "custom") {
         const name = (document.getElementById("manualSupName")?.value || "").trim();
-        const timing = document.getElementById("manualSupTiming")?.value || "Sabah";
+        const plan = window.VitaSupPage ? window.VitaSupPage.getPlan() : null;
+        const timing = plan && plan.vakits.length ? plan.vakits[0].vakit : "Sabah";
         const dose = (document.getElementById("manualSupDose")?.value || "").trim();
         if (!name) {
           previewEl.classList.add("hidden");
@@ -1264,19 +1266,14 @@ function applyParsedPdfValues() {
         (catalogKey === "custom" && ix.title.toLowerCase().includes(candidate.name.toLowerCase()))
       );
 
-      previewEl.classList.remove("hidden");
+      // Etkileşim yoksa kutu gösterilmez (sayfadaki saat çakışması uyarısıyla çelişen "saptanmadı" mesajı çıkmasın).
       if (relevant.length === 0) {
-        previewEl.className = "rounded-2xl border border-emerald-200 bg-emerald-50/80 p-3 text-xs text-emerald-950 flex items-start gap-2.5";
-        previewEl.innerHTML = `
-          <i class="fa-solid fa-shield-check text-emerald-600 text-base mt-0.5"></i>
-          <div>
-            <strong class="font-black block text-[11px] text-emerald-900">Klinik Veritabanı Kontrolü: Çakışma Saptanmadı</strong>
-            <p class="text-[10px] text-emerald-800 mt-0.5 leading-relaxed">
-              "${escapeHtmlText(candidate.name)}" (${escapeHtmlText(candidate.timing)}) için kayıtlı ilaçlarınız ve mevcut protokolünüzle majör bir etkileşim görünmüyor.
-            </p>
-          </div>
-        `;
-      } else {
+        previewEl.classList.add("hidden");
+        previewEl.innerHTML = "";
+        return;
+      }
+      previewEl.classList.remove("hidden");
+      {
         const hasDanger = relevant.some(r => r.severity === "danger");
         previewEl.className = `rounded-2xl border-2 p-3.5 space-y-2 text-xs ${
           hasDanger

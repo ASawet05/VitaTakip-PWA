@@ -43,6 +43,10 @@
       const ratio = Math.min(100, Math.round((state.hydration.current / state.hydration.target) * 100));
       document.getElementById("homeHydrationBar").style.width = `${ratio}%`;
 
+      // Gün farkındalığı: karşılama kartı ve "Bugünkü takviyelerim" başlığında bugünün adı (liste bu güne göre süzülür)
+      const todayName = new Date().toLocaleDateString("tr-TR", { weekday: "long" });
+      const heroDay = document.querySelector("#homeDayBadge span"); if (heroDay) heroDay.textContent = todayName;
+      const supDay = document.getElementById("supDayBadge"); if (supDay) supDay.textContent = todayName;
       const todaySupplements = state.supplements.filter(s => isSupplementScheduledToday(s));
       const morningItems = todaySupplements.filter(s => s.timing === "Sabah");
       const noonItems = todaySupplements.filter(s => s.timing === "Öğle");
@@ -73,7 +77,8 @@
         const groups = [
           { timing: "Sabah", label: "Sabah protokolü", icon: "fa-sun text-amber-500", items: morningItems },
           { timing: "Öğle", label: "Öğle protokolü", icon: "fa-utensils text-sky-500", items: noonItems },
-          { timing: "Akşam", label: "Akşam protokolü", icon: "fa-moon text-indigo-500", items: eveningItems }
+          { timing: "Akşam", label: "Akşam protokolü", icon: "fa-moon text-indigo-500", items: todaySupplements.filter(s => s.timing === "Akşam") },
+          { timing: "Gece", label: "Gece protokolü", icon: "fa-moon text-slate-500", items: todaySupplements.filter(s => s.timing === "Gece") }
         ];
 
         groups.forEach(g => {
@@ -145,10 +150,10 @@
 
             // Misantha Tipi Kutu, Stok ve Kalan Gün Sayacı (Pill & Days Counter)
             normalizeSupplementStockFields(item);
-            const kalanAdet = item.kalanAdet;
-            const toplamKutuAdedi = item.toplamKutuAdedi;
-            const gunlukDoz = item.gunlukDoz;
-            const kalanGun = Math.floor(kalanAdet / gunlukDoz);
+            const stockInfo = getSupplementGroupStock(item);
+            const toplamKutuAdedi = stockInfo.box;
+            const gunlukDoz = stockInfo.daily;
+            const kalanGun = stockInfo.days;
             const isCriticalStock = kalanGun <= 3;
             // Sade stok satırı: "Stok: 29 gün yetecek. Günlük doz: 1" — hemen altında "+Stok".
             const stockBadgeHtml = isCriticalStock
@@ -228,9 +233,41 @@
       return Math.floor(item.kalanAdet / item.gunlukDoz);
     }
 
+    /* Aynı takviyenin farklı vakit kayıtları (groupId): stok tek kutu gibi gösterilir/yenilenir. */
+    function getSupplementGroupMembers(item) {
+      if (!item || !item.groupId) return item ? [item] : [];
+      return (state.supplements || []).filter(s => s.groupId === item.groupId);
+    }
+    function getSupplementGroupStock(item) {
+      const members = getSupplementGroupMembers(item);
+      members.forEach(normalizeSupplementStockFields);
+      const remaining = members.reduce((sum, m) => sum + m.kalanAdet, 0);
+      const daily = Math.max(1, members.reduce((sum, m) => sum + m.gunlukDoz, 0));
+      const box = Math.max(1, members.reduce((sum, m) => sum + m.toplamKutuAdedi, 0));
+      return { remaining, daily, box, days: Math.floor(remaining / daily), members };
+    }
+    window.getSupplementGroupStock = getSupplementGroupStock;
+
     function refillSupplementBox(id, customAddAmount) {
       const item = (state.supplements || []).find(s => s.id === id);
       if (!item) return;
+      if (item.groupId && getSupplementGroupMembers(item).length > 1) {
+        // Yeni kutu, vakitlerin günlük adedine göre paylaştırılır.
+        const g = getSupplementGroupStock(item);
+        const add = Number.isFinite(Number(customAddAmount)) && Number(customAddAmount) > 0 ? Math.round(Number(customAddAmount)) : g.box;
+        let left = add;
+        g.members.forEach((m, i) => {
+          const part = i === g.members.length - 1 ? left : Math.floor(add * m.gunlukDoz / g.daily);
+          left -= part;
+          m.kalanAdet = Math.max(0, m.kalanAdet + part);
+          if (m.kalanAdet > m.toplamKutuAdedi) m.toplamKutuAdedi = m.kalanAdet;
+        });
+        saveState();
+        renderDailyTab();
+        const after = getSupplementGroupStock(item);
+        showToast("Yeni Kutu Eklendi (+Stok)", `${item.name} stoğuna +${add} adet eklendi. Güncel stok: ${after.remaining} adet (${after.days} gün yetecek).`, "success");
+        return;
+      }
       normalizeSupplementStockFields(item);
       const addCount = Number.isFinite(Number(customAddAmount)) && Number(customAddAmount) > 0
         ? Math.round(Number(customAddAmount))
@@ -262,10 +299,12 @@
       const remVal = Math.max(0, parseInt(remInput.value, 10) || 0);
       const doseVal = Math.max(1, parseInt(doseInput.value, 10) || 1);
       const kalanGun = Math.floor(remVal / doseVal);
+      const unitSel = document.getElementById("manualSupDoseUnit");
+      const unit = (unitSel && unitSel.value) || "adet";
       if (badge) {
         badge.textContent = kalanGun <= 3
-          ? `Kritik Stok: ${kalanGun} gün yetecek (${remVal} tablet kaldı)`
-          : `${kalanGun} gün yetecek (${remVal} tablet)`;
+          ? `Kritik Stok: ${kalanGun} gün yetecek (${remVal} ${unit} kaldı)`
+          : `${kalanGun} gün yetecek (${remVal} ${unit})`;
         badge.className = kalanGun <= 3
           ? "text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300"
           : "text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-white text-indigo-800 border border-indigo-200";
@@ -322,7 +361,7 @@
       if (!validTimings.includes(timing)) return;
       const items = (state.supplements || []).filter(item => {
         if (!isSupplementScheduledToday(item)) return false;
-        if (timing === "Akşam") return item.timing === "Akşam" || item.timing === "Gece";
+
         return item.timing === timing;
       });
       if (!items.length) { showToast("Takviye Bulunamadı", "Bu zaman diliminde işaretlenecek takviye yok.", "info"); return; }
@@ -364,6 +403,17 @@
     }
 
     function deleteSupplementItem(id) {
+      // Birden çok vakitli takviyede yalnızca bu vakit silinir; kalan stoğu diğer vakite aktarılır.
+      const item = (state.supplements || []).find(s => s.id === id);
+      if (item && item.groupId) {
+        const rest = getSupplementGroupMembers(item).filter(s => s.id !== id);
+        if (rest.length) {
+          normalizeSupplementStockFields(item);
+          rest[0].kalanAdet += item.kalanAdet;
+          rest[0].toplamKutuAdedi += item.toplamKutuAdedi;
+          if (rest.length === 1) rest[0].groupId = null;
+        }
+      }
       state.supplements = state.supplements.filter(s => s.id !== id);
       saveState();
       renderDailyTab();
@@ -623,7 +673,6 @@
       const boxCountInput = document.getElementById("manualSupBoxCount");
       const remCountInput = document.getElementById("manualSupRemainingCount");
       const dailyDoseInput = document.getElementById("manualSupDailyDose");
-      const timingSelect = document.getElementById("manualSupTiming");
       const hungerInput = document.getElementById("manualSupHungerNote");
 
       if (nameInput && item.urunAdi) nameInput.value = item.urunAdi;
@@ -641,11 +690,9 @@
       if (remCountInput) remCountInput.value = String(kutuAdedi);
       if (dailyDoseInput) dailyDoseInput.value = String(gunlukDoz);
 
-      if (timingSelect && item.zamanBloku) {
-        const validOptions = ["Sabah", "Öğle", "Akşam", "Gece"];
-        if (validOptions.includes(item.zamanBloku)) {
-          timingSelect.value = item.zamanBloku;
-        }
+      // Vakit: kutuda/katalogda yazıyorsa o vakit seçilir (Takviye Ekle sayfasındaki vakit düğmeleri)
+      if (item.zamanBloku && ["Sabah", "Öğle", "Akşam", "Gece"].includes(item.zamanBloku) && window.VitaSupPage) {
+        window.VitaSupPage.setVakits([item.zamanBloku]);
       }
       if (hungerInput && item.aclikDurumu) {
         setVitaSelectValueLoose(hungerInput, item.aclikDurumu);
@@ -696,17 +743,12 @@
       return { daily, unit, strength, hunger, text: `Günde ${daily} ${unit}${strength ? ` (${strength})` : ""}${hunger ? ` · ${hunger}` : ""}` };
     }
     function updateVitaSupplementDosePreview() {
+      // Takviye Ekle sayfası özeti vakit/saat/gün bilgisini de içerir.
+      if (window.VitaSupPage) { window.VitaSupPage.refresh(); return; }
       const preview = document.getElementById("manualSupDosePreview");
       if (preview) preview.textContent = getVitaSupplementDoseSummary().text;
     }
     window.updateVitaSupplementDosePreview = updateVitaSupplementDosePreview;
-
-    /* Hazır şablonlarda doz hesaplanmaz; kayda kullanıcının girdiği günlük miktar yazılır. */
-    function vitaTemplateDoseText(templateText, gunlukDoz) {
-      if (templateText && !/Etiket \/ hekim planındaki|Günlük miktarı/.test(templateText)) return templateText;
-      const s = getVitaSupplementDoseSummary();
-      return `Günde ${Math.max(1, Number(gunlukDoz) || s.daily)} ${s.unit}${s.strength ? ` (${s.strength})` : ""}`;
-    }
 
     function handleAddSupBarcodeDecoded(decodedText) {
       const cleanBarcode = String(decodedText || "").trim();
@@ -1019,11 +1061,13 @@
     window.handleAddSupAiPhotoInput = handleAddSupAiPhotoInput;
     window.fillAddSupplementModalFormFromItem = fillAddSupplementModalFormFromItem;
 
+    /* "Takviye Ekle" artık tam ekran sayfa (Tahlillerim gibi): üstte "← Ana Sayfa" ve başlık. */
     function openAddSupplementModal() {
       const modal = document.getElementById("addSupplementModal");
       if (!modal) return;
+      if (typeof navigateToView === "function" && state.activeTab !== "view-add-supplement") navigateToView("view-add-supplement");
       modal.classList.remove("hidden");
-      modal.style.display = "flex";
+      window.scrollTo(0, 0);
       stopScanner();
       populateAddSupQuickDbSelect();
       if (typeof window.updateCameraPermissionUI === "function") {
@@ -1046,14 +1090,13 @@
       const formInput = document.getElementById("manualSupFormText");
       const doseInput = document.getElementById("manualSupDose");
       const hungerInput = document.getElementById("manualSupHungerNote");
-      const timingSelect = document.getElementById("manualSupTiming");
       if (nameInput) nameInput.value = "";
       if (brandActiveInput) brandActiveInput.value = "";
       if (formInput) formInput.value = "";
       if (doseInput) doseInput.value = "";
       if (hungerInput) { hungerInput.querySelectorAll("option[data-dynamic]").forEach(o => o.remove()); hungerInput.value = ""; }
       const unitReset = document.getElementById("manualSupDoseUnit"); if (unitReset) unitReset.value = "tablet";
-      if (timingSelect) timingSelect.value = "Sabah";
+      if (window.VitaSupPage) window.VitaSupPage.reset();
 
       const boxInput = document.getElementById("manualSupBoxCount");
       const remInput = document.getElementById("manualSupRemainingCount");
@@ -1074,7 +1117,9 @@
     function closeAddSupplementModal() {
       stopScanner();
       const modal = document.getElementById("addSupplementModal");
-      if (modal) { modal.classList.add("hidden"); modal.style.display = "none"; }
+      if (modal) modal.classList.add("hidden");
+      // Tam ekran sayfadan Ana Sayfa'ya dönülür.
+      if (state.activeTab === "view-add-supplement" && typeof navigateToView === "function") navigateToView("view-home");
     }
 
     function onCatalogSelectChange(catalogKey) {
@@ -1149,108 +1194,85 @@
       const nameInput = document.getElementById("manualSupName");
       const formInput = document.getElementById("manualSupFormText");
       const doseInput = document.getElementById("manualSupDose");
-      const timingSelect = document.getElementById("manualSupTiming");
       const hungerInput = document.getElementById("manualSupHungerNote");
       if (nameInput) nameInput.value = cfg.name;
       if (formInput) formInput.value = chosenForm.replace('_', ' ');
       if (doseInput) doseInput.value = evaluated.doseText;
-      if (timingSelect && evaluated.timing) timingSelect.value = evaluated.timing;
-      if (hungerInput && evaluated.instruction) hungerInput.value = evaluated.instruction;
+      if (evaluated.timing && window.VitaSupPage) window.VitaSupPage.setVakits([evaluated.timing]);
+      // Uzun şablon talimatı "aç/tok" seçimine yazılmaz; yalnızca vakit önerisi aktarılır.
 
       if (typeof updateModalLiveInteractionPreview === "function") updateModalLiveInteractionPreview();
     }
 
+    /* Takviye Ekle sayfası kaydı: seçilen her vakit için bir kayıt (aynı groupId). Günlük adet vakitlere bölünür
+       (ör. 3 adet / 2 vakit → 2 + 1), stok da aynı oranda paylaştırılır; böylece her kaydın "kaç gün yeter" değeri aynıdır.
+       Gün seçimi: Her gün → [1..0]; belirli günler → yalnızca seçilenler (o gün programında olmayan takviye listede görünmez).
+       Hazır şablon yalnızca alanları önceden doldurur; kayıt her zaman formdaki değerlerle yapılır. */
     function commitManualSupplement() {
-      const catalogKey = document.getElementById("modalCatalogSelect").value;
+      const page = window.VitaSupPage;
+      const name = (document.getElementById("manualSupName")?.value || "").trim();
+      if (!name) { showToast("Eksik Ad", "Lütfen ürün adını giriniz veya barkod okutunuz.", "warning"); document.getElementById("manualSupName")?.focus(); return; }
+      const plan = page ? page.getPlan() : { vakits: [{ vakit: "Sabah", clock: "08:00" }], days: [1, 2, 3, 4, 5, 6, 0] };
+      if (!plan.vakits.length) { showToast("Vakit seçin", "Takviyeyi hangi vakit(ler)de alacağınızı seçin.", "warning"); return; }
+      if (!plan.days.length) { showToast("Gün seçin", "\"Haftanın belirli günleri\" seçiliyken en az bir gün işaretleyin.", "warning"); return; }
 
-      const nowDate = new Date();
-      const todayIso = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, "0")}-${String(nowDate.getDate()).padStart(2, "0")}`;
       const toplamKutuAdedi = Math.max(1, parseInt(document.getElementById("manualSupBoxCount")?.value, 10) || 30);
-      const kalanAdet = Math.max(0, parseInt(document.getElementById("manualSupRemainingCount")?.value, 10) ?? toplamKutuAdedi);
-      const gunlukDoz = Math.max(1, parseInt(document.getElementById("manualSupDailyDose")?.value, 10) || 1);
+      const remRaw = parseInt(document.getElementById("manualSupRemainingCount")?.value, 10);
+      const kalanAdet = Math.max(0, Number.isFinite(remRaw) ? remRaw : toplamKutuAdedi);
+      const doseSummary = getVitaSupplementDoseSummary();
+      const gunlukToplam = Math.max(plan.vakits.length, doseSummary.daily);
+      const brandActive = (document.getElementById("manualSupBrandActive")?.value || "").trim();
+      const customForm = (document.getElementById("manualSupFormText")?.value || "").trim() || null;
+      const hungerNote = (document.getElementById("manualSupHungerNote")?.value || "").trim();
+      const barcodeVal = (document.getElementById("addSupBarcodeInput")?.value || "").trim() || null;
+      const strength = doseSummary.strength;
+      const groupId = plan.vakits.length > 1 ? `supg_${Date.now().toString(36)}` : null;
+      const subParts = [customForm, brandActive].filter(Boolean);
+      const instructionText = [hungerNote ? `Açlık/Tokluk & Emilim: ${hungerNote}.` : "", brandActive ? `İçerik: ${brandActive}.` : "", "Hekiminizin belirttiği talimatlara uygun alınız."].filter(Boolean).join(" ");
 
-      if (catalogKey === "custom") {
-        const name = (document.getElementById("manualSupName")?.value || "").trim();
-        const brandActive = (document.getElementById("manualSupBrandActive")?.value || "").trim();
-        const timing = document.getElementById("manualSupTiming")?.value || "Sabah";
-        // Günlük miktar açıkça: "Günde 2 kapsül (1000 IU)". Eski belirsiz "Etiket / hekim planındaki miktarı girin" yazısı kalktı.
-        const doseSummary = getVitaSupplementDoseSummary();
-        const dose = `Günde ${doseSummary.daily} ${doseSummary.unit}${doseSummary.strength ? ` (${doseSummary.strength})` : ""}`;
-        const customForm = (document.getElementById("manualSupFormText")?.value || "").trim() || null;
-        const hungerNote = (document.getElementById("manualSupHungerNote")?.value || "").trim();
-        const barcodeVal = (document.getElementById("addSupBarcodeInput")?.value || "").trim() || null;
-
-        if (!name) { showToast("Eksik Ad", "Lütfen ürün adını giriniz veya barkod okutunuz.", "warning"); return; }
-
-        const subParts = [customForm, brandActive].filter(Boolean);
-        const instructionText = [
-          hungerNote ? `Açlık/Tokluk & Emilim: ${hungerNote}.` : "",
-          brandActive ? `İçerik: ${brandActive}.` : "",
-          "Hekiminizin belirttiği talimatlara uygun alınız."
-        ].filter(Boolean).join(" ");
-
+      // Adet ve stok paylaşımı (kalanlar ilk vakitlere)
+      const k = plan.vakits.length;
+      const per = i => Math.floor(gunlukToplam / k) + (i < gunlukToplam % k ? 1 : 0);
+      const share = (total, i) => Math.floor(total * per(i) / gunlukToplam) + (i === 0 ? total - plan.vakits.reduce((s, _, j) => s + Math.floor(total * per(j) / gunlukToplam), 0) : 0);
+      const stamp = Date.now();
+      plan.vakits.forEach((v, i) => {
+        const amount = per(i);
+        const dose = `${amount} ${doseSummary.unit}${strength ? ` (${strength})` : ""}`;
         state.supplements.push({
-          id: `sup_man_${Date.now()}`,
+          id: `sup_man_${stamp}_${i}`,
+          groupId,
           name,
           barcode: barcodeVal,
           markaEtken: brandActive || null,
           formKey: null,
+          sablonKey: (document.getElementById("modalCatalogSelect")?.value || "custom") !== "custom" ? document.getElementById("modalCatalogSelect").value : null,
           selectedForm: customForm,
-          timing,
+          timing: v.vakit,
+          scheduleTime: v.clock,
           doseText: hungerNote ? `${dose} • ${hungerNote}` : dose,
           dozBirimi: doseSummary.unit,
           aclikDurumu: hungerNote || null,
-          toplamKutuAdedi,
-          kalanAdet,
-          gunlukDoz,
+          toplamKutuAdedi: Math.max(1, share(toplamKutuAdedi, i)),
+          kalanAdet: share(kalanAdet, i),
+          gunlukDoz: amount,
           subText: subParts.length ? subParts.join(" · ") : "Hekim Tavsiyeli Tanımlama",
           instruction: instructionText,
-          addedDate: Date.now(),
+          addedDate: stamp,
           taken: false,
-          scheduleDays: [1, 2, 3, 4, 5, 6, 0],
-          scheduledDate: todayIso
+          scheduleDays: plan.days.slice()
         });
+      });
 
-        /* Barkod TAKVİYE önbelleğine öğretilir (ilaç önbelleğine asla): bir dahaki taramada katalogda olmasa da tanınır.
-           Barkod zaten takviye kataloğunda aynı ürün olarak varsa gereksiz kopya yapılmaz. */
-        const learnKey = typeof vitaBarcodeKey === "function" ? vitaBarcodeKey(barcodeVal) : "";
-        if (learnKey && typeof learnVitaBarcode === "function") {
-          const fromCatalog = addSupLastLookup && addSupLastLookup.barcode === learnKey && addSupLastLookup.source === "catalog";
-          if (!fromCatalog) {
-            const [brandPart, ...activeParts] = brandActive.split(/\s+—\s+/);
-            learnVitaBarcode("supplement", learnKey, {
-              urunAdi: name, marka: activeParts.length ? brandPart : "", etkenMadde: activeParts.length ? activeParts.join(" — ") : brandPart,
-              form: customForm || "", dozaj: (document.getElementById("manualSupDose")?.value || "").trim(),
-              kutuAdedi: toplamKutuAdedi, gunlukDoz, zamanBloku: timing, aclikDurumu: hungerNote
-            });
-          }
-        }
-      } else {
-        const cfg = FORM_DOSAGE_CONFIG[catalogKey];
-        const chosenForm = document.getElementById("modalFormSelect").value;
-        const scheduleDays = [1, 2, 3, 4, 5, 6, 0];
-        const w = state.user ? state.user.weight : 70;
-        const evaluated = cfg.forms[chosenForm](w);
-
-        const existing = state.supplements.find(s => s.formKey === catalogKey);
-        if (existing) {
-          existing.selectedForm = chosenForm;
-          existing.doseText = vitaTemplateDoseText(evaluated.doseText, gunlukDoz);
-          existing.subText = evaluated.subText;
-          existing.timing = evaluated.timing;
-          existing.instruction = evaluated.instruction;
-          existing.toplamKutuAdedi = toplamKutuAdedi;
-          existing.kalanAdet = kalanAdet;
-          existing.gunlukDoz = gunlukDoz;
-          existing.scheduledDate = todayIso;
-        } else {
-          state.supplements.push({
-            id: `sup_cat_${Date.now()}`,
-            name: cfg.name, formKey: catalogKey, selectedForm: chosenForm,
-            timing: evaluated.timing, doseText: vitaTemplateDoseText(evaluated.doseText, gunlukDoz),
-            toplamKutuAdedi, kalanAdet, gunlukDoz,
-            subText: evaluated.subText, instruction: evaluated.instruction,
-            addedDate: Date.now(), taken: false, scheduleDays, scheduledDate: todayIso
+      /* Barkod TAKVİYE önbelleğine öğretilir (ilaç önbelleğine asla). Katalogda aynı ürün olarak varsa kopya yapılmaz. */
+      const learnKey = typeof vitaBarcodeKey === "function" ? vitaBarcodeKey(barcodeVal) : "";
+      if (learnKey && typeof learnVitaBarcode === "function") {
+        const fromCatalog = addSupLastLookup && addSupLastLookup.barcode === learnKey && addSupLastLookup.source === "catalog";
+        if (!fromCatalog) {
+          const [brandPart, ...activeParts] = brandActive.split(/\s+—\s+/);
+          learnVitaBarcode("supplement", learnKey, {
+            urunAdi: name, marka: activeParts.length ? brandPart : "", etkenMadde: activeParts.length ? activeParts.join(" — ") : brandPart,
+            form: customForm || "", dozaj: (document.getElementById("manualSupDose")?.value || "").trim(),
+            kutuAdedi: toplamKutuAdedi, gunlukDoz: gunlukToplam, zamanBloku: plan.vakits[0].vakit, aclikDurumu: hungerNote
           });
         }
       }
@@ -1260,7 +1282,9 @@
       renderDailyTab();
       checkPendingSymptomReviews();
       detectSupplementConflicts();
-      showToast("Takviye Eklendi", "Takip listenize ve kutu stok sayacına kaydedildi.", "success");
+      const today = new Date().getDay();
+      const notToday = !plan.days.includes(today);
+      showToast("Takviye Eklendi", `${name}: ${plan.vakits.map(v => `${v.vakit} ${v.clock}`).join(", ")} · ${getSupplementScheduleDaysLabel({ scheduleDays: plan.days })}.${notToday ? " Bugün programda olmadığı için bugünkü listede görünmez." : ""}`, "success");
     }
 /* CDSS DEMOGRAFİ VE CANLI ÖZET SENKRONİZASYONU */
     function syncCDSSDemographics() {

@@ -363,3 +363,55 @@
 .vpf-btn-rm{border-color:#fecdd3;color:#be123c}
 .vpf-btn.hidden{display:none}
 .vpf-note{font-size:10.5px;color:#64748b}
+/* ===== Takviye Ekle: tam ekran sayfa ===== */
+.vsp-page{display:flex;flex-direction:column;gap:12px;padding-bottom:84px}
+.vsp-page.hidden{display:flex}
+.vsp-page .vsa-find{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:12px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.vsp-page .vsa-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.vsp-card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:12px 12px 14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 2px rgba(15,23,42,.04);min-width:0;margin:0}
+.vsp-card.vsa-dose{border:1.5px solid #99f6e4;background:#f0fdfa}
+.vsp-card.vsa-dose legend{float:left;width:100%;padding:0;margin-bottom:2px;font-size:13px;font-weight:900;color:#115e59}
+.vsp-h{margin:0;font-size:13px;font-weight:900;color:#0f172a;display:flex;align-items:center;gap:8px}
+.vsp-h i{color:#0d9488}
+.vsp-hrow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.vsp-badge{font-size:11px;font-weight:900;padding:3px 10px;border-radius:999px;background:#eef2ff;color:#3730a3}
+.vsp-field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.vsp-lbl{font-size:11.5px;font-weight:800;color:#475569}
+.vsp-lbl small{font-weight:600;color:#94a3b8}
+.vsp-field input:not([type=checkbox]),.vsp-field select{width:100%;box-sizing:border-box;height:44px;padding:0 12px;border:1.5px solid #e2e8f0;border-radius:12px;background:#f8fafc;font-size:16px;color:#0f172a}
+.vsp-field input:focus,.vsp-field select:focus{outline:none;border-color:#14b8a6;background:#fff;box-shadow:0 0 0 3px rgba(20,184,166,.14)}
+.vsp-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.vsp-step{display:flex;align-items:stretch;height:44px;border:1.5px solid #e2e8f0;border-radius:12px;background:#f8fafc;overflow:hidden}
+.vsp-step input{flex:1;min-width:0;border:0 !important;background:transparent !important;text-align:center;font-weight:900;height:100% !important;-moz-appearance:textfield;box-shadow:none !important}
+.vsp-step input::-webkit-outer-spin-button,.vsp-step input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.vsp-stepbtn{flex:0 0 42px;border:0;background:#fff;color:#0f766e;font-size:20px;font-weight:900;cursor:pointer}
+.vsp-stepbtn:active{background:#ccfbf1}
+.vsp-seg{display:grid;grid-template-columns:1fr 1.6fr;gap:6px;padding:4px;border-radius:12px;background:#e2e8f0}
+.vsp-segbtn{min-height:38px;border:0;border-radius:9px;background:transparent;color:#334155;font-size:12px;font-weight:800;cursor:pointer}
+.vsp-segbtn.is-on{background:#fff;color:#0f766e;box-shadow:0 1px 3px rgba(15,23,42,.15)}
+.vsp-days,.vsp-vakits{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.vsp-days.hidden{display:none}
+.vsp-chip{min-height:38px;min-width:46px;padding:0 12px;border-radius:999px;border:1.5px solid #cbd5e1;background:#fff;color:#334155;font-size:12.5px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.vsp-chip.is-on{border-color:#0d9488;background:#0d9488;color:#fff}
+.vsp-clocks{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:6px}
+.vsp-clock{display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:900;color:#115e59}
+.vsp-clock small{font-weight:700;color:#64748b}
+.vsp-clock input{height:42px;padding:0 10px;border:1.5px solid #99f6e4;border-radius:12px;background:#fff;font-size:16px;font-weight:800;color:#0f172a}
+.vsp-advice{display:flex;gap:8px;align-items:flex-start;padding:9px 11px;border-radius:12px;background:#ecfeff;border:1px solid #a5f3fc;font-size:12px;line-height:1.45;color:#155e75}
+.vsp-advice.hidden{display:none}
+.vsp-conflict{padding:10px 12px;border-radius:14px;background:#fff7ed;border:1.5px solid #fb923c;color:#7c2d12;font-size:12px;display:flex;flex-direction:column;gap:8px}
+.vsp-conflict.hidden{display:none}
+.vsp-conflict b i{color:#ea580c}
+.vsp-cf{display:flex;flex-wrap:wrap;align-items:center;gap:8px;line-height:1.4}
+.vsp-cf span{flex:1 1 200px}
+.vsp-cf button{min-height:34px;padding:4px 10px;border-radius:10px;border:0;background:#ea580c;color:#fff;font-size:11px;font-weight:900;cursor:pointer}
+.vsp-note{margin:0;font-size:10.5px;color:#64748b}
+.vsp-tpl summary{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;list-style:none;font-size:12.5px;font-weight:800;color:#334155}
+.vsp-tpl summary::-webkit-details-marker{display:none}
+.vsp-tpl summary small{font-weight:600;color:#94a3b8}
+.vsp-submitbar{position:sticky;bottom:calc(64px + 46px + env(safe-area-inset-bottom));z-index:20;padding:8px 0 0;background:linear-gradient(180deg,rgba(248,250,252,0),#f8fafc 40%)}
+@media (min-width:768px){.vsp-submitbar{bottom:12px}}
+.vsp-submitbar .vsa-submit{width:100%;min-height:50px}
+/* Gün rozetleri */
+.vday-badge{display:inline-flex;align-items:center;gap:5px;padding:2px 10px;border-radius:999px;background:#ccfbf1;color:#115e59;font-size:11px;font-weight:900;text-transform:capitalize;margin-left:6px}
+.vday-badge--hero{margin-left:0;padding:4px 12px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.22);font-size:12px}

@@ -61,8 +61,8 @@ log('Ok düğmesi çekmeceyi kapatır', c3 === false);
 
 /* 3) Takviye formu: günlük miktar + birim */
 await p.evaluate(() => { openAddSupplementModal(); document.getElementById('addSupMoreDetails').open = true; }); await sleep(200);
-const f0 = await p.evaluate(() => ({ legend: document.querySelector('#modalDoseFieldset legend')?.innerText, labels: Array.from(document.querySelectorAll('#modalDoseFieldset .vsa-field > span')).map(x => x.innerText), hungerTag: document.getElementById('manualSupHungerNote').tagName, unitOpts: Array.from(document.getElementById('manualSupDoseUnit').options).map(o => o.value), preview: document.getElementById('manualSupDosePreview').innerText, stockDaily: !!document.querySelector('#modalMisanthaStockBox #manualSupDailyDose') }));
-log('"Nasıl alacaksınız?" bölümü: günde kaç adet + birim seçimi, etiketteki miktar, aç/tok seçimi', f0.legend === 'Nasıl alacaksınız?' && f0.labels[0] === 'Günde kaç adet?' && f0.labels[1] === 'Birim' && f0.hungerTag === 'SELECT' && f0.unitOpts.includes('damla') && f0.preview === 'Günde 1 tablet' && !f0.stockDaily, JSON.stringify(f0));
+const f0 = await p.evaluate(() => ({ legend: document.querySelector('#modalDoseFieldset legend')?.innerText, labels: Array.from(document.querySelectorAll('#modalDoseFieldset .vsp-lbl')).map(x => x.innerText), hungerTag: document.getElementById('manualSupHungerNote').tagName, unitOpts: Array.from(document.getElementById('manualSupDoseUnit').options).map(o => o.value), preview: document.getElementById('manualSupDosePreview').innerText, stockDaily: !!document.querySelector('#modalMisanthaStockBox #manualSupDailyDose') }));
+log('"Nasıl alacaksınız?" bölümü: günde kaç adet + birim seçimi, etiketteki miktar, aç/tok seçimi', f0.legend === 'Nasıl alacaksınız?' && f0.labels[0] === 'Günde kaç adet?' && f0.labels[1] === 'Birim' && f0.hungerTag === 'SELECT' && f0.unitOpts.includes('damla') && /^Günde 1 tablet · Sabah 08:00 · Her gün$/.test(f0.preview) && !f0.stockDaily, JSON.stringify(f0));
 await p.evaluate(() => {
   document.getElementById('manualSupName').value = 'Form Testi Omega';
   const d = document.getElementById('manualSupDailyDose'); d.value = '2'; d.dispatchEvent(new Event('input'));
@@ -71,10 +71,10 @@ await p.evaluate(() => {
   const h = document.getElementById('manualSupHungerNote'); h.value = 'Tok karnına'; h.dispatchEvent(new Event('change'));
 });
 const f1 = await p.evaluate(() => document.getElementById('manualSupDosePreview').innerText);
-log('Canlı özet kullanıcının girdiğini açıkça gösterir', f1 === 'Günde 2 kapsül (1000 mg) · Tok karnına', f1);
+log('Canlı özet kullanıcının girdiğini açıkça gösterir', f1 === 'Günde 2 kapsül (1000 mg) · Sabah 08:00 · Her gün · Tok karnına', f1);
 await p.evaluate(() => commitManualSupplement()); await sleep(200);
 const f2 = await p.evaluate(() => { const s = state.supplements.find(x => x.name === 'Form Testi Omega'); return { dose: s?.doseText, daily: s?.gunlukDoz, unit: s?.dozBirimi }; });
-log('Kayıtta belirsiz "Etiket / hekim planındaki miktarı girin" yerine net miktar', f2.dose === 'Günde 2 kapsül (1000 mg) • Tok karnına' && f2.daily === 2 && f2.unit === 'kapsül', JSON.stringify(f2));
+log('Kayıtta belirsiz "Etiket / hekim planındaki miktarı girin" yerine net miktar', f2.dose === '2 kapsül (1000 mg) • Tok karnına' && f2.daily === 2 && f2.unit === 'kapsül', JSON.stringify(f2));
 await p.evaluate(() => { openAddSupplementModal(); fillAddSupplementModalFormFromItem({ urunAdi: 'Katalog Damla', form: 'Oral Damla', aclikDurumu: 'Tok (Yağlı Kahvaltı İle)', gunlukDoz: 1, kutuAdedi: 30 }); });
 const f3 = await p.evaluate(() => ({ unit: document.getElementById('manualSupDoseUnit').value, hunger: document.getElementById('manualSupHungerNote').value }));
 log('Katalogdan dolunca birim formdan tahmin edilir, listede olmayan aç/tok bilgisi kaybolmaz', f3.unit === 'damla' && f3.hunger === 'Tok (Yağlı Kahvaltı İle)', JSON.stringify(f3));
