@@ -896,7 +896,7 @@ function renderDailyTab() {
               : "Fotoğraftaki ürün tanınamadı. Kutunun ön yüzünü yakından ve net çekin ya da ürün adını yazın.");
         }
 
-        const engineLabel = usedLocalEngine ? "Yerel ürün listesi eşleşmesi" : `Gemini yapay zekâ${aiInfo.model ? ` (${aiInfo.model})` : ""}`;
+        const engineLabel = usedLocalEngine ? "Yerel ürün listesi eşleşmesi" : "Gemini yapay zekâ";
         const category = typeof window.getVitaBoxCategory === "function" ? window.getVitaBoxCategory(parsedJson) : "supplement";
         applyAiBoxResultToSupplementForm(parsedJson, engineLabel, category);
         if (window.SoundEffects) SoundEffects.playSuccess();

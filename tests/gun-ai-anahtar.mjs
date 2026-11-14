@@ -55,11 +55,13 @@ const chatLast = () => p.evaluate(() => { const m = document.querySelectorAll('#
 await p.evaluate(() => { document.getElementById('aiHealthDataConsent').checked = false; VitaAIChat.sendPreset('tahlil'); }); await sleep(1500);
 const noConsent = await chatLast();
 log('Onay yokken soru Google\'a gönderilmez', G.reqs.filter(r => r.url.includes(':generateContent')).length === 0, String(G.reqs.length));
-log('Anahtar varken ilk soruda paylaşım onayı sorulur', /Gemini/.test(lastConfirm) && /sağlık verilerinizi/.test(lastConfirm), lastConfirm.slice(0, 80));
-log('Onay yokken yerel yanıt ve nedeni gösterilir', /onay/i.test(noConsent) && /yerel/i.test(noConsent), noConsent.slice(0, 160));
+// Onay artık sohbette açılır pencereyle istenmez; yalnızca Ayarlar > Yapay zekâ bölümünden verilir.
+log('Sohbette açılır onay penceresi çıkmaz; sohbetin altında Ayarlar\'a yönlendiren satır görünür', !lastConfirm && await p.evaluate(() => !document.getElementById('aiConsentHint').classList.contains('hidden')), lastConfirm.slice(0, 80));
+log('Onay yokken yerel yanıt ve nedeni gösterilir', /onay/i.test(noConsent) && /yerel/i.test(noConsent) && /Ayarlar/.test(noConsent), noConsent.slice(0, 160));
 
-/* 4) Onay verilir (bir kez): Gemini yanıt verir, onay hesaba kaydedilir */
-clearReqs(); G.mode = 'ok'; confirmAnswer = true;
+/* 4) Onay Ayarlar'dan verilir (bir kez): Gemini yanıt verir, onay hesaba kaydedilir */
+clearReqs(); G.mode = 'ok'; confirmAnswer = true; // fotoğraf gönderim onayı (ayrı) için "evet"
+await p.evaluate(() => { const c = document.getElementById('aiHealthDataConsent'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); });
 await p.evaluate(() => VitaAIChat.sendPreset('tahlil')); await sleep(2500);
 const consentSaved = await p.evaluate(() => localStorage.getItem('vita_ai_consent_' + activeUserId));
 log('Verilen onay hesaba kaydedilir (bir daha sorulmaz)', consentSaved === 'true', String(consentSaved));

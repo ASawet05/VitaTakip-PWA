@@ -1754,7 +1754,7 @@ window.VitaAIChat = VitaAIChat;
         }
         const engineBadge = boxJson.usedLocalFallback
           ? "Yerel ürün listesi eşleşmesi (dosya adına göre)"
-          : `Gemini yapay zekâ (${boxJson.modelUsed || "flash"})`;
+          : "Gemini yapay zekâ";
 
         if (resultText) {
           resultText.textContent =

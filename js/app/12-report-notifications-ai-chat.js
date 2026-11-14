@@ -1740,13 +1740,30 @@ function getDoctorReportMode() {
     function geminiKeyStorageName() {
       return (typeof activeUserId !== "undefined" && activeUserId) ? `vita_gemini_api_key_${activeUserId}` : "";
     }
+    /* API anahtarı biçimi: hem klasik Google anahtarı ("AIza" + 35 karakter) hem Google AI Studio'nun yeni
+       anahtarları ("AQ." ile başlar, nokta içerir) kabul edilir. Yalnızca baştaki/sondaki boşluk, satır sonu ve
+       görünmez karakterler temizlenir; anahtarın içindeki nokta, tire ve alt çizgiye dokunulmaz.
+       Gerçek geçerliliğe biçimden değil Google'ın doğrulamasından karar verilir. */
+    function normalizeGeminiApiKeyInput(raw) {
+      return String(raw === undefined || raw === null ? "" : raw).replace(/^[\s​-‍⁠﻿]+|[\s​-‍⁠﻿]+$/g, "");
+    }
+    function checkGeminiApiKeyFormat(key) {
+      if (!key) return { ok: false, reason: "empty" };
+      if (/[\s​-‍⁠﻿]/.test(key)) return { ok: false, reason: "space" };
+      if (!/^[A-Za-z0-9._\-]+$/.test(key)) return { ok: false, reason: "chars" };
+      if (key.length < 20 || key.length > 256) return { ok: false, reason: "length" };
+      return { ok: true, kind: /^AIza/.test(key) ? "classic" : (/^AQ\./.test(key) ? "aistudio" : "other") };
+    }
+    window.normalizeGeminiApiKeyInput = normalizeGeminiApiKeyInput;
+    window.checkGeminiApiKeyFormat = checkGeminiApiKeyFormat;
+
     function getGeminiApiKey() {
       const name = geminiKeyStorageName();
       if (!name) return geminiMemoryNoSession ? geminiApiKeyMemory : "";
-      let stored = String(safeLocalStorageGetItem(name) || "").trim();
+      let stored = normalizeGeminiApiKeyInput(safeLocalStorageGetItem(name));
       if (!stored) {
         // Eski sürümde tek ortak anahtar vardı: ilk girişte o oturumdaki hesaba taşınır, ortak kopya silinir.
-        const legacy = String(safeLocalStorageGetItem("vita_gemini_api_key") || "").trim();
+        const legacy = normalizeGeminiApiKeyInput(safeLocalStorageGetItem("vita_gemini_api_key"));
         if (legacy) {
           stored = legacy;
           safeLocalStorageSetItem(name, legacy);
@@ -1806,6 +1823,40 @@ function getDoctorReportMode() {
       return error?.status === 404 || (error?.status === 400 && /model|not found|not supported|not available/.test(text));
     };
 
+    /* Aktif model göstergesi (yalnızca Ayarlar > Yapay zekâ; salt okunur). Otomatik model geçişi her çalıştığında
+       o an denenen/kullanılan modelin adı burada güncellenir; kullanıcı modeli elle seçemez. */
+    let vitaGeminiModelState = { model: "", phase: "" };
+    function setVitaGeminiActiveModel(model, phase) {
+      vitaGeminiModelState = { model: String(model || ""), phase: String(phase || "") };
+      updateGeminiActiveModelUI();
+    }
+    function updateGeminiActiveModelUI() {
+      const badge = document.getElementById("geminiActiveModelBadge");
+      const note = document.getElementById("geminiActiveModelNote");
+      if (!badge) return;
+      const key = getGeminiApiKey();
+      const saved = String(safeLocalStorageGetItem("vita_gemini_model_ok") || "");
+      const { model, phase } = vitaGeminiModelState;
+      let text = "—", noteText = "Anahtar girilince otomatik seçilir", tone = "idle";
+      if (key) {
+        if (phase === "trying" && model) { text = model; noteText = "Bağlanılıyor…"; tone = "busy"; }
+        else if (phase === "failed") { text = saved || "—"; noteText = "Şu an hiçbir Gemini modeline ulaşılamadı; yerel motor yanıtlıyor"; tone = "warn"; }
+        else if (saved) { text = saved; noteText = phase === "switched" ? "Önceki model yanıt vermedi; otomatik olarak bu modele geçildi" : "Otomatik seçildi · en son yanıt veren model"; tone = "ok"; }
+        else { text = "Henüz belirlenmedi"; noteText = "İlk Gemini isteğinde otomatik seçilir"; }
+      }
+      const tones = {
+        idle: "bg-slate-100 text-slate-600 border-slate-200",
+        busy: "bg-sky-50 text-sky-800 border-sky-200",
+        ok: "bg-emerald-50 text-emerald-800 border-emerald-200",
+        warn: "bg-amber-50 text-amber-900 border-amber-300"
+      };
+      badge.textContent = text;
+      badge.dataset.phase = tone;
+      badge.className = `inline-flex max-w-full items-center rounded-full border px-2.5 py-0.5 font-mono text-[11px] font-bold break-all ${tones[tone]}`;
+      if (note) note.textContent = noteText;
+    }
+    window.updateGeminiActiveModelUI = updateGeminiActiveModelUI;
+
     /* Tek giriş noktası: önerilen modelleri sırayla dener; model kaldırılmışsa erişilebilen modeli bulur. */
     async function vitaGeminiGenerate(apiKey, body, options = {}) {
       const tried = new Set();
@@ -1820,6 +1871,7 @@ function getDoctorReportMode() {
         const controller = typeof AbortController === "function" ? new AbortController() : null;
         const timer = controller && options.timeoutMs ? setTimeout(() => controller.abort(), options.timeoutMs) : null;
         if (controller && options.signal) options.signal.addEventListener("abort", () => controller.abort(), { once: true });
+        setVitaGeminiActiveModel(model, "trying");
         try {
           const response = await fetch(`${VITA_GEMINI_API_BASE}/models/${encodeURIComponent(model)}:generateContent`, {
             method: "POST",
@@ -1838,13 +1890,14 @@ function getDoctorReportMode() {
           const text = Array.isArray(parts) ? parts.map(p => p.text || "").join("").trim() : "";
           if (!text) throw Object.assign(new Error("Gemini boş yanıt döndürdü."), { emptyResponse: true, modelName: model });
           safeLocalStorageSetItem("vita_gemini_model_ok", model);
+          setVitaGeminiActiveModel(model, tried.size > 1 || (lastGood && model !== lastGood) ? "switched" : "ok");
           return { text, model };
         } catch (error) {
           lastError = error;
-          if (error?.name === "AbortError" && options.signal?.aborted) throw error;
+          if (error?.name === "AbortError" && options.signal?.aborted) { setVitaGeminiActiveModel("", ""); throw error; }
           // Model kaldırılmış/desteklenmiyorsa ya da kota dolmuşsa sıradaki model denenir; anahtar/ağ hatasında durulur.
           const retryable = isVitaGeminiModelError(error) || error?.status === 429 || error?.emptyResponse;
-          if (!retryable) throw error;
+          if (!retryable) { setVitaGeminiActiveModel("", "failed"); throw error; }
           if (isVitaGeminiModelError(error) && !discovered) {
             discovered = true;
             try { (await listVitaGeminiModels(apiKey)).forEach(m => { if (!tried.has(m)) queue.push(m); }); } catch (_) {}
@@ -1853,6 +1906,7 @@ function getDoctorReportMode() {
           if (timer) clearTimeout(timer);
         }
       }
+      setVitaGeminiActiveModel("", "failed");
       throw lastError || new Error("Uygun Gemini modeli bulunamadı.");
     }
     window.vitaGeminiGenerate = vitaGeminiGenerate;
@@ -1871,7 +1925,7 @@ function getDoctorReportMode() {
 
     async function saveGeminiApiKey(val) {
       const input = document.getElementById("drawerGeminiApiKeyInput");
-      const rawCandidate = val !== undefined && val !== null ? String(val).trim() : String(input?.value || "").trim();
+      const rawCandidate = normalizeGeminiApiKeyInput(val !== undefined && val !== null ? val : input?.value);
       const existingKey = getGeminiApiKey();
 
       if (!rawCandidate) {
@@ -1880,12 +1934,18 @@ function getDoctorReportMode() {
           showGeminiApiSaveFeedback(`<i class="fa-solid fa-circle-check text-emerald-600 mr-1"></i>Kayıtlı Gemini API anahtarınız aktif (${escapeHtmlText(existingKey.slice(0, 6))}••••).`, "success");
           return;
         }
-        showGeminiApiSaveFeedback(`<i class="fa-solid fa-triangle-exclamation text-amber-600 mr-1"></i>Google'dan aldığınız <strong>AIza...</strong> ile başlayan API anahtarını kutuya yapıştırın.`, "warning");
+        showGeminiApiSaveFeedback(`<i class="fa-solid fa-triangle-exclamation text-amber-600 mr-1"></i>Google AI Studio'dan aldığınız API anahtarını kutuya yapıştırın (<strong>AIza…</strong> veya <strong>AQ.…</strong> ile başlar).`, "warning");
         input?.focus();
         return;
       }
-      if (!/^[A-Za-z0-9_\-]{20,200}$/.test(rawCandidate)) {
-        showGeminiApiSaveFeedback(`<i class="fa-solid fa-circle-xmark text-rose-600 mr-1"></i>Bu bir Gemini API anahtarına benzemiyor. Boşluk veya fazladan karakter olmadan yapıştırın.`, "error");
+      const format = checkGeminiApiKeyFormat(rawCandidate);
+      if (!format.ok) {
+        const reasons = {
+          space: "Anahtarın içinde boşluk veya satır sonu var. Anahtarı tek parça hâlinde yeniden kopyalayıp yapıştırın.",
+          chars: "Anahtarda API anahtarlarında bulunmayan karakterler var (yalnızca harf, rakam, nokta, tire ve alt çizgi olabilir). Anahtarı yeniden kopyalayın.",
+          length: rawCandidate.length < 20 ? "Anahtar çok kısa; eksik kopyalanmış olabilir. Anahtarın tamamını yapıştırın." : "Anahtar beklenenden çok uzun; yanına başka metin karışmış olabilir."
+        };
+        showGeminiApiSaveFeedback(`<i class="fa-solid fa-circle-xmark text-rose-600 mr-1"></i>${reasons[format.reason] || reasons.chars}`, "error");
         return;
       }
 
@@ -1901,6 +1961,8 @@ function getDoctorReportMode() {
       geminiMemoryNoSession = !geminiKeyStorageName();
       if (geminiKeyStorageName()) safeLocalStorageSetItem(geminiKeyStorageName(), geminiApiKeyMemory);
       safeLocalStorageRemoveItem(VITA_GEMINI_MODEL_CACHE_KEY);
+      // Yeni anahtar başka bir hesaba/projeye ait olabilir: eski "çalışan model" bilgisi sıfırlanır, ilk istekte yeniden belirlenir.
+      if (rawCandidate !== existingKey) safeLocalStorageRemoveItem("vita_gemini_model_ok");
       if (input) input.value = geminiApiKeyMemory;
       updateApiKeyUI();
       if (window.VitaAIChat && typeof window.VitaAIChat.setRuntimeStatus === "function") {
@@ -1942,6 +2004,7 @@ function getDoctorReportMode() {
         el.title = key ? "" : "Bu özellik için Ayarlar > Yapay zekâ bölümüne Gemini API anahtarı ekleyin.";
       });
       updateAIProviderUI();
+      updateGeminiActiveModelUI();
       if (window.VitaAIChat && typeof window.VitaAIChat.syncConsentFromStorage === "function") window.VitaAIChat.syncConsentFromStorage();
     }
 
@@ -2109,13 +2172,20 @@ function getDoctorReportMode() {
         const status = document.getElementById("ai-voice-status");
         if (button) {
           button.innerHTML = voiceListening ? '<i class="fa-solid fa-stop text-xs"></i>' : '<i class="fa-solid fa-microphone text-xs"></i>';
-          button.setAttribute("aria-label", voiceListening ? "Sesli yazmayı durdur" : "Konuşarak soru yaz");
-          button.title = voiceListening ? "Sesli yazmayı durdur" : "Konuşarak soru yaz";
+          button.setAttribute("aria-label", voiceListening ? "Sesle yazmayı durdur" : "Sesle yaz");
+          button.setAttribute("aria-pressed", voiceListening ? "true" : "false");
+          button.title = voiceListening ? "Dinleniyor — durdurmak için dokunun" : "Sesle yaz (Türkçe)";
           button.className = voiceListening
-            ? "w-9 h-9 shrink-0 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 flex items-center justify-center transition cursor-pointer pulse-danger"
-            : "w-9 h-9 shrink-0 rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-100 text-teal-800 flex items-center justify-center transition cursor-pointer";
+            ? "vita-mic-btn is-listening w-9 h-9 shrink-0 rounded-xl border border-rose-400 bg-rose-600 text-white flex items-center justify-center transition cursor-pointer"
+            : "vita-mic-btn w-9 h-9 shrink-0 rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-100 text-teal-800 flex items-center justify-center transition cursor-pointer";
         }
-        if (status && message) status.textContent = message;
+        // Durum satırı yalnızca sesle yazma kullanılırken görünür; sohbet ekranı sade kalır.
+        if (status) {
+          window.clearTimeout(setVoiceInputState.hideTimer);
+          if (message) { status.textContent = message; status.classList.remove("hidden"); }
+          status.classList.toggle("is-listening", voiceListening);
+          if (!voiceListening) setVoiceInputState.hideTimer = window.setTimeout(() => status.classList.add("hidden"), message ? 5000 : 0);
+        }
       }
 
       function stopVoiceInput() {
@@ -2140,21 +2210,27 @@ function getDoctorReportMode() {
           input.focus();
           return;
         }
-        // Tarayıcı konuşma tanıma hizmetleri sesi dış sunuculara gönderebildiği için sesli giriş kapalıdır.
-        const Recognition = null;
+        // Web Speech API: Chrome/Edge/Samsung Internet'te webkit önekli, bazı tarayıcılarda öneksiz.
+        const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
         if (!Recognition) {
-          const message = "Sesli giriş kapalı: tarayıcının konuşma tanıma hizmeti sesinizi dış sunuculara gönderebilir. Sorunuzu yazarak sorabilirsiniz.";
-          showToast("Sesli yazma desteklenmiyor", message, "warning");
+          const message = "Bu tarayıcı sesle yazmayı desteklemiyor. Chrome veya Edge ile deneyebilir ya da sorunuzu yazabilirsiniz.";
+          showToast("Sesle yazma kullanılamıyor", message, "info");
           setVoiceInputState(false, message);
           input.focus();
           return;
+        }
+        // Konuşma tanıma tarayıcının kendi hizmetiyle yapılır; bazı tarayıcılarda ses bu hizmetin sunucusuna gider. Bir kez bildirilir.
+        if (safeLocalStorageGetItem("vita_voice_input_notice_seen") !== "true") {
+          safeLocalStorageSetItem("vita_voice_input_notice_seen", "true");
+          showToast("Sesle yazma", "Konuşmanız tarayıcınızın konuşma tanıma hizmetiyle metne çevrilir (Chrome'da Google). Metin gönderilmeden önce kutuda görünür.", "info");
         }
         const baseText = input.value.trim();
         try {
           const recognition = new Recognition();
           speechRecognition = recognition;
           recognition.lang = "tr-TR";
-          recognition.continuous = false;
+          // Mikrofon tekrar basılana kadar dinler; konuşma anlık olarak yazı kutusuna yazılır.
+          recognition.continuous = true;
           recognition.interimResults = true;
           recognition.maxAlternatives = 1;
           recognition.onstart = () => setVoiceInputState(true, "Dinleniyor… Konuşun; metin yazı alanında görünecek.");
@@ -2170,6 +2246,7 @@ function getDoctorReportMode() {
             input.dispatchEvent(new Event("input", { bubbles: true }));
           };
           recognition.onerror = event => {
+            if (event.error === "aborted") return; // kullanıcı durdurdu
             const messages = {
               "not-allowed": "Mikrofon izni verilmedi. Tarayıcı adres çubuğundan mikrofon iznini kontrol edin.",
               "no-speech": "Konuşma algılanmadı. Mikrofonu kontrol edip yeniden deneyin.",
@@ -2632,11 +2709,42 @@ ${context.length ? context.join("\n") : "Bu soruyla ilgili kişisel sağlık kay
         if (chevron) chevron.classList.toggle("rotate-180", isExpanded);
         if (status) {
           status.textContent = checked
-            ? "Açık · Soru ve ilgili sağlık bağlamı Gemini'ye gönderilebilir"
-            : "Kapalı · Yerel yanıt motoru kullanılır";
+            ? "Onay verildi · Soru ve ilgili sağlık bağlamı Gemini'ye gönderilebilir"
+            : "Onay verilmedi · Sohbet yerel yanıt motoruyla çalışır";
           status.classList.toggle("text-teal-700", Boolean(checked));
           status.classList.toggle("text-slate-500", !checked);
         }
+        updateConsentHint(Boolean(checked));
+      }
+
+      /* Sohbetin en altındaki tek satırlık, soluk bilgilendirme: onay yoksa Ayarlar'a yönlendirir, onay verilince gizlenir. */
+      function updateConsentHint(checked) {
+        const hint = document.getElementById("aiConsentHint");
+        const text = document.getElementById("aiConsentHintText");
+        if (!hint) return;
+        const hasKey = Boolean(getGeminiApiKey());
+        hint.classList.toggle("hidden", Boolean(checked) && hasKey);
+        if (text) {
+          text.textContent = !hasKey
+            ? "Gemini için Ayarlar'dan anahtar ekleyip onay verin."
+            : "Gemini için Ayarlar'dan veri paylaşım onayı verin.";
+        }
+      }
+
+      function openConsentSettings() {
+        if (window.SoundEffects) SoundEffects.playClick();
+        toggle(false);
+        navigateToView("view-settings");
+        window.setTimeout(() => {
+          const box = document.getElementById(getGeminiApiKey() ? "aiHealthDataConsentSettings" : "drawerGeminiApiKeyInput");
+          if (!box) return;
+          box.scrollIntoView({ behavior: "smooth", block: "center" });
+          const card = document.getElementById("aiHealthDataConsentSettings");
+          if (card && getGeminiApiKey()) {
+            card.classList.add("vita-attention");
+            window.setTimeout(() => card.classList.remove("vita-attention"), 1800);
+          }
+        }, 250);
       }
 
       function toggleConsentPanel() {
@@ -2680,7 +2788,7 @@ ${context.length ? context.join("\n") : "Bu soruyla ilgili kişisel sağlık kay
           if (activeRequest && !activeRequest.settled) revokeConsent();
           else showToast("Paylaşım onayı kaldırıldı", "Yeni sorular yerel yanıt motoruyla cevaplanacak.", "info");
         } else {
-          showToast("Paylaşım onayı etkin", "Açıklama kapatıldı; onayı istediğiniz zaman kaldırabilirsiniz.", "success");
+          showToast("Paylaşım onayı verildi", "Vita AI sohbeti artık Gemini ile yanıtlayabilir. Onayı Ayarlar > Yapay zekâ bölümünden istediğiniz zaman kaldırabilirsiniz.", "success");
         }
       }
 
@@ -3083,7 +3191,7 @@ YANIT BİÇİMİ (zorunlu): Sıradan bir kullanıcının anlayacağı sade dille
 
       function getLocalFallbackReason(err) {
         const providerLabel = getAIProvider() === "gemini" ? "Google Gemini" : "Yerel yanıt motoru";
-        if (err && err.aiPrivacyDeclined) return `${providerLabel} veri paylaşım onayı verilmedi; soru ve sağlık bilgileriniz dış servise gönderilmedi. Yanıt yerel VitaTakip motorundan hazırlanıyor.`;
+        if (err && err.aiPrivacyDeclined) return `${providerLabel} veri paylaşım onayı verilmedi (Ayarlar > Yapay zekâ); soru ve sağlık bilgileriniz dış servise gönderilmedi. Yanıt yerel VitaTakip motorundan hazırlanıyor.`;
         if (err && err.aiManualFallback) return `${providerLabel} yanıtı henüz gelmedi. Beklemek istemediğiniz için yerel VitaTakip motoru yanıt hazırladı.`;
         if (!err || err.noApiKey) return getAIProvider() === "local" ? "Yalnızca yerel yanıt modu seçili; sağlık verileriniz dış servise gönderilmedi." : `${providerLabel} API anahtarı ayarlı değil; yanıt VitaTakip'in yerel motorundan hazırlanıyor.`;
         const status = Number(err.status || 0);
@@ -3134,18 +3242,9 @@ YANIT BİÇİMİ (zorunlu): Sıradan bir kullanıcının anlayacağı sade dille
         const provider = getAIProvider();
         const providerKeyAvailable = provider === "gemini" ? Boolean(getGeminiApiKey()) : false;
         const consentInput = document.getElementById("aiHealthDataConsent");
-        let hasConsent = Boolean(consentInput && consentInput.checked) || (providerKeyAvailable && syncConsentFromStorage());
-
-        // Anahtar var ama bu hesapta henüz onay yok: bir kez sorulur, onaylanırsa hesaba kaydedilir.
-        if (providerKeyAvailable && !hasConsent && typeof window.confirm === "function") {
-          const ok = window.confirm("Gemini yapay zekâ asistanı, kişiselleştirilmiş yanıt için sorunuzu ve ilgili sağlık verilerinizi (profil, tahliller, seçili belirtiler, ilaç/takviyeler) Google Gemini'ye gönderecek.\n\nOnaylıyor musunuz? (Onayı sohbetteki \"Haricî yapay zekâ veri paylaşım ayarları\" bölümünden istediğiniz zaman kaldırabilirsiniz.)");
-          if (ok) {
-            if (consentInput) consentInput.checked = true;
-            persistConsent(true);
-            updateConsentUI(true);
-            hasConsent = true;
-          }
-        }
+        // Onay yalnızca Ayarlar > Yapay zekâ bölümünden verilir; sohbet açılır pencereyle onay istemez.
+        // Onay yoksa soru yerel motorla yanıtlanır ve sohbetin altındaki küçük yazı Ayarlar'a yönlendirir.
+        const hasConsent = Boolean(consentInput && consentInput.checked) || (providerKeyAvailable && syncConsentFromStorage());
 
         if (provider === "local" || !providerKeyAvailable || !hasConsent) {
           showTyping(false);
@@ -3183,7 +3282,7 @@ YANIT BİÇİMİ (zorunlu): Sıradan bir kullanıcının anlayacağı sade dille
 
       return {
         toggle, clearChat, resetSession, sendPreset, handleSubmit, callGeminiAPI, callSelectedAI, toggleVoiceInput, stopVoiceInput, analyzeMedicationImage,
-        handleConsentChange, initializeConsent, syncConsentFromStorage, toggleConsentPanel, closeConsentPanel, revokeConsent, useLocalFallback,
+        handleConsentChange, initializeConsent, syncConsentFromStorage, toggleConsentPanel, closeConsentPanel, revokeConsent, useLocalFallback, openConsentSettings,
         toggleMessageSpeech, stopMessageSpeech, openDoctorQuestions, closeDoctorQuestions, copyDoctorQuestions, addDoctorQuestionsToChat,
         setRuntimeStatus,
         previewLocalReply: generateFallbackClinicalReply,

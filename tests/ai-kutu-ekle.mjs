@@ -93,7 +93,7 @@ const t1 = await p.evaluate(() => ({
 }));
 log('Takviye ekle: yapay zekâ sonucu formun tüm alanlarına işlenir ve ayrıntılar açılır',
   t1.name === 'Solgar Vitamin D3 1000 IU' && t1.brand === 'Solgar — Kolekalsiferol' && t1.form === 'Yumuşak kapsül' && t1.dose === '1000 IU' && t1.hunger === 'Tok karnına' && t1.timing === 'Sabah' && t1.box === '100' && t1.daily === '1' && t1.detailsOpen, JSON.stringify(t1));
-log('Takviye ekle: sonuç kartında kaynak ve "Takviyeyi ekle" düğmesi var', /Gemini yapay zekâ \(gemini-[^)]+\) tanıdı/.test(t1.cardText) && t1.btns[0] === 'Takviyeyi ekle', t1.cardText.slice(0, 160));
+log('Takviye ekle: sonuç kartında kaynak ve "Takviyeyi ekle" düğmesi var', /Gemini yapay zekâ tanıdı/.test(t1.cardText) && !/gemini-\d/.test(t1.cardText) && t1.btns[0] === 'Takviyeyi ekle', t1.cardText.slice(0, 160));
 await p.evaluate(() => document.querySelector('#addSupAiResultCard .vita-ai-act-sup').click()); await sleep(900);
 const t2 = await p.evaluate(() => { const s = state.supplements.at(-1); return { n: state.supplements.length, name: s?.name, timing: s?.timing, box: s?.toplamKutuAdedi, daily: s?.gunlukDoz, dose: s?.doseText, form: s?.selectedForm, closed: document.getElementById('addSupplementModal').classList.contains('hidden') }; });
 log('Takviye ekle: "Takviyeyi ekle" ile çizelgeye doğru verilerle kaydedilir', t2.n === before + 1 && t2.name === 'Solgar Vitamin D3 1000 IU' && t2.timing === 'Sabah' && t2.box === 100 && t2.daily === 1 && /1000 IU/.test(t2.dose) && /Tok/.test(t2.dose) && t2.form === 'Yumuşak kapsül' && t2.closed, JSON.stringify(t2));

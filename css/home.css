@@ -150,3 +150,23 @@
 .vita-ai-act-ghost{background:#fff;border-color:#cbd5e1;color:#0f172a}
 .vita-ai-act:hover{filter:brightness(1.06)}
 @media (max-width:380px){.vita-ai-card dl>div{grid-template-columns:96px 1fr}}
+/* Vita AI sohbeti: sesle yazma göstergesi ve en alttaki tek satırlık onay bilgisi */
+.vita-mic-btn.is-listening{position:relative;animation:vitaMicPulse 1.1s ease-in-out infinite}
+.vita-mic-btn.is-listening::after{content:"";position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:999px;background:#ef4444;border:2px solid #fff;animation:vitaMicBlink 1s steps(2,start) infinite}
+@keyframes vitaMicPulse{0%,100%{box-shadow:0 0 0 0 rgba(225,29,72,.55)}50%{box-shadow:0 0 0 7px rgba(225,29,72,0)}}
+@keyframes vitaMicBlink{to{visibility:hidden}}
+.vita-voice-status.is-listening{color:#be123c;font-weight:700}
+.vita-consent-hint{display:flex;align-items:center;gap:6px;padding:3px 12px 5px;background:#fff;font-size:10px;line-height:1.3;color:#94a3b8;white-space:nowrap;overflow:hidden}
+.vita-consent-hint.hidden{display:none}
+.vita-consent-hint i{font-size:9px;flex:0 0 auto}
+.vita-consent-hint span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.vita-consent-hint button{flex:0 0 auto;margin-left:auto;padding:0 2px;border:0;background:none;color:#0f766e;font-size:10px;font-weight:800;text-decoration:underline;cursor:pointer}
+/* Ayarlar > Yapay zekâ: salt okunur aktif model ve veri paylaşım onayı */
+.vita-model-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.vita-model-label{font-size:11px;font-weight:800;color:#475569}
+.vita-model-note{flex-basis:100%;font-size:10px;color:#64748b}
+.vita-consent-card{margin-top:4px;padding:10px 12px;border:1px solid #fcd34d;border-radius:14px;background:#fffbeb;color:#451a03;font-size:11px;line-height:1.5;transition:box-shadow .3s}
+.vita-consent-card.vita-attention{box-shadow:0 0 0 3px rgba(20,184,166,.55)}
+.vita-consent-fine{margin:6px 0 0 30px;font-size:10px;color:#92400e}
+.vita-consent-status-row{margin:8px 0 0 30px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px}
+@media (prefers-reduced-motion:reduce){.vita-mic-btn.is-listening,.vita-mic-btn.is-listening::after{animation:none}}

@@ -263,6 +263,14 @@ function renderFridgeScheduleSheet() {
         check("Virgüllü laboratuvar sayısı doğru ayrıştırılıyor", parseVitaLabDecimal("75,5") === 75.5 && parseVitaLabDecimal("75.5") === 75.5);
         check("Geçersiz laboratuvar girdisi sayı olarak kabul edilmiyor", parseVitaLabDecimal("12ab") === null && parseVitaLabDecimal("") === null);
         check("Gemini onayı ve anahtar alanı mevcut", Boolean(document.getElementById("aiHealthDataConsentApproved")) && Boolean(document.getElementById("drawerGeminiApiKeyInput")) && typeof VitaAIChat.initializeConsent === "function");
+        check("Gemini veri paylaşım onayı Ayarlar'da, sohbet ekranında değil", Boolean(document.querySelector("#view-settings #aiHealthDataConsent")) && !document.querySelector("#vita-ai-chatbox #aiHealthDataConsent") && Boolean(document.getElementById("aiConsentHint")));
+        check("Klasik (AIza…) ve yeni (AQ.…) API anahtarları kabul edilir",
+          checkGeminiApiKeyFormat("AIzaSyA1b2C3d4E5f6G7h8I9j0K-L_mNoPqRsTu").ok
+          && checkGeminiApiKeyFormat("AQ.Ab8RN6Lx_k2-Qp9zWv3yTt5uIo7pAs1dFg4hJk6lZx8cVb0nM.q").ok
+          && normalizeGeminiApiKeyInput("  AQ.abc.def-ghi_jkl0123456789\r\n") === "AQ.abc.def-ghi_jkl0123456789");
+        check("Boşluklu veya geçersiz karakterli anahtar reddedilir", !checkGeminiApiKeyFormat("AIzaSy A1b2C3d4E5f6G7h8I9j0K-L_mNoPqRs").ok && !checkGeminiApiKeyFormat("AQ.abc/def+ghi=jkl012345678").ok && !checkGeminiApiKeyFormat("").ok);
+        check("Anahtar URL'de değil yalnızca x-goog-api-key başlığında gider", ![vitaGeminiGenerate, listVitaGeminiModels, validateGeminiApiKey].some(fn => /[?&]key=/.test(String(fn))));
+        check("Aktif model göstergesi salt okunur ve otomatik geçişte güncellenir", Boolean(document.querySelector("#view-settings #geminiActiveModelBadge[aria-readonly='true']")) && !document.querySelector("#geminiActiveModelBadge input, #geminiActiveModelBadge select") && /setVitaGeminiActiveModel\(model,\s*"trying"\)/.test(String(vitaGeminiGenerate)));
         check("Yanıt beklerken yerel motora geçiş mevcut", Boolean(document.getElementById("ai-use-local-fallback")) && typeof VitaAIChat.useLocalFallback === "function");
         check("Geri bildirim modalı tekil", document.querySelectorAll("#feedbackModal").length === 1);
         check("Geri bildirim formu mevcut", Boolean(document.getElementById("vitaFeedbackForm")));
@@ -309,7 +317,7 @@ function renderFridgeScheduleSheet() {
         check("Demo ürün ekleme akışı kaldırıldı; gerçek barkod okuyucu korundu", typeof addBarcodeSimulationProduct === "undefined" && typeof startBarcodeCameraScan === "function" && Boolean(document.getElementById("barcodeScannerModal")) && !document.getElementById("barcodeSampleSelect"));
         check("Demo/test hesap temizleme kuralı mevcut", typeof purgeLegacyDemoAccounts === "function");
         check("Sesli yazma butonu ve Web Speech API bağlantısı mevcut", Boolean(document.getElementById("ai-voice-btn")) && typeof VitaAIChat.toggleVoiceInput === "function");
-        check("Sesli giriş kapalı (konuşma tanıma sesi dış sunucuya gönderebilir), yazılı giriş mevcut", /const Recognition\s*=\s*null/.test(VitaAIChat.toggleVoiceInput.toString()) && /input\.focus\(\)/.test(VitaAIChat.toggleVoiceInput.toString()));
+        check("Sesle yazma Türkçe (tr-TR), desteklenmeyen tarayıcıda yazılı girişe döner", /webkitSpeechRecognition/.test(VitaAIChat.toggleVoiceInput.toString()) && /tr-TR/.test(VitaAIChat.toggleVoiceInput.toString()) && /input\.focus\(\)/.test(VitaAIChat.toggleVoiceInput.toString()));
         check("Gerçek kamera barkod okuma işlevi mevcut", typeof startBarcodeCameraScan === "function" && typeof stopBarcodeCameraScan === "function" && typeof handleBarcodeDetected === "function");
         check("Fotoğraftan barkod okuma işlevi mevcut", typeof decodeBarcodeFromPhoto === "function" && Boolean(document.getElementById("barcodePhotoFile")));
         check("Gemini görüntü analizi için fotoğraf onayı mevcut", typeof VitaAIChat.analyzeMedicationImage === "function" && Boolean(document.getElementById("barcodePhotoConsent")));

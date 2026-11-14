@@ -24,11 +24,11 @@
 <!-- Uses Inter when already available; otherwise falls back immediately to the system UI font. -->
 <!-- Font Awesome 6 CDN -->
 <!-- build:css -->
-<link rel="stylesheet" href="./css/app.css?v=31aed92359">
-<script defer src="./js/app.1.js?v=31aed92359"></script>
-<script defer src="./js/app.2.js?v=31aed92359"></script>
-<script defer src="./js/app.3.js?v=31aed92359"></script>
-<script defer src="./js/app.4.js?v=31aed92359"></script>
+<link rel="stylesheet" href="./css/app.css?v=96ba13b1b5">
+<script defer src="./js/app.1.js?v=96ba13b1b5"></script>
+<script defer src="./js/app.2.js?v=96ba13b1b5"></script>
+<script defer src="./js/app.3.js?v=96ba13b1b5"></script>
+<script defer src="./js/app.4.js?v=96ba13b1b5"></script>
 <!-- /build:css -->
 <!-- Chart.js loads only if a trend chart is needed. -->
 <!-- PDF.js loads only when a user selects a PDF for analysis. -->
@@ -1750,10 +1750,15 @@ Kapalı
 </div>
 <span class="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-slate-100 text-slate-700 border border-slate-200" id="apiStatusBadge">Yerel Asistan</span>
 </div>
+<div class="vita-model-row" id="geminiActiveModelRow">
+<span class="vita-model-label">Aktif model</span>
+<span aria-live="polite" aria-readonly="true" class="inline-flex max-w-full items-center rounded-full border px-2.5 py-0.5 font-mono text-[11px] font-bold break-all bg-slate-100 text-slate-600 border-slate-200" id="geminiActiveModelBadge" role="status" title="Model otomatik seçilir ve değiştirilemez">—</span>
+<span class="vita-model-note" id="geminiActiveModelNote">Anahtar girilince otomatik seçilir</span>
+</div>
 <div class="space-y-2">
 <label class="text-xs font-bold text-slate-700 block" for="drawerGeminiApiKeyInput">Gemini API anahtarı</label>
 <div class="flex flex-col sm:flex-row gap-2">
-<input autocomplete="off" class="flex-1 px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-navy-900 focus:outline-none focus:border-teal-500 font-mono" id="drawerGeminiApiKeyInput" onkeydown="if(event.key==='Enter'){event.preventDefault(); saveGeminiApiKey(this.value);}" placeholder="AIzaSy... anahtarınızı buraya yapıştırın" type="password"/>
+<input autocomplete="off" class="flex-1 px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-navy-900 focus:outline-none focus:border-teal-500 font-mono" id="drawerGeminiApiKeyInput" onkeydown="if(event.key==='Enter'){event.preventDefault(); saveGeminiApiKey(this.value);}" placeholder="AIza… veya AQ.… ile başlayan anahtarı yapıştırın" spellcheck="false" autocapitalize="off" autocorrect="off" type="password"/>
 <button class="px-4 py-2 rounded-xl bg-navy-900 hover:bg-slate-800 text-white text-xs font-bold transition cursor-pointer shrink-0 flex items-center justify-center gap-1.5" id="btnSaveGeminiApiKey" onclick="if(window.SoundEffects) SoundEffects.playClick(); saveGeminiApiKey(document.getElementById('drawerGeminiApiKeyInput').value)" type="button">
 <i class="fa-solid fa-plug-circle-check text-teal-400"></i>
 <span>Kaydet</span>
@@ -1765,8 +1770,16 @@ Kapalı
 </div>
 <div aria-live="polite" class="hidden rounded-xl border p-2.5 text-xs font-bold" id="geminiApiSaveFeedbackBox"></div>
 <p class="text-[11px] text-slate-500 leading-relaxed">
-Anahtar girerseniz Vita AI sohbeti ve kutu fotoğrafı tanıma Google Gemini ile çalışır; girmezseniz cihazdaki yerel motor yanıtlar. Anahtar yalnızca <strong>bu tarayıcıda, bu hesaba özel</strong> saklanır ve kaydederken Google ile doğrulanır. Sağlık verileriniz yalnızca sohbetteki paylaşım onayını açtığınızda gönderilir. <a class="font-bold text-teal-700 underline" href="https://aistudio.google.com/apikey" rel="noopener noreferrer" target="_blank">Google'dan ücretsiz Gemini anahtarı alın</a>
+Anahtar girerseniz Vita AI sohbeti ve kutu fotoğrafı tanıma Google Gemini ile çalışır; girmezseniz cihazdaki yerel motor yanıtlar. Anahtar yalnızca <strong>bu tarayıcıda, bu hesaba özel</strong> saklanır ve kaydederken Google ile doğrulanır. Sağlık verileriniz yalnızca aşağıdaki veri paylaşım onayını verdiğinizde gönderilir. <a class="font-bold text-teal-700 underline" href="https://aistudio.google.com/apikey" rel="noopener noreferrer" target="_blank">Google'dan ücretsiz Gemini anahtarı alın</a>
 </p>
+<div class="vita-consent-card" id="aiHealthDataConsentSettings">
+<label class="flex items-start gap-2.5 cursor-pointer" for="aiHealthDataConsent">
+<input class="mt-0.5 h-5 w-5 rounded border-amber-400 text-teal-600 focus:ring-teal-500 shrink-0" id="aiHealthDataConsent" onchange="VitaAIChat.handleConsentChange(this.checked)" type="checkbox"/>
+<span><strong id="aiConsentProviderLabel">Google Gemini veri paylaşım onayı:</strong> Vita AI sohbetine yazdığım sorunun ve soruyla ilişkili, uygulamada kayıtlı sağlık verilerimin (tahlil yorumu isteyen sorularda girdiğim tüm tahlil değerleri, referans aralıkları, önceki ölçümler, yaş/cinsiyet, ilaç ve belirti kayıtları dahil) yanıt üretimi için Google Gemini hizmetine gönderilmesini onaylıyorum.</span>
+</label>
+<p class="vita-consent-fine">Onay vermezseniz sohbet yerel VitaTakip motoruyla yanıt verir. Sağlık verileriniz hassastır; paylaşım kapsamını değerlendirin. Bu uygulama otomatik KVKK uyumluluğu garantisi vermez. Onayı istediğiniz zaman buradan kaldırabilirsiniz.</p>
+<div class="vita-consent-status-row"><span class="text-[11px] font-bold text-slate-500" id="aiHealthDataConsentStatus">Onay verilmedi · Sohbet yerel yanıt motoruyla çalışır</span><button class="hidden rounded-lg border border-teal-200 bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-800 hover:bg-teal-100" id="aiHealthDataConsentApproved" onclick="VitaAIChat.revokeConsent()" type="button">Onayı kaldır</button></div>
+</div>
 </div>
 </div>
 
@@ -2053,41 +2066,18 @@ Verileri Sil
 <span class="flex-1" id="ai-typing-text">VitaAI klinik verileri analiz ediyor...</span>
 <button class="hidden px-2.5 py-1 rounded-lg bg-white border border-teal-300 text-teal-800 hover:bg-teal-100 font-black shrink-0" id="ai-use-local-fallback" onclick="VitaAIChat.useLocalFallback()" type="button">Yerel yanıtı kullan</button>
 </div>
-<!-- Haricî yapay zekâ veri paylaşım ayarları: kompakt çekmece; varsayılan olarak kapalıdır. -->
-<div class="shrink-0 border-t border-slate-200 bg-white" id="aiHealthDataConsentDisclosure">
-<div class="flex items-center gap-2 px-2 py-1.5">
-<button aria-controls="aiHealthDataConsentPanel" aria-expanded="false" class="min-w-0 flex-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-slate-50 transition cursor-pointer" id="aiHealthDataConsentToggle" onclick="VitaAIChat.toggleConsentPanel()" type="button">
-<i class="fa-solid fa-shield-halved text-teal-700 shrink-0"></i>
-<div class="min-w-0 flex-1">
-<span class="block text-[10px] font-black text-slate-700">Haricî yapay zekâ veri paylaşım ayarları</span>
-<span class="block text-[9px] text-slate-500" id="aiHealthDataConsentStatus">Kapalı · Yerel yanıt motoru kullanılır</span>
-</div>
-<i class="fa-solid fa-chevron-down text-[10px] text-slate-500 transition-transform" id="aiHealthDataConsentChevron"></i>
-</button>
-<button class="hidden shrink-0 rounded-lg border border-teal-200 bg-teal-50 px-2 py-1 text-[9px] font-bold text-teal-800 hover:bg-teal-100" id="aiHealthDataConsentApproved" onclick="VitaAIChat.revokeConsent()" type="button">Onayı kaldır</button>
-</div>
-<div class="hidden px-3 py-2 bg-amber-50 border-t border-amber-200" id="aiHealthDataConsentPanel">
-<label class="flex items-start gap-2 text-[10px] leading-relaxed text-amber-950 cursor-pointer" for="aiHealthDataConsent">
-<input class="mt-0.5 h-4 w-4 rounded border-amber-400 text-teal-600 focus:ring-teal-500 shrink-0" id="aiHealthDataConsent" onchange="VitaAIChat.handleConsentChange(this.checked)" type="checkbox"/>
-<span><strong id="aiConsentProviderLabel">Haricî yapay zekâ veri paylaşım onayı:</strong> Bu oturumdaki sorumun ve soruyla ilişkili, uygulamada kayıtlı sağlık verilerinin (tahlil yorumu isteyen sorularda girdiğiniz tüm tahlil değerleri, referans aralıkları, önceki ölçümler, yaş/cinsiyet, ilaç ve belirti kayıtları dahil) Google Gemini hizmetine yanıt üretimi için gönderilmesini onaylıyorum.</span>
-</label>
-<p class="mt-1 pl-6 text-[9px] text-amber-800">Onay vermezseniz soru yerel VitaTakip motoruyla yanıtlanır. Sağlık verileriniz hassastır; dış servise göndermeden önce metni ve paylaşım kapsamını değerlendirin. Bu uygulama otomatik KVKK uyumluluğu garantisi vermez.</p>
-<div class="mt-2 flex justify-end">
-<button class="rounded-lg border border-amber-300 bg-white px-2.5 py-1 text-[9px] font-bold text-amber-900 hover:bg-amber-100" onclick="VitaAIChat.closeConsentPanel()" type="button">Kapat / Şimdilik yerel kullan</button>
-</div>
-</div>
-</div>
 <!-- Mesaj Giriş Alanı -->
-<div aria-live="polite" class="px-3 py-1 text-[9px] text-slate-500 bg-white border-t border-slate-100" id="ai-voice-status">Sorunuzu yazın; yanıtlar bu cihazda hazırlanır.</div>
+<div aria-live="polite" class="hidden vita-voice-status px-3 py-1 text-[10px] text-slate-500 bg-white border-t border-slate-100" id="ai-voice-status"></div>
 <form class="p-2.5 bg-white border-t border-slate-200 flex items-center gap-1.5 shrink-0" onsubmit="VitaAIChat.handleSubmit(event)">
 <input autocomplete="off" class="min-w-0 flex-1 px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500 font-medium" id="ai-user-input" placeholder="Tahlil, takviye veya etkileşim sorunuz..." type="text"/>
-<button aria-label="Konuşarak soru yaz" class="hidden w-9 h-9 shrink-0 rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-100 text-teal-800 flex items-center justify-center transition cursor-pointer" id="ai-voice-btn" onclick="VitaAIChat.toggleVoiceInput()" title="Konuşarak soru yaz" type="button">
+<button aria-label="Sesle yaz" aria-pressed="false" class="vita-mic-btn w-9 h-9 shrink-0 rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-100 text-teal-800 flex items-center justify-center transition cursor-pointer" id="ai-voice-btn" onclick="VitaAIChat.toggleVoiceInput()" title="Sesle yaz (Türkçe)" type="button">
 <i class="fa-solid fa-microphone text-xs"></i>
 </button>
 <button aria-label="Soruyu gönder" class="w-9 h-9 shrink-0 rounded-xl bg-teal-600 hover:bg-teal-700 text-white flex items-center justify-center shadow-xs transition cursor-pointer" id="ai-send-btn" type="submit">
 <i class="fa-solid fa-paper-plane text-xs"></i>
 </button>
 </form>
+<div class="hidden vita-consent-hint" id="aiConsentHint" role="note"><i aria-hidden="true" class="fa-solid fa-shield-halved"></i><span id="aiConsentHintText">Gemini için Ayarlar'dan veri paylaşım onayı verin.</span><button onclick="VitaAIChat.openConsentSettings()" type="button">Ayarlar</button></div>
 </div>
 <!-- Yüzen Tetikleyici Buton -->
 <button class="w-13 h-13 p-3.5 rounded-full bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 text-white shadow-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition border-2 border-white/50 cursor-pointer" onclick="VitaAIChat.toggle()" type="button">
