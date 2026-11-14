@@ -24,11 +24,11 @@
 <!-- Uses Inter when already available; otherwise falls back immediately to the system UI font. -->
 <!-- Font Awesome 6 CDN -->
 <!-- build:css -->
-<link rel="stylesheet" href="./css/app.css?v=680194f3cf">
-<script defer src="./js/app.1.js?v=680194f3cf"></script>
-<script defer src="./js/app.2.js?v=680194f3cf"></script>
-<script defer src="./js/app.3.js?v=680194f3cf"></script>
-<script defer src="./js/app.4.js?v=680194f3cf"></script>
+<link rel="stylesheet" href="./css/app.css?v=f08b5d22c6">
+<script defer src="./js/app.1.js?v=f08b5d22c6"></script>
+<script defer src="./js/app.2.js?v=f08b5d22c6"></script>
+<script defer src="./js/app.3.js?v=f08b5d22c6"></script>
+<script defer src="./js/app.4.js?v=f08b5d22c6"></script>
 <!-- /build:css -->
 <!-- Chart.js loads only if a trend chart is needed. -->
 <!-- PDF.js loads only when a user selects a PDF for analysis. -->
@@ -1871,6 +1871,7 @@ Verileri Sil
 <input autocomplete="off" id="addSupBarcodeInput" inputmode="search" maxlength="64" oninput="vsAddSearch(this.value)" onkeydown="vsAddSearchKey(event)" placeholder="Ürün adı veya barkod numarası" type="search"/>
 </div>
 <div class="vsa-suggest hidden" id="vsAddSuggest" role="listbox"></div>
+<div class="hidden vsp-quick" id="vspQuick" role="group" aria-label="Hızlı ekle: son kullandığınız takviyeler"></div>
 <div class="vsa-actions">
 <button class="vsa-btn vsa-btn-main" id="btnAddSupStartCamera" onclick="if(window.SoundEffects) SoundEffects.playClick(); startAddSupModalScanner()" type="button"><i class="fa-solid fa-barcode"></i><span>Barkod Tara</span></button>
 <button class="vsa-btn vsa-btn-stop hidden" id="btnAddSupStopCamera" onclick="if(window.SoundEffects) SoundEffects.playClick(); stopScanner()" type="button"><i class="fa-solid fa-stop"></i><span>Kamerayı Kapat</span></button>
@@ -1958,14 +1959,14 @@ Verileri Sil
 <p class="vsa-dose-preview" id="manualSupDosePreview" aria-live="polite">Günde 1 tablet</p>
 </fieldset>
 <!-- 3) Stok -->
-<section class="vsp-card" id="modalMisanthaStockBox" aria-labelledby="vspStockTitle">
-<div class="vsp-hrow"><h2 class="vsp-h" id="vspStockTitle"><i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i> Stok</h2><b class="vsp-badge" id="modalMisanthaDaysPreviewBadge">30 gün yetecek</b></div>
+<details class="vsp-card vsp-stockd" id="modalMisanthaStockBox">
+<summary class="vsp-hrow"><span class="vsp-h" id="vspStockTitle"><i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i> Stok</span><span class="vsp-sumr"><b class="vsp-badge" id="modalMisanthaDaysPreviewBadge">30 gün yetecek</b><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></span></summary>
 <div class="vsp-grid2">
 <div class="vsp-field"><span class="vsp-lbl">Kutudaki adet</span><div class="vsp-step"><button type="button" class="vsp-stepbtn" data-step="-1" data-target="manualSupBoxCount" aria-label="Kutudaki adet: azalt">−</button><input id="manualSupBoxCount" inputmode="numeric" max="1000" min="1" type="number" value="30" oninput="updateManualModalStockPreview(true)"/><button type="button" class="vsp-stepbtn" data-step="1" data-target="manualSupBoxCount" aria-label="Kutudaki adet: artır">+</button></div></div>
 <div class="vsp-field"><span class="vsp-lbl">Kalan adet</span><div class="vsp-step"><button type="button" class="vsp-stepbtn" data-step="-1" data-target="manualSupRemainingCount" aria-label="Kalan adet: azalt">−</button><input id="manualSupRemainingCount" inputmode="numeric" max="1000" min="0" type="number" value="30" oninput="updateManualModalStockPreview(false)"/><button type="button" class="vsp-stepbtn" data-step="1" data-target="manualSupRemainingCount" aria-label="Kalan adet: artır">+</button></div></div>
 </div>
 <p class="vsp-note">Kutuyu daha önce açtıysanız kalan adedi düzeltin.</p>
-</section>
+</details>
 <!-- 4) Uyarılar: mevcut takviyelerle zamanlama çakışması + ilaç etkileşimi -->
 <div aria-live="polite" class="hidden vsp-conflict" id="vspConflict" role="status"></div>
 <div class="hidden vsa-live" id="modalLiveInteractionWarning" role="status" aria-live="polite"></div>

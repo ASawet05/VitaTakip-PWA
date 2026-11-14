@@ -109,7 +109,11 @@ function openAppDrawer() {
       closeAppDrawer();
       closeHeaderProfileMenu();
       // Takviye Ekle sayfasından çıkılırken kamera kapanır (arka planda açık kalmasın).
-      if (state.activeTab === "view-add-supplement" && viewId !== "view-add-supplement" && typeof stopScanner === "function") stopScanner();
+      if (state.activeTab === "view-add-supplement" && viewId !== "view-add-supplement") {
+        if (typeof stopScanner === "function") stopScanner();
+        // Yarım kalan düzenleme sonraki açılışa taşınmasın.
+        if (window.VitaSupPage && typeof window.VitaSupPage.getEditIds === "function" && window.VitaSupPage.getEditIds()) window.VitaSupPage.reset();
+      }
       state.activeTab = viewId;
       if (typeof markVitaGuideVisit === "function") markVitaGuideVisit(viewId);
 

@@ -44,12 +44,12 @@ const c0 = await p.evaluate(() => {
   const vis = el => el && el.getClientRects().length > 0;
   return { cb: vis(card.querySelector('input[type=checkbox]')), name: card.querySelector('.vsc-name').innerText, meta: card.querySelector('.vsc-meta').innerText, del: vis(card.querySelector('.vsc-del')),
     moreHidden: !vis(more), stockHidden: !vis(card.querySelector('.misantha-stock-bar')), refillHidden: !vis(card.querySelector('.misantha-refill-btn')), instrHidden: !vis(card.querySelector('.vsc-instruction')),
-    flag: card.querySelector('.vsc-flag-stock')?.innerText || '', h: Math.round(card.getBoundingClientRect().height) };
+    flag: (card.querySelector('.vsc-low')?.innerText || '').replace(/\s+/g, ' '), h: Math.round(card.getBoundingClientRect().height) };
 });
-log('Kart varsayılanda yalnızca onay kutusu, ad, saat/sıklık ve silme gösterir (stok, +Stok, talimat gizli)', c0.cb && c0.name === 'Test D3 1000 IU' && /\d\d:\d\d|Sabah/.test(c0.meta) && c0.del && c0.moreHidden && c0.stockHidden && c0.refillHidden && c0.instrHidden && c0.h <= 80, JSON.stringify(c0));
-log('Kritik stok gizlenmez: başlıkta küçük işaret olarak görünür', /2g/.test(c0.flag), c0.flag);
+log('Kart varsayılanda yalnızca onay kutusu, ad, saat/sıklık ve silme gösterir (stok, +Stok, talimat gizli)', c0.cb && c0.name === 'Test D3 1000 IU' && /\d\d:\d\d|Sabah/.test(c0.meta) && c0.del && c0.moreHidden && c0.stockHidden && c0.refillHidden && c0.instrHidden && c0.h <= 130, JSON.stringify(c0));
+log('Kritik stok gizlenmez: kartta "Kutu bitmek üzere" şeridi ve "Yeni kutu açtım" görünür', /2 gün yetecek/.test(c0.flag) && /Yeni kutu açtım/.test(c0.flag), c0.flag);
 await p.evaluate(() => document.querySelector('.vsc-card[data-sup-id="sup_test_1"] .vsc-main').click()); await sleep(150);
-const c1 = await p.evaluate(() => { const card = document.querySelector('.vsc-card[data-sup-id="sup_test_1"]'); const vis = el => el && el.getClientRects().length > 0; return { open: card.classList.contains('is-open'), stock: vis(card.querySelector('.vsc-stock')), refill: vis(card.querySelector('.misantha-refill-btn')), text: card.querySelector('.vsc-more').innerText.replace(/\s+/g, ' '), exp: card.querySelector('.vsc-chev').getAttribute('aria-expanded') }; });
+const c1 = await p.evaluate(() => { const card = document.querySelector('.vsc-card[data-sup-id="sup_test_1"]'); const vis = el => el && el.getClientRects().length > 0; return { open: card.classList.contains('is-open'), stock: vis(card.querySelector('.vsc-stock')), refill: vis(card.querySelector('.misantha-refill-btn, .vsc-low button')), text: card.querySelector('.vsc-more').innerText.replace(/\s+/g, ' '), exp: card.querySelector('.vsc-chev').getAttribute('aria-expanded') }; });
 // Sadeleştirme: çekmecede yalnızca "Stok: N gün yetecek. Günlük doz: N" + "+Stok"; talimat "!" düğmesinde.
 log('Karta dokununca çekmece açılır: sade stok satırı ve +Stok görünür, uzun talimat görünmez', c1.open && c1.stock && c1.refill && /Kritik stok: 2 gün yetecek\. Günlük doz: 1/.test(c1.text) && !/Uzun kullanım/.test(c1.text) && c1.exp === 'true', JSON.stringify(c1));
 await p.evaluate(() => document.querySelector('.vsc-card[data-sup-id="sup_test_1"] input[type=checkbox]').click()); await sleep(200);

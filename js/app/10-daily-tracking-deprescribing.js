@@ -47,7 +47,9 @@
       const todayName = new Date().toLocaleDateString("tr-TR", { weekday: "long" });
       const heroDay = document.querySelector("#homeDayBadge span"); if (heroDay) heroDay.textContent = todayName;
       const supDay = document.getElementById("supDayBadge"); if (supDay) supDay.textContent = todayName;
-      const todaySupplements = state.supplements.filter(s => isSupplementScheduledToday(s));
+      const todayScheduled = state.supplements.filter(s => isSupplementScheduledToday(s));
+      // "Bugün atla" ile atlananlar listede kalır ama günlük ilerleme/sayaçlara katılmaz.
+      const todaySupplements = todayScheduled.filter(s => !isSupplementSkippedToday(s));
       const morningItems = todaySupplements.filter(s => s.timing === "Sabah");
       const noonItems = todaySupplements.filter(s => s.timing === "Öğle");
       const eveningItems = todaySupplements.filter(s => s.timing === "Akşam" || s.timing === "Gece");
@@ -67,22 +69,24 @@
       if (!checklistContainer) return;
       checklistContainer.innerHTML = "";
 
-      if (total === 0) {
+      if (todayScheduled.length === 0) {
         checklistContainer.innerHTML = `
           <div class="text-center py-3 px-3 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-xs text-slate-500">
             <i class="fa-solid fa-pills text-amber-500 mr-1"></i> Henüz takviye yok. “Takviye Ekle” ile başlayın.
           </div>
         `;
       } else {
+        const byTiming = t => todayScheduled.filter(s => s.timing === t);
         const groups = [
-          { timing: "Sabah", label: "Sabah protokolü", icon: "fa-sun text-amber-500", items: morningItems },
-          { timing: "Öğle", label: "Öğle protokolü", icon: "fa-utensils text-sky-500", items: noonItems },
-          { timing: "Akşam", label: "Akşam protokolü", icon: "fa-moon text-indigo-500", items: todaySupplements.filter(s => s.timing === "Akşam") },
-          { timing: "Gece", label: "Gece protokolü", icon: "fa-moon text-slate-500", items: todaySupplements.filter(s => s.timing === "Gece") }
+          { timing: "Sabah", label: "Sabah protokolü", icon: "fa-sun text-amber-500", items: byTiming("Sabah") },
+          { timing: "Öğle", label: "Öğle protokolü", icon: "fa-utensils text-sky-500", items: byTiming("Öğle") },
+          { timing: "Akşam", label: "Akşam protokolü", icon: "fa-moon text-indigo-500", items: byTiming("Akşam") },
+          { timing: "Gece", label: "Gece protokolü", icon: "fa-moon text-slate-500", items: byTiming("Gece") }
         ];
 
         groups.forEach(g => {
           if (g.items.length === 0) return;
+          const activeItems = g.items.filter(i => !isSupplementSkippedToday(i));
 
           const groupEl = document.createElement("div");
           groupEl.className = "space-y-2.5";
@@ -90,15 +94,18 @@
             <div class="vsg-head">
               <i class="fa-solid ${g.icon}"></i>
               <span class="vsg-label">${g.label}</span>
-              <span class="vsg-count">${g.items.filter(i=>i.taken).length}/${g.items.length}</span>
+              <span class="vsg-count">${activeItems.filter(i=>i.taken).length}/${activeItems.length}</span>
               <button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); markTimingTaken(${safeJsStringAttribute(g.timing)})" class="vsg-all" title="Bu zaman dilimindeki tüm takviyeleri alındı olarak işaretler" aria-label="${escapeHtmlText(g.label)}: tümünü alındı işaretle"><i class="fa-solid fa-check-double" aria-hidden="true"></i> Tümü alındı</button>
             </div>
           `;
 
           g.items.forEach(item => {
+            const isSkipped = isSupplementSkippedToday(item);
             const card = document.createElement("div");
             card.className = `vsc-card px-3 py-2.5 rounded-2xl border transition-all ${
-              item.taken
+              isSkipped
+                ? "is-skipped bg-slate-50 border-slate-200"
+                : item.taken
                 ? "bg-teal-50/70 border-teal-200"
                 : "bg-white border-slate-200 hover:border-slate-300 shadow-sm"
             }`;
@@ -163,10 +170,10 @@
             const misanthaStockBarHtml = `
               <div class="vsc-stock">
                 ${stockBadgeHtml}
-                <button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); refillSupplementBox(${safeJsStringAttribute(item.id)})" class="misantha-refill-btn" title="Biten kutuyu yenile (+${toplamKutuAdedi} adet ekle)">
+                ${kalanGun <= VITA_LOW_STOCK_DAYS ? "" : `<button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); refillSupplementBox(${safeJsStringAttribute(item.id)})" class="misantha-refill-btn" title="Biten kutuyu yenile (+${toplamKutuAdedi} adet ekle)">
                   <i class="fa-solid fa-box-open"></i>
                   <span>Yeni Kutu Ekle (+Stok)</span>
-                </button>
+                </button>`}
               </div>
             `;
 
@@ -174,8 +181,24 @@
                Stok, +Stok, günlük doz, kullanım talimatı, etkileşim ayrıntısı ve form seçici akordeonda.
                Güvenlik uyarıları gizlenmez: başlıkta küçük işaret kalır; "yasaklı" uyarısı her zaman görünür. */
             const isOpen = vitaOpenSupplementCards.has(String(item.id));
+            // Kutu bitmek üzere (≤ VITA_LOW_STOCK_DAYS gün): kartta her zaman görünen tek dokunuşluk "Yeni kutu açtım".
+            const isLowStock = kalanGun <= VITA_LOW_STOCK_DAYS;
+            const lowStockHtml = isLowStock ? `
+              <div class="vsc-low${isCriticalStock ? " is-critical" : ""}" data-testid="low-stock-strip">
+                <i class="fa-solid fa-box-open" aria-hidden="true"></i>
+                <span>${kalanGun <= 0 ? "Kutu bitti" : `Kutu bitmek üzere: ${kalanGun} gün yetecek`}</span>
+                <button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); refillSupplementBox(${safeJsStringAttribute(item.id)})" aria-label="${escapeHtmlText(item.name)}: yeni kutu açtım (+${toplamKutuAdedi} adet)">Yeni kutu açtım</button>
+              </div>` : "";
+            const skippedHtml = isSkipped ? `
+              <div class="vsc-skipped"><i class="fa-solid fa-ban" aria-hidden="true"></i><span>Bugün atlandı — ilerlemenize sayılmaz</span>
+                <button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); unskipSupplementToday(${safeJsStringAttribute(item.id)})">Geri al</button></div>` : "";
+            const actionsHtml = `
+              <div class="vsc-actions">
+                <button type="button" class="vsc-act" onclick="if(window.SoundEffects) SoundEffects.playClick(); VitaSupPage.startEdit(${safeJsStringAttribute(item.id)})"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Düzenle</button>
+                ${!isSkipped && !item.taken ? `<button type="button" class="vsc-act" onclick="if(window.SoundEffects) SoundEffects.playClick(); skipSupplementToday(${safeJsStringAttribute(item.id)})"><i class="fa-solid fa-ban" aria-hidden="true"></i> Bugün atla</button>` : ""}
+              </div>`;
             const headerFlags = [
-              isCriticalStock ? `<span class="vsc-flag vsc-flag-stock" title="Kritik stok: ${kalanGun} gün yetecek"><i class="fa-solid fa-triangle-exclamation"></i>${kalanGun}g</span>` : "",
+              isCriticalStock && !isLowStock ? `<span class="vsc-flag vsc-flag-stock" title="Kritik stok: ${kalanGun} gün yetecek"><i class="fa-solid fa-triangle-exclamation"></i>${kalanGun}g</span>` : "",
               itemInteractions.length ? `<span class="vsc-flag vsc-flag-ix" title="${itemInteractions.length} etkileşim uyarısı — ayrıntılar için dokunun"><i class="fa-solid fa-bolt"></i>${itemInteractions.length}</span>` : ""
             ].join("");
             card.innerHTML = `
@@ -193,8 +216,11 @@
                 <button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); deleteSupplementItem(${safeJsStringAttribute(item.id)})" title="Listeden Çıkar" aria-label="${escapeHtmlText(item.name)} listeden çıkar" class="vsc-del"><i class="fa-solid fa-trash-can"></i></button>
               </div>
               ${deprescribingBadgeHtml}
+              ${skippedHtml}
+              ${lowStockHtml}
               <div class="vsc-more${isOpen ? "" : " hidden"}" id="vscMore_${escapeHtmlText(item.id)}">
                 ${misanthaStockBarHtml}
+                ${actionsHtml}
               </div>
             `;
             /* Kaldırılanlar (tekrar ve yoğunluk): etkileşim metin kutuları (üstteki Emniyet Kalkanı'nda; kartta ⚡ sayısı kalır),
@@ -356,11 +382,42 @@
       showToast("Form Güncellendi", `${item.name} formu "${newForm.replace('_', ' ')}" olarak seçildi.`, "success");
     }
 
+    /* "Bugün atla": bilerek alınmayan doz o güne özel işaretlenir (skippedOn = YYYY-MM-DD, yerel gün).
+       Ertesi gün kendiliğinden geçersiz olur; atlanan doz sayaç/VitaSkor ve hatırlatmalara katılmaz, stoktan düşülmez. */
+    var VITA_LOW_STOCK_DAYS = 5;
+    function vitaLocalDayKey(d = new Date()) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+    function isSupplementSkippedToday(item, date = new Date()) {
+      return Boolean(item && item.skippedOn && item.skippedOn === vitaLocalDayKey(date));
+    }
+    function skipSupplementToday(id) {
+      const item = (state.supplements || []).find(s => s.id === id);
+      if (!item) return;
+      normalizeSupplementStockFields(item);
+      if (item.taken) { item.taken = false; item.kalanAdet = Math.min(item.toplamKutuAdedi, item.kalanAdet + item.gunlukDoz); }
+      item.skippedOn = vitaLocalDayKey();
+      saveState();
+      renderDailyTab();
+      showToast("Bugün atlandı", `${item.name} (${item.timing}) bugün alınmayacak olarak işaretlendi; günlük ilerlemenize sayılmaz ve hatırlatma gelmez. Yarın listede yeniden görünür.`, "info");
+    }
+    function unskipSupplementToday(id) {
+      const item = (state.supplements || []).find(s => s.id === id);
+      if (!item) return;
+      item.skippedOn = null;
+      saveState();
+      renderDailyTab();
+      showToast("Geri alındı", `${item.name} yeniden bugünkü listenizde.`, "info");
+    }
+    window.isSupplementSkippedToday = isSupplementSkippedToday;
+    window.skipSupplementToday = skipSupplementToday;
+    window.unskipSupplementToday = unskipSupplementToday;
+
     function markTimingTaken(timing) {
       const validTimings = ["Sabah", "Öğle", "Akşam", "Gece"];
       if (!validTimings.includes(timing)) return;
       const items = (state.supplements || []).filter(item => {
-        if (!isSupplementScheduledToday(item)) return false;
+        if (!isSupplementScheduledToday(item) || isSupplementSkippedToday(item)) return false;
 
         return item.timing === timing;
       });
@@ -384,6 +441,7 @@
         normalizeSupplementStockFields(item);
         const becomingTaken = !item.taken;
         item.taken = becomingTaken;
+        if (becomingTaken) item.skippedOn = null; // atlanmış dozu yine de aldıysa atlama kalkar
         if (becomingTaken) {
           item.kalanAdet = Math.max(0, item.kalanAdet - item.gunlukDoz);
         } else {
@@ -705,6 +763,9 @@
       if (typeof updateModalLiveInteractionPreview === "function") {
         updateModalLiveInteractionPreview();
       }
+      // Barkod / yapay zekâ kutudaki adedi getirdi: katlanır "Stok" bölümü kontrol için kendiliğinden açılır.
+      const stockBox = document.getElementById("modalMisanthaStockBox");
+      if (stockBox) stockBox.open = true;
     }
 
     /* Seçim kutusuna listede olmayan bir değer gelirse (ör. katalogdaki "Tok (Yağlı Kahvaltı İle)") seçenek olarak eklenir; bilgi kaybolmaz. */
@@ -1226,7 +1287,12 @@
       const hungerNote = (document.getElementById("manualSupHungerNote")?.value || "").trim();
       const barcodeVal = (document.getElementById("addSupBarcodeInput")?.value || "").trim() || null;
       const strength = doseSummary.strength;
-      const groupId = plan.vakits.length > 1 ? `supg_${Date.now().toString(36)}` : null;
+      // Düzenleme: aynı vakitteki eski kayıt kimliği, "alındı/atlandı" durumu ve eklenme tarihi korunur.
+      const editIds = page && typeof page.getEditIds === "function" ? page.getEditIds() : null;
+      const oldMembers = editIds ? state.supplements.filter(s => editIds.includes(s.id)) : [];
+      const isEdit = Boolean(editIds && oldMembers.length);
+      const oldGroupId = (oldMembers.find(o => o.groupId) || {}).groupId || null;
+      const groupId = plan.vakits.length > 1 ? (oldGroupId || `supg_${Date.now().toString(36)}`) : null;
       const subParts = [customForm, brandActive].filter(Boolean);
       const instructionText = [hungerNote ? `Açlık/Tokluk & Emilim: ${hungerNote}.` : "", brandActive ? `İçerik: ${brandActive}.` : "", "Hekiminizin belirttiği talimatlara uygun alınız."].filter(Boolean).join(" ");
 
@@ -1235,17 +1301,19 @@
       const per = i => Math.floor(gunlukToplam / k) + (i < gunlukToplam % k ? 1 : 0);
       const share = (total, i) => Math.floor(total * per(i) / gunlukToplam) + (i === 0 ? total - plan.vakits.reduce((s, _, j) => s + Math.floor(total * per(j) / gunlukToplam), 0) : 0);
       const stamp = Date.now();
+      const newRecords = [];
       plan.vakits.forEach((v, i) => {
         const amount = per(i);
         const dose = `${amount} ${doseSummary.unit}${strength ? ` (${strength})` : ""}`;
-        state.supplements.push({
-          id: `sup_man_${stamp}_${i}`,
+        const prev = isEdit ? oldMembers.find(o => o.timing === v.vakit) : null;
+        newRecords.push({
+          id: prev ? prev.id : `sup_man_${stamp}_${i}`,
           groupId,
           name,
-          barcode: barcodeVal,
+          barcode: prev ? (prev.barcode || barcodeVal) : barcodeVal,
           markaEtken: brandActive || null,
           formKey: null,
-          sablonKey: (document.getElementById("modalCatalogSelect")?.value || "custom") !== "custom" ? document.getElementById("modalCatalogSelect").value : null,
+          sablonKey: isEdit ? (oldMembers[0].sablonKey || null) : ((document.getElementById("modalCatalogSelect")?.value || "custom") !== "custom" ? document.getElementById("modalCatalogSelect").value : null),
           selectedForm: customForm,
           timing: v.vakit,
           scheduleTime: v.clock,
@@ -1257,14 +1325,27 @@
           gunlukDoz: amount,
           subText: subParts.length ? subParts.join(" · ") : "Hekim Tavsiyeli Tanımlama",
           instruction: instructionText,
-          addedDate: stamp,
-          taken: false,
+          addedDate: prev ? (prev.addedDate || stamp) : stamp,
+          taken: prev ? Boolean(prev.taken) : false,
+          skippedOn: prev ? (prev.skippedOn || null) : null,
           scheduleDays: plan.days.slice()
         });
       });
+      if (isEdit) {
+        const at = state.supplements.findIndex(s => editIds.includes(s.id));
+        state.supplements = state.supplements.filter(s => !editIds.includes(s.id));
+        state.supplements.splice(Math.max(0, Math.min(at, state.supplements.length)), 0, ...newRecords);
+      } else {
+        state.supplements.push(...newRecords);
+      }
+      if (page && typeof page.rememberRecent === "function") {
+        const vakitClocks = {};
+        plan.vakits.forEach(v => { vakitClocks[v.vakit] = v.clock; });
+        page.rememberRecent({ name, brand: brandActive, form: customForm || "", strength, unit: doseSummary.unit, hunger: hungerNote, daily: gunlukToplam, vakits: vakitClocks, days: plan.days.slice(), box: toplamKutuAdedi });
+      }
 
       /* Barkod TAKVİYE önbelleğine öğretilir (ilaç önbelleğine asla). Katalogda aynı ürün olarak varsa kopya yapılmaz. */
-      const learnKey = typeof vitaBarcodeKey === "function" ? vitaBarcodeKey(barcodeVal) : "";
+      const learnKey = isEdit ? "" : (typeof vitaBarcodeKey === "function" ? vitaBarcodeKey(barcodeVal) : "");
       if (learnKey && typeof learnVitaBarcode === "function") {
         const fromCatalog = addSupLastLookup && addSupLastLookup.barcode === learnKey && addSupLastLookup.source === "catalog";
         if (!fromCatalog) {
@@ -1284,7 +1365,7 @@
       detectSupplementConflicts();
       const today = new Date().getDay();
       const notToday = !plan.days.includes(today);
-      showToast("Takviye Eklendi", `${name}: ${plan.vakits.map(v => `${v.vakit} ${v.clock}`).join(", ")} · ${getSupplementScheduleDaysLabel({ scheduleDays: plan.days })}.${notToday ? " Bugün programda olmadığı için bugünkü listede görünmez." : ""}`, "success");
+      showToast(isEdit ? "Takviye Güncellendi" : "Takviye Eklendi", `${name}: ${plan.vakits.map(v => `${v.vakit} ${v.clock}`).join(", ")} · ${getSupplementScheduleDaysLabel({ scheduleDays: plan.days })}.${notToday ? " Bugün programda olmadığı için bugünkü listede görünmez." : ""}`, "success");
     }
 /* CDSS DEMOGRAFİ VE CANLI ÖZET SENKRONİZASYONU */
     function syncCDSSDemographics() {

@@ -132,8 +132,109 @@
   }
   function reset() {
     st.freq = "daily"; st.days = new Set(ALL_DAYS); st.vakits = { "Sabah": DEFAULT_CLOCK["Sabah"] };
-    refresh();
+    editIds = null; setEditUi(false);
+    var stock = $("modalMisanthaStockBox"); if (stock) stock.open = false;
+    refresh(); renderQuick();
   }
+  /* Vakit → saat eşlemesi ve gün listesiyle planı topluca kurar (düzenleme / hızlı ekleme). */
+  function setSchedule(vakitClocks, days) {
+    var next = {};
+    ORDER.forEach(function (v) { if (vakitClocks && vakitClocks[v]) next[v] = isClock(vakitClocks[v]) ? vakitClocks[v] : DEFAULT_CLOCK[v]; });
+    if (Object.keys(next).length) st.vakits = next;
+    setDays(days);
+  }
+
+  /* ---- Kayıtlardan / formdan ürün özeti (hızlı ekleme ve düzenleme ortak) ---- */
+  function membersOf(item) {
+    if (!item) return [];
+    var list = typeof getSupplementGroupStock === "function" ? getSupplementGroupStock(item).members : [item];
+    return list.slice().sort(function (a, b) { return ORDER.indexOf(a.timing) - ORDER.indexOf(b.timing); });
+  }
+  function snapshotFromRecords(members) {
+    var m0 = members[0] || {}, vak = {};
+    members.forEach(function (m) {
+      if (ORDER.indexOf(m.timing) < 0) return;
+      var c = typeof getSupplementTimeLabel === "function" ? getSupplementTimeLabel(m) : m.scheduleTime;
+      vak[m.timing] = isClock(c) ? c : DEFAULT_CLOCK[m.timing];
+    });
+    var sm = String(m0.doseText || "").split(" • ")[0].match(/\(([^)]+)\)/);
+    return {
+      name: m0.name || "", brand: m0.markaEtken || "", form: String(m0.selectedForm || "").replace(/_/g, " "),
+      strength: sm ? sm[1] : "", unit: m0.dozBirimi || "", hunger: m0.aclikDurumu || "",
+      daily: members.reduce(function (a, m) { return a + (Number(m.gunlukDoz) || 1); }, 0) || 1,
+      vakits: vak, days: Array.isArray(m0.scheduleDays) && m0.scheduleDays.length ? m0.scheduleDays.map(Number) : ALL_DAYS.slice(),
+      box: members.reduce(function (a, m) { return a + (Number(m.toplamKutuAdedi) || 0); }, 0) || 30
+    };
+  }
+  function applySnapshot(snap, remaining) {
+    function set(id, v) { var el = $(id); if (el) el.value = v == null ? "" : String(v); }
+    set("manualSupName", snap.name); set("manualSupBrandActive", snap.brand); set("manualSupFormText", snap.form); set("manualSupDose", snap.strength);
+    var unit = $("manualSupDoseUnit");
+    if (unit) unit.value = snap.unit && Array.prototype.some.call(unit.options, function (o) { return o.value === snap.unit; }) ? snap.unit : (typeof guessVitaDoseUnit === "function" ? guessVitaDoseUnit(snap.form) : "tablet");
+    var hunger = $("manualSupHungerNote");
+    if (hunger) { if (typeof setVitaSelectValueLoose === "function") setVitaSelectValueLoose(hunger, snap.hunger); else hunger.value = snap.hunger || ""; }
+    set("manualSupDailyDose", Math.max(1, Number(snap.daily) || 1));
+    set("manualSupBoxCount", Math.max(1, Number(snap.box) || 30));
+    set("manualSupRemainingCount", remaining == null ? Math.max(1, Number(snap.box) || 30) : Math.max(0, remaining));
+    setSchedule(snap.vakits, snap.days);
+    if (typeof updateModalLiveInteractionPreview === "function") try { updateModalLiveInteractionPreview(); } catch (_) {}
+  }
+
+  /* ---- Hızlı ekleme: son eklenen / listedeki takviyeler (yalnızca bu cihazda) ---- */
+  function recentKey() { return "vitatakip_sup_recent_" + (typeof activeUserId !== "undefined" && activeUserId ? activeUserId : "guest"); }
+  function readRecents() { try { var a = JSON.parse(localStorage.getItem(recentKey()) || "[]"); return Array.isArray(a) ? a.filter(function (r) { return r && r.name; }) : []; } catch (_) { return []; } }
+  function rememberRecent(snap) {
+    if (!snap || !snap.name) return;
+    var key = fold(snap.name), list = readRecents().filter(function (r) { return fold(r.name) !== key; });
+    list.unshift(snap);
+    try { localStorage.setItem(recentKey(), JSON.stringify(list.slice(0, 8))); } catch (_) {}
+  }
+  var quickList = [];
+  function quickItems() {
+    var seen = {}, out = [];
+    readRecents().forEach(function (r) { var k = fold(r.name); if (!seen[k]) { seen[k] = 1; out.push(r); } });
+    var sups = typeof state !== "undefined" && Array.isArray(state.supplements) ? state.supplements.slice() : [];
+    sups.sort(function (a, b) { return (b.addedDate || 0) - (a.addedDate || 0); }).forEach(function (s) {
+      var k = fold(s.name); if (!s.name || seen[k]) return; seen[k] = 1; out.push(snapshotFromRecords(membersOf(s)));
+    });
+    return out.slice(0, 6);
+  }
+  function renderQuick() {
+    var box = $("vspQuick"); if (!box) return;
+    quickList = editIds ? [] : quickItems();
+    box.classList.toggle("hidden", !quickList.length);
+    box.innerHTML = quickList.length ? '<span class="vsp-qlbl"><i class="fa-solid fa-bolt" aria-hidden="true"></i> Hızlı ekle</span>' + quickList.map(function (q, i) {
+      return '<button type="button" class="vsp-qchip" data-quick="' + i + '" title="Formu ' + esc(q.name) + ' ile doldur">' + esc(q.name) + "</button>";
+    }).join("") : "";
+  }
+  function useQuick(i) {
+    var snap = quickList[i]; if (!snap) return;
+    applySnapshot(snap, null);
+    if (typeof showToast === "function") showToast("Form dolduruldu", snap.name + ": son kullandığınız plan getirildi. Gerekirse değiştirip “Takviyeyi ekle”ye dokunun.", "info");
+    var n = $("modalCustomNameContainer"); if (n && n.scrollIntoView) n.scrollIntoView({ block: "start", behavior: "smooth" });
+  }
+
+  /* ---- Düzenleme: aynı sayfa, mevcut kayıt(lar) dolu açılır ---- */
+  var editIds = null;
+  function setEditUi(on) {
+    var t = $("vsaTitle"); if (t) t.textContent = on ? "Takviyeyi Düzenle" : "Takviye Ekle";
+    var vt = $("currentViewTitle"); if (vt && typeof state !== "undefined" && state.activeTab === "view-add-supplement") vt.textContent = on ? "Takviyeyi Düzenle" : "Takviye Ekle";
+    var btn = $("btnCommitSupplement");
+    if (btn) btn.innerHTML = on ? '<i class="fa-solid fa-check"></i><span>Değişiklikleri kaydet</span>' : '<i class="fa-solid fa-plus"></i><span>Takviyeyi ekle</span>';
+    ["addSupBoxBarcodeSection", "addSupMoreDetails"].forEach(function (id) { var el = $(id); if (el) el.classList.toggle("hidden", !!on); });
+    var page = $("addSupplementModal"); if (page) page.classList.toggle("is-editing", !!on);
+  }
+  function startEdit(id) {
+    var item = typeof state !== "undefined" ? (state.supplements || []).find(function (s) { return String(s.id) === String(id); }) : null;
+    if (!item || typeof openAddSupplementModal !== "function") return;
+    var members = membersOf(item);
+    openAddSupplementModal();
+    editIds = members.map(function (m) { return m.id; });
+    applySnapshot(snapshotFromRecords(members), members.reduce(function (a, m) { return a + (Number(m.kalanAdet) || 0); }, 0));
+    setEditUi(true); renderQuick();
+    var stock = $("modalMisanthaStockBox"); if (stock) stock.open = true;
+  }
+  function getEditIds() { return editIds ? editIds.slice() : null; }
   function setVakits(list) {
     var next = {};
     (list || []).forEach(function (v) { if (ORDER.indexOf(v) > -1) next[v] = st.vakits[v] || DEFAULT_CLOCK[v]; });
@@ -175,6 +276,8 @@
       else st.vakits[name] = DEFAULT_CLOCK[name];
       refresh(); return;
     }
+    var q = t.closest("#vspQuick [data-quick]");
+    if (q) { useQuick(Number(q.dataset.quick)); return; }
     var shift = t.closest("#vspConflict [data-shift-vakit]");
     if (shift) { setClock(shift.dataset.shiftVakit, shift.dataset.shiftTo); return; }
   });
@@ -183,6 +286,7 @@
     if (inp && isClock(inp.value)) { st.vakits[inp.dataset.vakit] = inp.value; renderPreview(); renderConflicts(); }
   });
 
-  window.VitaSupPage = { refresh: refresh, reset: reset, setVakits: setVakits, setDays: setDays, setClock: setClock, getPlan: getPlan, syncUnitFromForm: syncUnitFromForm, adviceFor: adviceFor, conflicts: conflicts };
+  window.VitaSupPage = { refresh: refresh, reset: reset, setVakits: setVakits, setDays: setDays, setClock: setClock, getPlan: getPlan, syncUnitFromForm: syncUnitFromForm, adviceFor: adviceFor, conflicts: conflicts,
+    setSchedule: setSchedule, startEdit: startEdit, getEditIds: getEditIds, rememberRecent: rememberRecent, quickItems: quickItems, renderQuick: renderQuick };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", refresh, { once: true }); else refresh();
 })();

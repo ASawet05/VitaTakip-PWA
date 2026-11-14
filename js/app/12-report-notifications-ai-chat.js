@@ -1698,12 +1698,28 @@ function getDoctorReportMode() {
 
       const firedKey = `vitatakip_notif_fired_${activeUserId || 'guest'}_${todayStr}_${currentHM}`;
       if (Array.isArray(state.supplements) && state.supplements.length && safeLocalStorageGetItem(firedKey) !== "true") {
-        const pendingItems = state.supplements.filter(item => getSupplementTimeLabel(item) === currentHM && isSupplementScheduledToday(item, now) && !item.taken);
+        const pendingItems = state.supplements.filter(item => getSupplementTimeLabel(item) === currentHM && isSupplementScheduledToday(item, now) && !item.taken && !(typeof isSupplementSkippedToday === "function" && isSupplementSkippedToday(item, now)));
         if (pendingItems.length) {
           safeLocalStorageSetItem(firedKey, "true");
           const names = pendingItems.map(item => `${item.name} (${item.doseText || 'Doz bilgisi yok'})`).join(", ");
           vitaShowNotification(`⏰ VitaTakip: ${currentHM} takviye zamanı`, `Çizelgenizdeki takviyeler: ${names}. Kutu/prospektüs ve hekim/eczacı talimatlarına uyun.`, `vita-sup-${currentHM}`);
         }
+      }
+
+      /* Kutu bitmeden uyarı: stoğu ≤ 5 gün kalan her takviye (vakit grubu tek ürün sayılır) için günde bir kez, 09:00'dan sonra. */
+      if (now.getHours() >= 9 && Array.isArray(state.supplements) && typeof getSupplementGroupStock === "function") {
+        const seenStock = new Set();
+        state.supplements.forEach(item => {
+          const key = String(item.groupId || item.id);
+          if (seenStock.has(key)) return;
+          seenStock.add(key);
+          const g = getSupplementGroupStock(item);
+          if (g.days > (typeof VITA_LOW_STOCK_DAYS === "number" ? VITA_LOW_STOCK_DAYS : 5)) return;
+          const stockKey = `vitatakip_notif_fired_${activeUserId || 'guest'}_${todayStr}_stock_${key}`;
+          if (safeLocalStorageGetItem(stockKey) === "true") return;
+          safeLocalStorageSetItem(stockKey, "true");
+          vitaShowNotification(`📦 ${item.name} bitmek üzere`, `${item.name}: ${g.days} gün yetecek kadar kaldı (${g.remaining} adet). Yeni kutuyu açınca uygulamada “Yeni kutu açtım”a dokunun.`, `vita-stock-${key}`);
+        });
       }
 
       if (typeof getTodayVitaMedicationDoses === "function") {
