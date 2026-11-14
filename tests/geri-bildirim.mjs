@@ -17,6 +17,9 @@ p.on('request', async r => {
     if (r.method() === 'OPTIONS') return r.respond({ status: 204, headers: cors });
     NET.reqs.push({ url: u, headers: r.headers(), body: JSON.parse(r.postData() || '{}') });
     await new Promise(res => setTimeout(res, NET.delay));
+    // Gerçek FormSubmit gibi: Referer yoksa reddeder (canlıda yaşanan hata).
+    if (!r.headers().referer) return r.respond({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ success: 'false', message: 'Make sure you open this page through a web server, FormSubmit will not work in pages browsed as HTML files.' }) });
+    if (NET.mode === 'activation') return r.respond({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ success: 'false', message: "This form needs Activation. We've sent you an email containing an 'Activate Form' link." }) });
     if (NET.mode === 'fail') return r.respond({ status: 500, headers: cors, contentType: 'application/json', body: JSON.stringify({ success: 'false', message: 'Server error' }) });
     if (NET.mode === 'offline') return r.abort('internetdisconnected');
     return r.respond({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ success: 'true', message: 'The form was submitted successfully.' }) });
@@ -40,6 +43,7 @@ log('Gönderim sürerken düğme pasif, "Gönderiliyor..." ve yüklenme simgesi'
 await sleep(700);
 const req = NET.reqs[0] || {};
 log('İstek FormSubmit AJAX adresine POST + JSON başlıklarıyla gider', req.url === 'https://formsubmit.co/ajax/sxgsawet@gmail.com' && /application\/json/.test(req.headers?.['content-type'] || '') && /application\/json/.test(req.headers?.accept || ''), req.url);
+log('İstekte yalnızca site adresi Referer olarak gider (FormSubmit bunu ister; sayfa yolu gönderilmez)', req.headers?.referer === 'http://localhost:8080/', req.headers?.referer);
 const body = req.body || {};
 log('Gövdede Türkçe anahtarlarla tüm alanlar ve konu var', body['Gönderen'] === 'Test Kullanici' && body['Kullanım kolaylığı puanı'] === '4 / 5' && body['Bildirim türü'] === 'Hata' && body['İlgili bölüm'] === 'VitaAI' && /çalışıyor/.test(body['Açıklama']) && body._subject === '[VitaTakip] Yeni Geri Bildirim', JSON.stringify(body));
 const ok = await p.evaluate(() => { const s = document.getElementById('vitaFeedbackDeliveryStatus'); return { status: s.innerText.trim(), cls: s.className, visible: !s.classList.contains('hidden'), msg: document.getElementById('vitaFeedbackMessage').value, entries: getVitaFeedbackEntries().map(e => ({ m: e.message, d: e.delivered })), hist: document.getElementById('vitaFeedbackHistoryList').innerText, btn: document.getElementById('btnSubmitVitaFeedback').disabled }; });
@@ -54,6 +58,12 @@ await p.evaluate(() => document.getElementById('vitaFeedbackForm').requestSubmit
 const fail = await p.evaluate(() => { const s = document.getElementById('vitaFeedbackDeliveryStatus'); return { status: s.innerText.replace(/\s+/g, ' ').trim(), cls: s.className, msg: document.getElementById('vitaFeedbackMessage').value, n: getVitaFeedbackEntries().length, buttons: Array.from(s.querySelectorAll('button')).map(x => x.innerText.trim()) }; });
 log('Sunucu hatasında kırmızı uyarı, yazılanlar silinmez, kayıt "iletildi" sayılmaz', /vita-fb-error/.test(fail.cls) && /gönderilemedi/.test(fail.status) && /İkinci mesaj/.test(fail.msg) && fail.n === 1, fail.status);
 log('Hata durumunda "Tekrar dene" ve "E-posta uygulamasıyla gönder" seçenekleri', fail.buttons.includes('Tekrar dene') && fail.buttons.includes('E-posta uygulamasıyla gönder'), JSON.stringify(fail.buttons));
+
+/* 2b) Form henüz etkinleştirilmemiş: ne yapılacağını söyleyen uyarı */
+NET.mode = 'activation';
+await p.evaluate(() => document.getElementById('vitaFeedbackForm').requestSubmit()); await sleep(900);
+const act = await p.evaluate(() => document.getElementById('vitaFeedbackDeliveryStatus').innerText);
+log('Etkinleştirilmemiş formda "Activate Form" bağlantısı anlatılır', /etkinleştirilmemiş/.test(act) && /Activate Form/.test(act) && !/@/.test(act), act.slice(0, 120));
 
 /* 3) İnternet yok: kırmızı uyarı */
 NET.mode = 'offline';

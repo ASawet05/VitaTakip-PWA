@@ -2012,7 +2012,9 @@ window.VitaAIChat = VitaAIChat;
           body: JSON.stringify(payload),
           signal: controller ? controller.signal : undefined,
           credentials: "omit",
-          referrerPolicy: "no-referrer"
+          // FormSubmit, gönderimi hangi siteden geldiğine göre (Referer) tanır; yoksa "web server" hatası verip reddeder.
+          // Yalnızca site adresi (https://vitatakip.com.tr/) gönderilir, sayfa yolu gönderilmez.
+          referrerPolicy: "origin"
         });
         if (timer) clearTimeout(timer);
         const data = await response.json().catch(() => ({}));
@@ -2051,7 +2053,7 @@ window.VitaAIChat = VitaAIChat;
         offline: "İnternet bağlantısı yok gibi görünüyor; geri bildirim gönderilemedi.",
         network: "Sunucuya ulaşılamadı; geri bildirim gönderilemedi.",
         server: "Gönderim servisi şu an yanıt vermedi; geri bildirim gönderilemedi.",
-        activation: "Gönderim servisi henüz etkinleştirilmemiş; geri bildirim iletilemedi."
+        activation: "Gönderim servisi henüz etkinleştirilmemiş (geliştiricinin e-postasına gelen \"Activate Form\" bağlantısıyla bir kez etkinleştirilir); geri bildirim iletilemedi."
       };
       if (statusBox) {
         statusBox.className = "vita-fb-status vita-fb-error rounded-xl p-3 text-xs font-bold border";
