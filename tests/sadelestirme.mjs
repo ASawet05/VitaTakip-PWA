@@ -75,9 +75,22 @@ log('Esc ile bilgi penceresi kapanır', await p.evaluate(() => !document.getElem
 /* 4) Ana Sayfa sırası + "Tümü alındı" */
 const order = await p.evaluate(() => {
   const pos = id => { const el = document.getElementById(id); return el ? Math.round(el.getBoundingClientRect().top + scrollY) : -1; };
-  return { kalkan: pos('conflictShieldAlertBanner'), takviye: pos('supplementChecklistContainer'), ilac: pos('todayMedsCard'), su: pos('homeHydrationCard'), ozet: pos('homeDailySummaryDetails'), hero: pos('homeHeroCard') };
+  const summaryInHome = !!document.querySelector('#view-home #dashVitaSkor');
+  return { kalkan: pos('conflictShieldAlertBanner'), takviye: pos('supplementChecklistContainer'), ilac: pos('todayMedsCard'), su: pos('homeHydrationCard'), hero: pos('homeHeroCard'), summaryInHome };
 });
-log('Ana Sayfa sırası: karşılama → Emniyet Kalkanı → takviyeler → ilaçlar → su → günlük özet', order.hero < order.kalkan && order.kalkan < order.takviye && order.takviye < order.ilac && order.ilac < order.su && order.su < order.ozet, JSON.stringify(order));
+log('Ana Sayfa sırası: karşılama → su → Emniyet Kalkanı → takviyeler → ilaçlar; günlük özet Ana Sayfa\'da değil', order.hero < order.su && order.su < order.kalkan && order.kalkan < order.takviye && order.takviye < order.ilac && !order.summaryInHome, JSON.stringify(order));
+/* Üst bar: günlük özet simgesi → panel; "Yükle" düğmesi üst barda yok */
+const top0 = await p.evaluate(() => ({ install: document.querySelectorAll('header .vita-pwa-btn, header [data-pwa-install]').length, btn: !!document.querySelector('header #btnHeaderDailySummary'), badge: document.getElementById('headerDailySummaryBadge').innerText, panelHidden: document.getElementById('dailySummaryPanel').classList.contains('hidden') }));
+await p.evaluate(() => { document.querySelector('.vsc-card input[type=checkbox]').click(); }); await sleep(200);
+// Üst bar sayfa kaydırılınca ekrandan çıkar; kullanıcı simgeye sayfa başındayken dokunur.
+await p.evaluate(() => window.scrollTo(0, 0)); await sleep(200);
+await p.evaluate(() => document.getElementById('btnHeaderDailySummary').click()); await sleep(250);
+const top1 = await p.evaluate(() => { const pn = document.getElementById('dailySummaryPanel'); const r = pn.getBoundingClientRect(); return { open: !pn.classList.contains('hidden'), exp: document.getElementById('btnHeaderDailySummary').getAttribute('aria-expanded'), skor: document.getElementById('dashVitaSkor').innerText, badge: document.getElementById('headerDailySummaryBadge').innerText, morning: document.getElementById('dashMorningCount').innerText, inView: r.left >= 0 && r.right <= innerWidth && r.top > 40 && r.bottom <= innerHeight, rect: [Math.round(r.top), Math.round(r.bottom), innerHeight, Math.round(document.querySelector('header').getBoundingClientRect().bottom)] }; });
+log('Üst barda "Yükle" yok; günlük özet simgesi var', top0.install === 0 && top0.btn && top0.panelHidden, JSON.stringify(top0));
+log('Simgeye basınca günlük özet göstergeleri panelde açılır; rozet VitaSkor\'u gösterir', top1.open && top1.exp === 'true' && top1.badge === top1.skor && /\d+\/\d+/.test(top1.morning) && top1.inView, JSON.stringify(top1));
+await p.mouse.click(30, 700); await sleep(150);
+const top2 = await p.evaluate(() => document.getElementById('dailySummaryPanel').classList.contains('hidden'));
+log('Panel dışına dokununca kapanır', top2);
 const sym = await p.evaluate(() => { state.selectedSymptoms.add(Object.keys(ANAMNESIS_DICTIONARY)[0]); localStorage.removeItem(Object.keys(localStorage).find(k => /symptom.*check|sdc/i.test(k)) || '_'); if (typeof window.renderSymptomDailyCheck === 'function') window.renderSymptomDailyCheck(); renderDailyTab(); const host = document.getElementById('symptomDailyCheck'); const su = document.getElementById('homeHydrationCard'); return host ? { afterWater: su.compareDocumentPosition(host) & Node.DOCUMENT_POSITION_FOLLOWING ? true : false } : { afterWater: null }; });
 log('"Belirtileriniz hâlâ var mı?" su kartının altında (belirti varsa)', sym.afterWater !== false, JSON.stringify(sym));
 const grp = await p.evaluate(() => { const h = document.querySelector('.vsg-head'); const btn = h.querySelector('.vsg-all'); const hr = h.getBoundingClientRect(), br = btn.getBoundingClientRect(); return { oneRow: br.top >= hr.top - 1 && br.bottom <= hr.bottom + 1, text: btn.innerText.trim(), h: Math.round(br.height) }; });

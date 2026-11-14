@@ -80,3 +80,48 @@
     idle = setTimeout(show, 1400);
   }, { passive: true });
 })();
+
+/* Üst bar: günlük özet göstergeleri simgesi. Basınca VitaSkor ve sabah/öğle/akşam sayaçları açılır panelde görünür
+   (Ana Sayfa'da yer kaplamaz). Simgedeki rozet VitaSkor'u gösterir; dışarı dokununca, Esc'te veya sayfa değişince kapanır. */
+(function () {
+  "use strict";
+  function $(id) { return document.getElementById(id); }
+  function position(panel) {
+    var header = document.querySelector("header");
+    var top = header ? Math.round(header.getBoundingClientRect().bottom) + 8 : 64;
+    panel.style.top = Math.max(8, top) + "px";
+  }
+  function toggle(force) {
+    var panel = $("dailySummaryPanel"), btn = $("btnHeaderDailySummary");
+    if (!panel) return;
+    var open = typeof force === "boolean" ? force : panel.classList.contains("hidden");
+    if (open) {
+      if (typeof window.renderDailyTab === "function") { try { window.renderDailyTab(); } catch (_) {} }
+      position(panel);
+      panel.classList.remove("hidden");
+      if (window.SoundEffects) try { window.SoundEffects.playClick(); } catch (_) {}
+    } else panel.classList.add("hidden");
+    if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  window.toggleDailySummaryPanel = toggle;
+
+  function syncBadge() {
+    var src = $("dashVitaSkor"), badge = $("headerDailySummaryBadge");
+    if (src && badge) badge.textContent = String(src.textContent || "0%").trim();
+  }
+  function init() {
+    var src = $("dashVitaSkor");
+    if (src && typeof MutationObserver === "function") new MutationObserver(syncBadge).observe(src, { childList: true, characterData: true, subtree: true });
+    syncBadge();
+    document.addEventListener("click", function (e) {
+      var panel = $("dailySummaryPanel");
+      if (!panel || panel.classList.contains("hidden")) return;
+      if (!panel.contains(e.target) && !(e.target.closest && e.target.closest("#btnHeaderDailySummary"))) toggle(false);
+    });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") toggle(false); });
+    window.addEventListener("resize", function () { var p = $("dailySummaryPanel"); if (p && !p.classList.contains("hidden")) position(p); });
+    var orig = window.navigateToView;
+    if (typeof orig === "function") window.navigateToView = function () { toggle(false); return orig.apply(this, arguments); };
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true }); else init();
+})();

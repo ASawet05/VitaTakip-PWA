@@ -44,12 +44,14 @@ const install = await p.evaluate(async () => {
   ev.prompt = () => { prompted = true; };
   ev.userChoice = Promise.resolve({ outcome: 'dismissed' });
   window.dispatchEvent(ev);
-  const authBtn = document.querySelector('.vita-pwa-btn--auth');
-  const visible = authBtn && !authBtn.hidden && authBtn.offsetParent !== null;
+  // Yükleme düğmesi yalnızca Ayarlar > Araçlar'da: üst barda ve giriş ekranında yok.
+  const elsewhere = document.querySelectorAll('[data-pwa-install], .vita-pwa-btn--header, .vita-pwa-btn--auth').length;
+  const settingsBtn = document.getElementById('pwaInstallSettingsBtn');
+  const visible = Boolean(settingsBtn) && !settingsBtn.disabled && elsewhere === 0;
   await VitaPwaInstall.install();
-  return { visible, prompted };
+  return { visible, prompted, elsewhere };
 });
-log('"Uygulamayı Cihaza Yükle" düğmesi görünür ve kurulum penceresini açar', install.visible && install.prompted, JSON.stringify(install));
+log('"Uygulamayı Cihaza Yükle" yalnızca Ayarlar\'da; kurulum penceresini açar', install.visible && install.prompted, JSON.stringify(install));
 const help = await p.evaluate(() => { VitaPwaInstall.openHelp(); const m = document.getElementById('pwaInstallHelp'); const r = { open: !m.hidden, text: m.innerText }; VitaPwaInstall.closeHelp(); return r; });
 log('Kurulum olayı yoksa "Ana Ekrana Ekle" yardımı açılır', help.open && /Ana ekrana ekle|Ana Ekrana Ekle/i.test(help.text));
 
