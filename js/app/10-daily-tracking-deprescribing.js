@@ -821,6 +821,7 @@ function renderDailyTab() {
 
       const fallbackBox = document.getElementById("addSupFallbackConfirmBox");
       if (fallbackBox) fallbackBox.classList.add("hidden");
+      hideAddSupAiResultCard();
 
       showAddSupFeedback("⏳ Fotoğraftaki barkod okunuyor...", "info");
 
@@ -857,7 +858,8 @@ function renderDailyTab() {
 
         const base64Data = await convertAddSupFileToBase64(file);
         const mimeType = file.type || "image/jpeg";
-        const promptText = 'Bu ilaç veya takviye kutusu üzerindeki ürün adını, markasını, etken maddesini, farmasötik formunu (tablet, kapsül, saşe, damla vb.), birim dozajını (mg, mcg, IU) ve kutudaki toplam adet bilgisini şu JSON formatında çıkar: {"urunAdi": "", "marka": "", "etkenMadde": "", "form": "", "dozaj": "", "kutuAdedi": 30, "gunlukDoz": 1, "zamanBloku": "Sabah", "aclikDurumu": "Tok"}. Sadece saf JSON döndür.';
+        // "İlaç ekle" penceresiyle aynı istem: alanlar bu formun alanlarına birebir karşılık gelir.
+        const promptText = window.VITA_BOX_PHOTO_PROMPT || 'Fotoğraftaki takviye kutusundan {"urunAdi":"","marka":"","etkenMadde":"","form":"","dozaj":"","kutuAdedi":0,"gunlukDoz":0,"zamanBloku":"","aclikDurumu":"","tur":""} JSON nesnesini çıkar. Sadece JSON döndür.';
 
         let parsedJson = null;
         let usedLocalEngine = false;
@@ -873,11 +875,9 @@ function renderDailyTab() {
           });
           aiInfo = aiResp || {};
           usedLocalEngine = Boolean(aiResp.usedLocalFallback);
-          const cleaned = String(aiResp.text || "").replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-          const firstBrace = cleaned.indexOf("{");
-          const lastBrace = cleaned.lastIndexOf("}");
-          try { parsedJson = JSON.parse(firstBrace >= 0 && lastBrace > firstBrace ? cleaned.slice(firstBrace, lastBrace + 1) : cleaned); }
-          catch (_) { parsedJson = null; /* yapay zekâ yanıtı okunamadı → "tanınamadı" mesajı */ }
+          parsedJson = typeof window.parseGeminiBoxJsonResponse === "function"
+            ? window.parseGeminiBoxJsonResponse(aiResp.text)
+            : null;
         } else if (typeof window.LocalClinicalFallbackEngine === "function") {
           usedLocalEngine = true;
           parsedJson = JSON.parse(window.LocalClinicalFallbackEngine(promptText, base64Data, {
@@ -896,27 +896,113 @@ function renderDailyTab() {
               : "Fotoğraftaki ürün tanınamadı. Kutunun ön yüzünü yakından ve net çekin ya da ürün adını yazın.");
         }
 
-        fillAddSupplementModalFormFromItem({
-          urunAdi: parsedJson.urunAdi || "",
-          marka: parsedJson.marka || "",
-          etkenMadde: parsedJson.etkenMadde || "",
-          form: parsedJson.form || "",
-          dozaj: parsedJson.dozaj || "",
-          kutuAdedi: Number(parsedJson.kutuAdedi) > 0 ? Number(parsedJson.kutuAdedi) : 30,
-          gunlukDoz: Number(parsedJson.gunlukDoz) > 0 ? Number(parsedJson.gunlukDoz) : 1,
-          zamanBloku: parsedJson.zamanBloku || "Sabah",
-          aclikDurumu: parsedJson.aclikDurumu || "Tok"
-        });
-
-        const recognizedTitle = parsedJson.urunAdi || "Kutu Bilgileri";
-        const engineLabel = usedLocalEngine ? "Yerel ürün listesi eşleşmesi" : "Gemini yapay zekâ";
-        showAddSupFeedback(`✨ ${engineLabel}: ${recognizedTitle} form alanlarına aktarıldı. Kutudaki bilgilerle karşılaştırıp doğrulayın.`, "success");
+        const engineLabel = usedLocalEngine ? "Yerel ürün listesi eşleşmesi" : `Gemini yapay zekâ${aiInfo.model ? ` (${aiInfo.model})` : ""}`;
+        const category = typeof window.getVitaBoxCategory === "function" ? window.getVitaBoxCategory(parsedJson) : "supplement";
+        applyAiBoxResultToSupplementForm(parsedJson, engineLabel, category);
         if (window.SoundEffects) SoundEffects.playSuccess();
-        showToast(`Ürün tanındı: ${recognizedTitle}`, `${engineLabel} ile dolduruldu; kutudaki etiketle karşılaştırıp doğrulayın.`, "success");
       } catch (err) {
+        hideAddSupAiResultCard();
         showAddSupFeedback(`Kutu görseli işlenirken uyarı: ${err?.message || "Lütfen yukarıdaki 30 popüler takviye listesinden seçin veya ürün adını girin."}`, "warning");
       }
     }
+
+    /* Yapay zekâ kutu sonucunu Takviye ekle formuna işler ve formun hemen üstünde, "Takviyeyi ekle"
+       düğmesiyle birlikte bir özet kartı gösterir. Kutuda yazmayan bilgi uydurulmaz; zaman yalnızca
+       hatırlatma taslağı olarak önerilir. "İlaç ekle" penceresinden aktarılan sonuç da buradan geçer. */
+    let lastAddSupAiItem = null;
+    function applyAiBoxResultToSupplementForm(raw, engineLabel = "Gemini yapay zekâ", category = "supplement") {
+      if (!raw || !raw.urunAdi) return;
+      const nameForTiming = `${raw.urunAdi} ${raw.etkenMadde || ""}`;
+      const suggestedTiming = !raw.zamanBloku && typeof window.suggestVitaTimingBlockFromName === "function"
+        ? window.suggestVitaTimingBlockFromName(nameForTiming) : "";
+      const item = {
+        urunAdi: String(raw.urunAdi).slice(0, 120),
+        marka: raw.marka || "",
+        etkenMadde: raw.etkenMadde || "",
+        form: raw.form || "",
+        dozaj: raw.dozaj || "",
+        kutuAdedi: Number(raw.kutuAdedi) > 0 ? Number(raw.kutuAdedi) : 30,
+        gunlukDoz: Number(raw.gunlukDoz) > 0 ? Number(raw.gunlukDoz) : 1,
+        zamanBloku: raw.zamanBloku || suggestedTiming || "",
+        aclikDurumu: raw.aclikDurumu || ""
+      };
+      lastAddSupAiItem = item;
+
+      const hungerInput = document.getElementById("manualSupHungerNote");
+      if (hungerInput) hungerInput.value = "";
+      fillAddSupplementModalFormFromItem(item);
+
+      // Doldurulan isteğe bağlı alanlar katlanmış bölümde kalmasın.
+      const more = document.getElementById("addSupMoreDetails");
+      if (more) more.open = true;
+      const feedbackBox = document.getElementById("addSupBarcodeFeedbackBox");
+      if (feedbackBox) { feedbackBox.classList.add("hidden"); feedbackBox.textContent = ""; }
+
+      const card = document.getElementById("addSupAiResultCard");
+      if (!card) return;
+      const esc = value => escapeHtmlText(String(value));
+      const timingNote = raw.zamanBloku ? "kutuda yazıyor" : (suggestedTiming ? "taslak öneri, değiştirebilirsiniz" : "");
+      const rows = [
+        ["Ürün", item.urunAdi],
+        ["Marka / etken madde", [item.marka, item.etkenMadde].filter(Boolean).join(" — ")],
+        ["Form", item.form],
+        ["Birim doz", item.dozaj],
+        ["Kutu adedi", raw.kutuAdedi > 0 ? `${item.kutuAdedi} adet` : ""],
+        ["Günlük doz", raw.gunlukDoz > 0 ? `${item.gunlukDoz}` : ""],
+        ["Zaman", item.zamanBloku ? `${item.zamanBloku}${timingNote ? ` (${timingNote})` : ""}` : ""],
+        ["Aç / tok", item.aclikDurumu]
+      ].filter(([, value]) => value);
+      const isMedication = category === "medication";
+      card.className = `vita-ai-card${isMedication ? " is-medication" : ""}`;
+      card.innerHTML = `
+        <div class="vita-ai-card-head"><i class="fa-solid fa-robot" aria-hidden="true"></i><span>${esc(engineLabel)} tanıdı</span></div>
+        <dl>${rows.map(([label, value]) => `<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join("")}</dl>
+        ${isMedication
+          ? `<p class="vita-ai-card-warn"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Bu ürün bir <strong>ilaç</strong> gibi görünüyor. İlaçlar takviye çizelgesine değil, ilaç listenize eklenir; böylece takviyelerinizle etkileşimi denetlenir.</p>`
+          : `<p class="vita-ai-card-note">Bilgiler aşağıdaki forma işlendi. Kutudaki etiketle karşılaştırın; gerekirse alanları düzeltip ekleyin.</p>`}
+        <div class="vita-ai-act-row">
+          ${isMedication
+            ? `<button type="button" class="vita-ai-act vita-ai-act-med" onclick="addAiSupplementItemAsMedication()"><i class="fa-solid fa-prescription-bottle-medical"></i><span>İlaç listeme ekle</span></button>
+               <button type="button" class="vita-ai-act vita-ai-act-sup" onclick="if(window.SoundEffects) SoundEffects.playClick(); commitManualSupplement()"><i class="fa-solid fa-capsules"></i><span>Yine de takviye olarak ekle</span></button>`
+            : `<button type="button" class="vita-ai-act vita-ai-act-sup" onclick="if(window.SoundEffects) SoundEffects.playClick(); commitManualSupplement()"><i class="fa-solid fa-check"></i><span>Takviyeyi ekle</span></button>
+               <button type="button" class="vita-ai-act vita-ai-act-ghost" onclick="focusAddSupFormForEdit()"><i class="fa-solid fa-pen"></i><span>Bilgileri düzenle</span></button>`}
+        </div>`;
+      card.classList.remove("hidden");
+      window.setTimeout(() => card.scrollIntoView({ behavior: "smooth", block: "nearest" }), 120);
+      showToast(`Ürün tanındı: ${item.urunAdi}`, isMedication ? "Bu ürün ilaç gibi görünüyor; ilaç listenize ekleyebilirsiniz." : "Bilgiler forma işlendi; kontrol edip \"Takviyeyi ekle\"ye basın.", isMedication ? "warning" : "success");
+    }
+
+    function hideAddSupAiResultCard() {
+      lastAddSupAiItem = null;
+      const card = document.getElementById("addSupAiResultCard");
+      if (card) { card.classList.add("hidden"); card.innerHTML = ""; }
+    }
+
+    function focusAddSupFormForEdit() {
+      if (window.SoundEffects) SoundEffects.playClick();
+      const more = document.getElementById("addSupMoreDetails");
+      if (more) more.open = true;
+      const name = document.getElementById("manualSupName");
+      if (name) { name.scrollIntoView({ behavior: "smooth", block: "center" }); name.focus({ preventScroll: true }); }
+    }
+
+    function addAiSupplementItemAsMedication() {
+      if (window.SoundEffects) SoundEffects.playClick();
+      const name = String(document.getElementById("manualSupName")?.value || lastAddSupAiItem?.urunAdi || "").trim();
+      if (!name) return;
+      const quickInput = document.getElementById("quickAddMedInput");
+      if (quickInput && typeof addQuickMedicationFromInput === "function") {
+        closeAddSupplementModal();
+        quickInput.value = name;
+        addQuickMedicationFromInput();
+        const drawer = document.getElementById("dailyProtocolMedicationsDrawer");
+        if (drawer) { drawer.open = true; window.setTimeout(() => drawer.scrollIntoView({ behavior: "smooth", block: "center" }), 150); }
+      }
+    }
+    window.applyAiBoxResultToSupplementForm = applyAiBoxResultToSupplementForm;
+    window.hideAddSupAiResultCard = hideAddSupAiResultCard;
+    window.focusAddSupFormForEdit = focusAddSupFormForEdit;
+    window.addAiSupplementItemAsMedication = addAiSupplementItemAsMedication;
 
     window.stopScanner = stopScanner;
     window.startAddSupModalScanner = startAddSupModalScanner;
@@ -942,6 +1028,9 @@ function renderDailyTab() {
       if (barcodeInput) barcodeInput.value = "";
       if (feedbackBox) { feedbackBox.classList.add("hidden"); feedbackBox.textContent = ""; }
       if (fallbackBox) fallbackBox.classList.add("hidden");
+      hideAddSupAiResultCard();
+      const moreDetails = document.getElementById("addSupMoreDetails");
+      if (moreDetails) moreDetails.open = false;
 
       const nameInput = document.getElementById("manualSupName");
       const brandActiveInput = document.getElementById("manualSupBrandActive");

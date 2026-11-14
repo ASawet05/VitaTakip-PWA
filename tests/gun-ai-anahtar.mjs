@@ -107,7 +107,7 @@ await p.evaluate(async () => {
 await sleep(400);
 await p.evaluate(() => { const inp = document.getElementById('addSupAiPhotoInput'); const dt = new DataTransfer(); dt.items.add(window.__kutu); inp.files = dt.files; inp.dispatchEvent(new Event('change', { bubbles: true })); });
 await sleep(4500);
-const photo = await p.evaluate(() => ({ fb: (document.getElementById('addSupBarcodeFeedbackBox')?.innerText || '').replace(/\s+/g, ' ').slice(0, 200), name: document.getElementById('manualSupName')?.value || '' }));
+const photo = await p.evaluate(() => ({ fb: ((document.getElementById('addSupAiResultCard')?.innerText || '') + ' ' + (document.getElementById('addSupBarcodeFeedbackBox')?.innerText || '')).replace(/\s+/g, ' ').slice(0, 200), name: document.getElementById('manualSupName')?.value || '' }));
 log('Fotoğraf gönderilmeden önce onay sorulur', dialogs >= 1, String(dialogs));
 log('Barkodsuz kutu fotoğrafı Gemini ile tanınır ve forma dolar', /Testvit/.test(photo.name) && /Gemini/i.test(photo.fb), JSON.stringify(photo));
 const photoPosts = G.reqs.filter(r => r.method === 'POST' && r.url.includes(':generateContent'));

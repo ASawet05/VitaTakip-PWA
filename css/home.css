@@ -130,3 +130,23 @@
 #barcodeScannerModal.vsm #barcodeStartCameraBtn{min-height:46px;width:100%;font-size:14px}
 #barcodeScannerModal.vsm #barcodeCameraViewport{position:relative}
 .vsm-online{display:flex;align-items:center;justify-content:center;gap:7px;width:calc(100% - 20px);margin:6px 10px 10px;min-height:40px;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;border-radius:12px;font-size:12.5px;font-weight:800;cursor:pointer}
+/* Yapay zekâ kutu tanıma: sonuç kartı ve hemen altındaki ekleme düğmeleri (İlaç ekle + Takviye ekle) */
+.vita-ai-card{margin-top:10px;border:1.5px solid #5eead4;border-radius:16px;background:linear-gradient(180deg,#f0fdfa,#fff);padding:12px;color:#0f172a}
+.vita-ai-card.is-medication{border-color:#a5b4fc;background:linear-gradient(180deg,#eef2ff,#fff)}
+.vita-ai-card-head{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:900;color:#115e59}
+.vita-ai-card.is-medication .vita-ai-card-head{color:#3730a3}
+.vita-ai-card dl{margin:8px 0 0;display:grid;gap:3px}
+.vita-ai-card dl>div{display:grid;grid-template-columns:118px 1fr;gap:8px;font-size:12px;line-height:1.35}
+.vita-ai-card dt{color:#64748b;font-weight:700}
+.vita-ai-card dd{margin:0;font-weight:800;word-break:break-word}
+.vita-ai-card-note,.vita-ai-card-warn,.vita-ai-act-note{margin:8px 0 0;font-size:11px;line-height:1.45;color:#475569}
+.vita-ai-card-warn{color:#3730a3;font-weight:700}
+.vita-ai-actions{margin-top:10px;padding-top:10px;border-top:1px dashed #a5b4fc}
+.vita-ai-act-row{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}
+.vita-ai-act{flex:1 1 180px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 12px;border-radius:12px;border:1px solid transparent;font-size:13px;font-weight:900;cursor:pointer;transition:filter .15s,transform .1s}
+.vita-ai-act:active{transform:scale(.98)}
+.vita-ai-act-sup{background:linear-gradient(90deg,#0f766e,#14b8a6);color:#fff}
+.vita-ai-act-med{background:#4338ca;color:#fff}
+.vita-ai-act-ghost{background:#fff;border-color:#cbd5e1;color:#0f172a}
+.vita-ai-act:hover{filter:brightness(1.06)}
+@media (max-width:380px){.vita-ai-card dl>div{grid-template-columns:96px 1fr}}

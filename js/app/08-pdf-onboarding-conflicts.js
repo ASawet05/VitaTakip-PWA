@@ -611,8 +611,10 @@ function applyParsedPdfValues() {
         const found = typeof window.findPrescriptionDrugInDb === "function"
           ? window.findPrescriptionDrugInDb(medName)
           : db.find(d => d.urunAdi.toLocaleLowerCase("tr-TR") === String(medName || "").toLocaleLowerCase("tr-TR"));
-        if (found && !mergedMap.has(found.barcode)) {
-          mergedMap.set(found.barcode, {
+        // Güç (doz) farklı olduğu için barkodsuz dönen kayıtlar ada göre anahtarlanır; aksi hâlde "" anahtarında çakışırdı.
+        const foundKey = found ? (found.barcode || found.urunAdi) : "";
+        if (found && !mergedMap.has(foundKey)) {
+          mergedMap.set(foundKey, {
             ...found,
             toplamKutuAdedi: found.kutuAdedi,
             kalanAdet: found.kutuAdedi

@@ -24,11 +24,11 @@
 <!-- Uses Inter when already available; otherwise falls back immediately to the system UI font. -->
 <!-- Font Awesome 6 CDN -->
 <!-- build:css -->
-<link rel="stylesheet" href="./css/app.css?v=eeaf474613">
-<script defer src="./js/app.1.js?v=eeaf474613"></script>
-<script defer src="./js/app.2.js?v=eeaf474613"></script>
-<script defer src="./js/app.3.js?v=eeaf474613"></script>
-<script defer src="./js/app.4.js?v=eeaf474613"></script>
+<link rel="stylesheet" href="./css/app.css?v=31aed92359">
+<script defer src="./js/app.1.js?v=31aed92359"></script>
+<script defer src="./js/app.2.js?v=31aed92359"></script>
+<script defer src="./js/app.3.js?v=31aed92359"></script>
+<script defer src="./js/app.4.js?v=31aed92359"></script>
 <!-- /build:css -->
 <!-- Chart.js loads only if a trend chart is needed. -->
 <!-- PDF.js loads only when a user selects a PDF for analysis. -->
@@ -2546,7 +2546,7 @@ Verileri Sil
 <div class="vsa-actions">
 <button class="vsa-btn vsa-btn-main" id="btnAddSupStartCamera" onclick="if(window.SoundEffects) SoundEffects.playClick(); startAddSupModalScanner()" type="button"><i class="fa-solid fa-barcode"></i><span>Barkod tara</span></button>
 <button class="vsa-btn vsa-btn-stop hidden" id="btnAddSupStopCamera" onclick="if(window.SoundEffects) SoundEffects.playClick(); stopScanner()" type="button"><i class="fa-solid fa-stop"></i><span>Kamerayı kapat</span></button>
-<button class="vsa-btn" id="btnAddSupAiBoxScan" onclick="if(window.SoundEffects) SoundEffects.playClick(); triggerGeminiBoxScan()" type="button"><i class="fa-solid fa-camera"></i><span>Fotoğrafla tanı</span></button>
+<button class="vsa-btn" id="btnAddSupAiBoxScan" onclick="if(window.SoundEffects) SoundEffects.playClick(); triggerGeminiBoxScan()" type="button" title="Kutunun fotoğrafını çekin: önce barkod okunur, okunamazsa yapay zekâ (Gemini) ürünü tanır ve formu doldurur."><i class="fa-solid fa-wand-magic-sparkles"></i><span>Yapay zekâ ile tanı</span></button>
 <input accept="image/*" capture="environment" class="hidden" id="addSupAiPhotoInput" onchange="handleAddSupAiPhotoInput(event)" type="file"/>
 </div>
 <div class="hidden vsa-cam" id="addSupCameraViewportWrapper">
@@ -2558,6 +2558,7 @@ Verileri Sil
 <p id="addSupCameraLiveStatus">Barkodu çerçeveye hizalayın.</p>
 </div>
 <div aria-live="polite" class="hidden vsa-feedback" id="addSupBarcodeFeedbackBox"></div>
+<div aria-live="polite" class="hidden" id="addSupAiResultCard"></div>
 <div aria-live="assertive" class="hidden vsa-fallback" id="addSupFallbackConfirmBox">
 <p><i class="fa-solid fa-circle-question" aria-hidden="true"></i> Barkod bu cihazdaki ürün listesinde yok. Kutunun fotoğrafıyla yapay zekâ (Gemini) doldursun mu?</p>
 <div class="vsa-fb-actions">
@@ -2587,7 +2588,7 @@ Verileri Sil
 <option value="Gece">Gece</option>
 </select></label>
 </div>
-<details class="vsa-more">
+<details class="vsa-more" id="addSupMoreDetails">
 <summary><span>Daha fazla bilgi <small>(isteğe bağlı)</small></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></summary>
 <div class="vsa-more-body">
 <div class="vsa-grid" id="modalCustomDoseContainer">
@@ -2822,7 +2823,7 @@ Verileri Sil
 <img alt="Seçilen kutu fotoğrafı önizlemesi" class="hidden mx-auto max-h-64 max-w-full rounded-xl border border-slate-200 object-contain" id="barcodePhotoPreview"/>
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2"><button class="min-h-10 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-800 hover:bg-slate-50" onclick="decodeBarcodeFromPhoto()" type="button"><i class="fa-solid fa-barcode mr-1"></i> Fotoğraftaki barkodu tekrar oku</button><button class="min-h-10 rounded-xl bg-indigo-700 px-3 py-2 text-xs font-black text-white hover:bg-indigo-800" data-vita-requires-gemini="" id="barcodeAnalyzePhotoBtn" onclick="analyzeMedicationPhotoWithAI()" type="button"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Yapay Zekâ (Gemini) ile Kutuyu Tanı</button></div>
 <label class="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-[10px] leading-relaxed text-amber-950"><input class="mt-0.5 h-4 w-4 shrink-0 rounded border-amber-400 text-teal-600" id="barcodePhotoConsent" type="checkbox"/><span><strong>Yapay zekâ fotoğraf onayı:</strong> "Yapay Zekâ ile Kutuyu Tanı"yı kullandığımda seçtiğim kutu fotoğrafının ürün adını ve içeriğini tespit etmek için Google Gemini'ye gönderilmesini onaylıyorum. Barkod okuma için fotoğraf gönderilmez. Fotoğrafa kişisel bilgi eklemeyin.</span></label>
-<div aria-live="polite" class="hidden rounded-2xl border border-indigo-200 bg-indigo-50 p-3 text-xs text-indigo-950" id="barcodeAiResult"><div class="font-black"><i class="fa-solid fa-robot mr-1"></i> Yapay Zeka Kutu &amp; İçerik Tanıma Sonucu</div><pre class="mt-2 whitespace-pre-wrap break-words font-sans text-xs leading-relaxed" id="barcodeAiResultText"></pre><p class="mt-2 border-t border-indigo-200 pt-2 text-[10px] leading-relaxed">Bu sonuç görselde okunabilen yazıların analizidir; etken madde, doz ve ürün kimliğini kutu/prospektüs veya eczacıyla doğrulayın.</p></div>
+<div aria-live="polite" class="hidden rounded-2xl border border-indigo-200 bg-indigo-50 p-3 text-xs text-indigo-950" id="barcodeAiResult"><div class="font-black"><i class="fa-solid fa-robot mr-1"></i> Yapay Zeka Kutu &amp; İçerik Tanıma Sonucu</div><pre class="mt-2 whitespace-pre-wrap break-words font-sans text-xs leading-relaxed" id="barcodeAiResultText"></pre><div aria-live="polite" class="hidden vita-ai-actions" id="barcodeAiResultActions"></div><p class="mt-2 border-t border-indigo-200 pt-2 text-[10px] leading-relaxed">Bu sonuç görselde okunabilen yazıların analizidir; etken madde, doz ve ürün kimliğini kutu/prospektüs veya eczacıyla doğrulayın.</p></div>
 </section>
 <div class="rounded-xl border border-amber-300 bg-amber-50 p-3 text-[10px] leading-relaxed text-amber-950"><strong><i class="fa-solid fa-triangle-exclamation mr-1"></i> Önemli:</strong> Barkod önce <strong>Türkiye EAN-13 (869) Takviye &amp; İlaç Veritabanı</strong>, yalnızca bu cihazdaki ürün listesinde aranır (internete sorgu gönderilmez); listede yoksa ürün adını elle yazabilirsiniz. <em>Takviye Ekle</em> modunda yalnızca vitamin ve gıda takviyeleri, <em>İlaç Seç ve Denetle</em> modunda ise genel/reçeteli ilaçlar eşleştirilir.</div>
 <div class="flex justify-end"><button class="min-h-10 rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700" onclick="closeBarcodeScannerModal()" type="button">Kapat</button></div>

@@ -278,12 +278,30 @@ function findPrescriptionDrugInDb(queryOrBarcode) {
   }
 
   const lower = clean.toLocaleLowerCase("tr-TR");
-  return VITA_PRESCRIPTION_DRUG_DB.find(d =>
+  const candidates = VITA_PRESCRIPTION_DRUG_DB.filter(d =>
     d.urunAdi.toLocaleLowerCase("tr-TR") === lower ||
     d.urunAdi.toLocaleLowerCase("tr-TR").includes(lower) ||
     lower.includes(d.urunAdi.toLocaleLowerCase("tr-TR").split(" ")[0]) ||
     d.etkenMadde.toLocaleLowerCase("tr-TR").includes(lower)
-  ) || null;
+  );
+  if (!candidates.length) return null;
+  const exactName = candidates.find(d => d.urunAdi.toLocaleLowerCase("tr-TR") === lower);
+  if (exactName) return exactName;
+
+  /* Doz (güç) korunur: "Euthyrox 100 mcg" aranınca listedeki ilk "Euthyrox 50 mcg" kaydı DÖNMEMELİ.
+     Aynı güçte kayıt varsa o seçilir; yoksa markanın etkileşim kuralları kullanılır ama ad/güç kullanıcınınki kalır. */
+  const wanted = vitaDrugStrength(lower);
+  if (!wanted) return candidates[0];
+  const sameStrength = candidates.find(d => vitaDrugStrength(d.urunAdi) === wanted);
+  if (sameStrength) return sameStrength;
+  return { ...candidates[0], barcode: "", urunAdi: clean.slice(0, 120), strengthFromQuery: true };
+}
+
+function vitaDrugStrength(text) {
+  const m = String(text || "").toLocaleLowerCase("tr-TR").match(/(\d+(?:[.,]\d+)?)\s*(mg|mcg|µg|μg|ml|iu|ui|ünite|g)(?![a-zçğıöşü])/);
+  if (!m) return "";
+  const unit = m[2] === "µg" || m[2] === "μg" ? "mcg" : (m[2] === "ui" || m[2] === "ünite" ? "iu" : m[2]);
+  return `${Number(m[1].replace(",", "."))}${unit}`;
 }
 
 function evaluatePrescriptionDrugSupplementConflict(drug, supplements) {

@@ -1552,8 +1552,13 @@ window.VitaAIChat = VitaAIChat;
        SİSTEM 4: YAPAY ZEKA (AI) İLE KUTUYU TANIMA VE OTOMATİK FORM DOLDURMA
        (Çalışır Gemini Vision Entegrasyonu — gemini-1.5-flash)
        ========================================================================= */
+    /* Kutu fotoğrafı istemi: "İlaç ekle" ve "Takviye ekle" pencereleri aynı istemi ve aynı alanları kullanır.
+       Alanlar Takviye ekle formuna (ad, marka/etken, form, birim doz, kutu adedi, günlük doz, zaman, aç/tok) birebir karşılık gelir. */
     const MISANTHA_GEMINI_VISION_BOX_PROMPT =
-      'Bu ilaç veya takviye kutusu üzerindeki ürün adını, etken maddesini, farmasötik formunu (tablet, kapsül, saşe, damla vb.), birim dozajını (mg, mcg) ve kutudaki toplam adet bilgisini şu JSON formatında çıkar: {"urunAdi": "", "etkenMadde": "", "form": "", "dozaj": "", "kutuAdedi": 0}. Sadece saf JSON döndür.';
+      'Fotoğraftaki ilaç veya gıda takviyesi kutusunu incele. Yalnızca kutuda okunabilen bilgileri yaz; okuyamadığın alanı boş bırak ("" veya 0). Tahmin etme, doz veya kullanım önerisi üretme. ' +
+      'Şu JSON nesnesini döndür: {"urunAdi": "marka dahil tam ürün adı", "marka": "", "etkenMadde": "etken madde(ler)", "form": "tablet, kapsül, saşe, damla, şurup, sprey vb.", "dozaj": "birim doz, ör. 1000 IU veya 500 mg", "kutuAdedi": 0, "gunlukDoz": 0, "zamanBloku": "kutuda yazıyorsa Sabah, Öğle, Akşam veya Gece; yoksa boş", "aclikDurumu": "kutuda yazıyorsa Aç karnına veya Tok karnına; yoksa boş", "tur": "ilac veya takviye"}. ' +
+      'tur: reçeteli/reçetesiz ilaçsa "ilac"; vitamin, mineral, bitkisel ürün veya gıda takviyesiyse "takviye". Sadece saf JSON döndür.';
+    window.VITA_BOX_PHOTO_PROMPT = MISANTHA_GEMINI_VISION_BOX_PROMPT;
 
     function parseGeminiBoxJsonResponse(rawText = "") {
       const cleaned = String(rawText || "")
@@ -1572,9 +1577,83 @@ window.VitaAIChat = VitaAIChat;
         etkenMadde: String(parsed.etkenMadde || "").trim(),
         form: String(parsed.form || "").trim(),
         dozaj: String(parsed.dozaj || "").trim(),
-        kutuAdedi: Math.max(0, parseInt(parsed.kutuAdedi, 10) || 0)
+        kutuAdedi: Math.max(0, parseInt(parsed.kutuAdedi, 10) || 0),
+        marka: String(parsed.marka || "").trim(),
+        gunlukDoz: Math.max(0, parseInt(parsed.gunlukDoz, 10) || 0),
+        zamanBloku: normalizeVitaTimingBlock(parsed.zamanBloku),
+        aclikDurumu: String(parsed.aclikDurumu || "").trim().slice(0, 40),
+        tur: String(parsed.tur || "").trim().toLocaleLowerCase("tr-TR")
       };
     }
+    window.parseGeminiBoxJsonResponse = parseGeminiBoxJsonResponse;
+
+    function normalizeVitaTimingBlock(value) {
+      const v = String(value || "").trim().toLocaleLowerCase("tr-TR");
+      if (!v) return "";
+      if (v.startsWith("sabah")) return "Sabah";
+      if (v.startsWith("öğle") || v.startsWith("ogle")) return "Öğle";
+      if (v.startsWith("akşam") || v.startsWith("aksam")) return "Akşam";
+      if (v.startsWith("gece") || v.includes("yatmadan")) return "Gece";
+      return "";
+    }
+
+    /* Kutuda zaman yazmıyorsa yalnızca hatırlatma taslağı önerilir (barkod penceresindeki öneriyle aynı kurallar). */
+    function suggestVitaTimingBlockFromName(text) {
+      const t = String(text || "").toLocaleLowerCase("tr-TR");
+      if (/magnezyum|magnesium|melatonin/.test(t)) return "Akşam";
+      if (/omega[\s-]*3|balık yağı|balik yagi|\bepa\b|\bdha\b|koenzim|coq10/.test(t)) return "Öğle";
+      if (/vitamin[\s-]*d|d vitamini|d3|kolekalsiferol|\bb12\b|kobalamin|folat|folik|demir|ferro|multivitamin/.test(t)) return "Sabah";
+      return "";
+    }
+    window.suggestVitaTimingBlockFromName = suggestVitaTimingBlockFromName;
+
+    /* Ürün türü: önce yapay zekânın "tur" alanı, yoksa yerel ad/etken madde sınıflandırması. */
+    function getVitaBoxCategory(box) {
+      if (box && (box.tur === "ilac" || box.tur === "ilaç")) return "medication";
+      if (box && box.tur === "takviye") return "supplement";
+      return classifyScannedProductCategory(`${box?.urunAdi || ""} ${box?.marka || ""} ${box?.etkenMadde || ""} ${box?.form || ""}`);
+    }
+    window.getVitaBoxCategory = getVitaBoxCategory;
+
+    /* Barkod penceresinde yapay zekâ sonucunun hemen altında kaydetme düğmeleri:
+       eskiden kaydetme düğmesi sonuç kutusunun çok üstündeki panelde kalıyor, telefonda görünmüyordu. */
+    let lastVitaAiBoxItem = null;
+    function renderBarcodeAiActions(item, category) {
+      const box = document.getElementById("barcodeAiResultActions");
+      lastVitaAiBoxItem = item || null;
+      if (!box) return;
+      if (!item) { box.innerHTML = ""; box.classList.add("hidden"); return; }
+      const name = escapeHtmlText(item.urunAdi);
+      const asMed = `<button type="button" class="vita-ai-act vita-ai-act-med" onclick="addAiRecognizedMedication()"><i class="fa-solid fa-prescription-bottle-medical"></i><span>${category === "supplement" ? "Yine de ilaç olarak ekle" : "İlacı listeme ekle"}</span></button>`;
+      const asSup = `<button type="button" class="vita-ai-act vita-ai-act-sup" onclick="moveAiRecognizedProductToSupplementForm()"><i class="fa-solid fa-capsules"></i><span>${category === "medication" ? "Yine de takviye olarak ekle" : "Takviye olarak ekle"}</span></button>`;
+      const note = category === "supplement"
+        ? `<p class="vita-ai-act-note"><strong>${name}</strong> bir vitamin / gıda takviyesi gibi görünüyor; günlük takviye çizelgenize eklenebilir.</p>`
+        : `<p class="vita-ai-act-note"><strong>${name}</strong> ilaç listenize eklenecek ve takviyelerinizle etkileşimi denetlenecek. Adı yukarıdaki "Tespit Edilen İlaç Adı" alanından düzeltebilirsiniz.</p>`;
+      box.innerHTML = note + `<div class="vita-ai-act-row">${category === "supplement" ? asSup + asMed : asMed + asSup}</div>`;
+      box.classList.remove("hidden");
+    }
+
+    function addAiRecognizedMedication() {
+      if (window.SoundEffects) SoundEffects.playClick();
+      const item = lastVitaAiBoxItem;
+      const medNameEl = document.getElementById("barcodeDetectedMedicationName");
+      // Takviye olarak sınıflandırıldıysa ilaç paneli doldurulmamıştır; adı yapay zekâ sonucundan al.
+      if (item && medNameEl && !medNameEl.value.trim()) medNameEl.value = String(item.urunAdi || "").slice(0, 120);
+      if (item && lastScannedProductRecord) lastScannedProductRecord.name = medNameEl?.value?.trim() || item.urunAdi;
+      transferScannedMedicationToInspector();
+    }
+
+    function moveAiRecognizedProductToSupplementForm() {
+      if (window.SoundEffects) SoundEffects.playClick();
+      const item = lastVitaAiBoxItem;
+      if (!item) return;
+      closeBarcodeScannerModal();
+      openAddSupplementModal();
+      if (typeof window.applyAiBoxResultToSupplementForm === "function") window.applyAiBoxResultToSupplementForm(item, item.engineLabel || "Gemini yapay zekâ", "supplement");
+    }
+    window.renderBarcodeAiActions = renderBarcodeAiActions;
+    window.addAiRecognizedMedication = addAiRecognizedMedication;
+    window.moveAiRecognizedProductToSupplementForm = moveAiRecognizedProductToSupplementForm;
 
     async function callGeminiVisionForBoxJson(base64Image, mimeType, apiKey, fileName = "") {
       if (typeof window.callGeminiWithFallback === "function") {
@@ -1637,6 +1716,7 @@ window.VitaAIChat = VitaAIChat;
       const resultText = document.getElementById("barcodeAiResultText");
       const original = button ? button.innerHTML : "";
 
+      renderBarcodeAiActions(null);
       try {
         if (button) {
           button.disabled = true;
@@ -1672,14 +1752,6 @@ window.VitaAIChat = VitaAIChat;
           if (boxJson.usedLocalFallback) throw new Error("Ürün fotoğraftan tanınamadı. Fotoğraf gönderimini onaylamadıysanız hiçbir şey gönderilmedi; aksi hâlde Gemini'ye ulaşılamadı. Barkodu okutun veya ürün adını yazın.");
           throw new Error("Gemini kutudaki ürünü okuyamadı. Kutunun ön yüzünü yakından ve net çekin veya ürün adını yazın.");
         }
-        const prettyJson = JSON.stringify({
-          urunAdi: boxJson.urunAdi,
-          etkenMadde: boxJson.etkenMadde,
-          form: boxJson.form,
-          dozaj: boxJson.dozaj,
-          kutuAdedi: boxJson.kutuAdedi
-        }, null, 2);
-
         const engineBadge = boxJson.usedLocalFallback
           ? "Yerel ürün listesi eşleşmesi (dosya adına göre)"
           : `Gemini yapay zekâ (${boxJson.modelUsed || "flash"})`;
@@ -1691,11 +1763,13 @@ window.VitaAIChat = VitaAIChat;
             `Etken Madde: ${boxJson.etkenMadde || "-"}\n` +
             `Farmasötik Form: ${boxJson.form || "-"}\n` +
             `Birim Dozaj: ${boxJson.dozaj || "-"}\n` +
-            `Kutu Adedi: ${boxJson.kutuAdedi || 30}\n\n` +
-            `Yapılandırılmış Çıktı:\n${prettyJson}`;
+            `Kutu Adedi: ${boxJson.kutuAdedi > 0 ? boxJson.kutuAdedi : "-"}` +
+            (boxJson.gunlukDoz > 0 ? `\nGünlük Doz: ${boxJson.gunlukDoz}` : "") +
+            (boxJson.zamanBloku ? `\nZaman: ${boxJson.zamanBloku}` : "") +
+            (boxJson.aclikDurumu ? `\nAç / Tok: ${boxJson.aclikDurumu}` : "");
         }
 
-        const detectedCategory = classifyScannedProductCategory(`${boxJson.urunAdi} ${boxJson.etkenMadde} ${boxJson.form}`);
+        const detectedCategory = getVitaBoxCategory(boxJson);
         const productRecord = {
           name: boxJson.urunAdi || "AI ile Tanınan Ürün",
           brand: engineBadge,
@@ -1703,17 +1777,24 @@ window.VitaAIChat = VitaAIChat;
           form: boxJson.form || "Tablet / Kapsül",
           dozaj: [boxJson.dozaj, boxJson.etkenMadde].filter(Boolean).join(" · ") || boxJson.dozaj || boxJson.etkenMadde,
           kutuAdedi: boxJson.kutuAdedi > 0 ? boxJson.kutuAdedi : 30,
-          gunlukDoz: 1,
+          gunlukDoz: boxJson.gunlukDoz > 0 ? boxJson.gunlukDoz : 1,
           categoryLabel: detectedCategory === "medication" ? "Reçeteli / Genel İlaç" : "Vitamin & Gıda Takviyesi",
           ingredients: [boxJson.etkenMadde, boxJson.dozaj].filter(Boolean).join(" "),
           suggestedDose: [boxJson.dozaj, boxJson.form ? `1 ${boxJson.form}` : ""].filter(Boolean).join(" · "),
           source: engineBadge
         };
 
+        const medNameBefore = document.getElementById("barcodeDetectedMedicationName");
+        if (medNameBefore) medNameBefore.value = "";
         applyBarcodeCatalogueMatch(productRecord, "AI-VISION");
-        showToast("Ürün tanındı", `${productRecord.name} bilgileri forma dolduruldu (${engineBadge}). Kutudaki bilgilerle karşılaştırıp doğrulayın.`, "success");
+        const effectiveCategory = detectedCategory === "unknown" ? currentBarcodeScannerMode : detectedCategory;
+        renderBarcodeAiActions({ ...boxJson, engineLabel: engineBadge }, effectiveCategory);
+        const actionsBox = document.getElementById("barcodeAiResultActions");
+        if (actionsBox) window.setTimeout(() => actionsBox.scrollIntoView({ behavior: "smooth", block: "center" }), 350);
+        showToast("Ürün tanındı", `${productRecord.name} tanındı. Kutudaki bilgilerle karşılaştırıp sonucun altındaki düğmeyle ekleyin.`, "success");
       } catch (error) {
         if (resultText) {
+          renderBarcodeAiActions(null);
           resultText.textContent = `Görsel analizi tamamlanamadı: ${error?.message || "Bilinmeyen hata"}\n\nYukarıdaki Türkiye EAN-13 listesinden ürün seçebilir veya barkod numarasını elle girebilirsiniz.`;
         }
         if (resultBox) resultBox.classList.remove("hidden");
