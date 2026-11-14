@@ -76,9 +76,9 @@ log('Esc ile bilgi penceresi kapanır', await p.evaluate(() => !document.getElem
 const order = await p.evaluate(() => {
   const pos = id => { const el = document.getElementById(id); return el ? Math.round(el.getBoundingClientRect().top + scrollY) : -1; };
   const summaryInHome = !!document.querySelector('#view-home #dashVitaSkor');
-  return { kalkan: pos('conflictShieldAlertBanner'), takviye: pos('supplementChecklistContainer'), ilac: pos('todayMedsCard'), su: pos('homeHydrationCard'), hero: pos('homeHeroCard'), summaryInHome };
+  return { kalkan: pos('conflictShieldAlertBanner'), takviye: pos('supplementChecklistContainer'), ilac: pos('todayMedsCard'), sekmeler: pos('homeCareTabs'), ayniAlan: !!document.querySelector('#homeCareTabs #todaySupsCard') && !!document.querySelector('#homeCareTabs #todayMedsCard'), su: pos('homeHydrationCard'), hero: pos('homeHeroCard'), summaryInHome };
 });
-log('Ana Sayfa sırası: karşılama → su → Emniyet Kalkanı → takviyeler → ilaçlar; günlük özet Ana Sayfa\'da değil', order.hero < order.su && order.su < order.kalkan && order.kalkan < order.takviye && order.takviye < order.ilac && !order.summaryInHome, JSON.stringify(order));
+log('Ana Sayfa sırası: karşılama → su → Emniyet Kalkanı → takviyeler ⇄ ilaçlar (tek alanda sekmeler); günlük özet Ana Sayfa\'da değil', order.hero < order.su && order.su < order.kalkan && order.kalkan < order.sekmeler && order.ayniAlan && !order.summaryInHome, JSON.stringify(order));
 /* Üst bar: günlük özet simgesi → panel; "Yükle" düğmesi üst barda yok */
 const top0 = await p.evaluate(() => ({ install: document.querySelectorAll('header .vita-pwa-btn, header [data-pwa-install]').length, btn: !!document.querySelector('header #btnHeaderDailySummary'), badge: document.getElementById('headerDailySummaryBadge').innerText, panelHidden: document.getElementById('dailySummaryPanel').classList.contains('hidden') }));
 await p.evaluate(() => { document.querySelector('.vsc-card input[type=checkbox]').click(); }); await sleep(200);

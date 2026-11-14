@@ -105,7 +105,7 @@ const hc = await p.evaluate(() => {
   return { day: document.getElementById('medDayBadge').innerText, expect: new Date().toLocaleDateString('tr-TR', { weekday: 'long' }),
     supRight: sup.left > supP.right - 2 && Math.abs((sup.top + sup.bottom) / 2 - (supP.top + supP.bottom) / 2) < 14,
     medRight: med.left > medP.right - 2 && Math.abs((med.top + med.bottom) / 2 - (medP.top + medP.bottom) / 2) < 14,
-    sym: Math.abs(sup.width - med.width) < 6 && Math.abs(sup.right - med.right) < 4 };
+    sym: (() => { const sc = document.getElementById('todaySupsCard').getBoundingClientRect(), mc = document.getElementById('todayMedsCard').getBoundingClientRect(); return Math.abs(sup.width - med.width) < 6 && Math.abs((sc.right - sup.right) - (mc.right - med.right)) < 4; })() };
 });
 log('"Bugünkü ilaçlarım" başlığında da gün rozeti', hc.day === hc.expect, JSON.stringify(hc));
 log('"+ Takviye Ekle" ve "+ İlaç Ekle" açıklama metninin sağında, iki kartta simetrik', hc.supRight && hc.medRight && hc.sym, JSON.stringify(hc));
