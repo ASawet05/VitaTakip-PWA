@@ -34,6 +34,8 @@
       high: { meaning: "Alyuvarlar büyük; B12/folat eksikliği ile ilişkili olabilir.", food: "" }
     },
     crp: { high: { meaning: "CRP yüksek; vücutta bir iltihabi durum olabilir.", food: "" } },
+    rbcFolate: { low: { meaning: "Eritrosit folatı düşük; uzun dönem folat yetersizliği olabilir.", food: "Yeşil yapraklı sebzeler, baklagiller, turunçgiller." } },
+    hcy: { high: { meaning: "Homosistein yüksek; B12/folat eksikliği, böbrek veya tiroid nedenleri hekimle araştırılmalı.", food: "" } },
     alt: { high: { meaning: "Karaciğer enzimi (ALT) yüksek.", food: "" } },
     creatinine: { high: { meaning: "Böbrek süzme değeriniz normalin dışında.", food: "" } }
   };
@@ -296,7 +298,7 @@
         adv = { meaning: "Gebelikte böbrek süzme hızı artar, bu yüzden kreatinin normalde düşüktür (0,4–0,8 mg/dL). Bu değer gebelik için yüksek sayılır; tansiyon yüksekliği, baş ağrısı, görme bozukluğu veya ödem varsa acildir. Her durumda doğum hekiminize bildirin.", food: "" };
       }
       html += '<details class="vs-val' + (r.critical ? " vs-val-crit" : "") + '"><summary>' +
-        '<span class="vs-val-name">' + esc(r.name) + '</span>' +
+        '<span class="vs-val-name">' + esc(r.name) + (window.VitaSourceInfo ? VitaSourceInfo.button(r.key, r.name) : "") + '</span>' +
         '<span class="vs-val-num">' + esc(fmt(r.value)) + ' <small>' + esc(r.unit) + esc(r.extra) + '</small></span>' +
         '<span class="vs-chip ' + chip[1] + '">' + chip[0] + '</span><i class="fa-solid fa-chevron-down vs-chev" aria-hidden="true"></i></summary>' +
         '<div class="vs-val-body">';
@@ -310,7 +312,7 @@
     });
     if (m.ok.length) {
       html += '<div class="vs-okrow"><span class="vs-ok-title">Normal</span>' + m.ok.map(function (r) {
-        return '<span class="vs-okchip">' + esc(r.name) + ' <b>' + esc(fmt(r.value)) + '</b></span>';
+        return '<span class="vs-okchip">' + esc(r.name) + ' <b>' + esc(fmt(r.value)) + '</b>' + (window.VitaSourceInfo ? VitaSourceInfo.button(r.key, r.name) : "") + '</span>';
       }).join("") + '</div>';
     }
     html += '</section>';
@@ -373,7 +375,7 @@
     try { m = build(); } catch (e) { console.warn("[VitaTakip] clinical-simple:", e); return; }
     current = m;
     /* Sıra: özet → güvenlik uyarıları → değerlerim → belirtiler → testler (+ hatırlatma) */
-    host.innerHTML = summaryHtml(m) + safetyHtml(m) + valuesHtml(m) + (window.VitaAgeStage ? VitaAgeStage.cardHtml() : "") + symptomsHtml(m) + testsHtml(m);
+    host.innerHTML = summaryHtml(m) + safetyHtml(m) + valuesHtml(m) + (window.VitaRecheck ? VitaRecheck.cardHtml(m) : "") + (window.VitaAgeStage ? VitaAgeStage.cardHtml() : "") + symptomsHtml(m) + testsHtml(m);
     host.classList.remove("hidden");
   }
 

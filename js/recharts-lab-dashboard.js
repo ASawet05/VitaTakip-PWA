@@ -19,7 +19,9 @@
     { key: "creatinine", label: "Kreatinin", shortLabel: "Kreatinin", unit: "mg/dL", color: "#ea580c", refMin: 0.6, refMax: 1.2, defaultActive: false, inverseDirection: true },
     { key: "alt", label: "ALT (Karaciğer)", shortLabel: "ALT", unit: "U/L", color: "#be123c", refMin: 7, refMax: 35, defaultActive: false, inverseDirection: true },
     { key: "mcv", label: "MCV", shortLabel: "MCV", unit: "fL", color: "#9333ea", refMin: 80, refMax: 100, defaultActive: false },
-    { key: "crp", label: "CRP", shortLabel: "CRP", unit: "mg/L", color: "#475569", refMin: 0, refMax: 5, defaultActive: false, inverseDirection: true }
+    { key: "crp", label: "CRP", shortLabel: "CRP", unit: "mg/L", color: "#475569", refMin: 0, refMax: 5, defaultActive: false, inverseDirection: true },
+    { key: "rbcFolate", label: "Eritrosit folatı", shortLabel: "RBC Folat", unit: "ng/mL", color: "#15803d", refMin: 140, refMax: 1000, defaultActive: false },
+    { key: "hcy", label: "Homosistein", shortLabel: "Hcy", unit: "µmol/L", color: "#a16207", refMin: 5, refMax: 15, defaultActive: false, inverseDirection: true }
   ];
 
   // Sample longitudinal dataset used when the user clicks "Örnek Trend Önizle" or wants to explore multi-line tracking
@@ -477,7 +479,9 @@
       alt: "inputLabAlt",
       hb: "inputLabHb",
       mcv: "inputLabMcv",
-      crp: "inputLabCrp"
+      crp: "inputLabCrp",
+      rbcFolate: "inputLabRbcFolate",
+      hcy: "inputLabHcy"
     };
     const combined = {};
     let hasAny = false;
@@ -804,7 +808,9 @@
         alt: latest.alt,
         hb: latest.hb,
         mcv: latest.mcv,
-        crp: latest.crp
+        crp: latest.crp,
+        rbcFolate: latest.rbcFolate,
+        hcy: latest.hcy
       };
     }
     if (typeof saveState === "function") saveState();

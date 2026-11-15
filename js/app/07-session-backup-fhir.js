@@ -470,7 +470,9 @@ function checkMidnightReset(userId) {
         alt: { code: "1742-6", display: "Alanine aminotransferase in Serum/Plasma", unit: "U/L", label: "ALT" },
         hb: { code: "718-7", display: "Hemoglobin [Mass/volume] in Blood", unit: "g/dL", label: "Hemoglobin" },
         mcv: { code: "787-2", display: "MCV [Entitic volume] by Automated count", unit: "fL", label: "MCV" },
-        crp: { code: "1988-5", display: "C reactive protein [Mass/volume] in Serum or Plasma", unit: "mg/L", label: "CRP" }
+        crp: { code: "1988-5", display: "C reactive protein [Mass/volume] in Serum or Plasma", unit: "mg/L", label: "CRP" },
+        rbcFolate: { code: "2282-2", display: "Folate [Mass/volume] in Red Blood Cells", unit: "ng/mL", label: "Eritrosit folatı" },
+        hcy: { code: "13965-9", display: "Homocysteine [Moles/volume] in Serum or Plasma", unit: "umol/L", label: "Homosistein" }
       };
       const patientReference = `urn:uuid:${patientId}`;
       const addObservation = ({ code, display, value, unit, categoryCode, date, referenceText, note }) => {
@@ -781,7 +783,9 @@ function checkMidnightReset(userId) {
         alt: [["iu/l", "U/L"], ["u/l", "U/L"]],
         hb: [["g/dl", "g/dL"], ["g/l", "g/L"]],
         mcv: [["fl", "fL"]],
-        crp: [["mg/l", "mg/L"], ["mg/dl", "mg/dL"]]
+        crp: [["mg/l", "mg/L"], ["mg/dl", "mg/dL"]],
+        rbcFolate: [["nmol/l", "nmol/L"], ["ng/ml", "ng/mL"]],
+        hcy: [["umol/l", "µmol/L"], ["µmol/l", "µmol/L"]]
       }[key] || [];
       for (const [token, displayUnit] of paramUnits) {
         if (lineNorm.includes(token)) {
@@ -800,11 +804,13 @@ function checkMidnightReset(userId) {
         { key: "ca", name: "Kalsiyum (Ca / Total)", unit: "mg/dL", inputId: "inputLabCalcium", keywords: ["kalsiyum", "calcium", "total ca", "serum ca"] },
         { key: "zinc", name: "Çinko (Zn)", unit: "µg/dL", inputId: "inputLabZinc", keywords: ["cinko", "zinc", "serum zn"] },
         { key: "creatinine", name: "Kreatinin (CREA / Böbrek)", unit: "mg/dL", inputId: "inputLabCreatinine", keywords: ["kreatinin", "creatinine", "serum crea", "crea"] },
-        { key: "folate", name: "Folat / Folik Asit (B9)", unit: "ng/mL", inputId: "inputLabFolate", keywords: ["folat", "folate", "folik asit", "folic acid", "vitamin b9", "b9"] },
+        { key: "folate", name: "Folat / Folik Asit (B9)", unit: "ng/mL", inputId: "inputLabFolate", keywords: ["folat", "folate", "folik asit", "folic acid", "vitamin b9", "b9"], exclude: ["eritrosit", "rbc folat", "red cell", "red blood cell", "alyuvar"] },
         { key: "alt", name: "ALT (Alanin Aminotransferaz)", unit: "U/L", inputId: "inputLabAlt", keywords: ["alanin aminotransferaz", "alanine aminotransferase", "sgpt", "serum alt", "alt (sgpt)", "alt"] },
         { key: "hb", name: "Hemoglobin (Hb / HGB)", unit: "g/dL", inputId: "inputLabHb", keywords: ["hemoglobin (hgb)", "hemoglobin", "hgb"], exclude: ["a1c", "hba1", "glikoz", "glycos", "glycat", "ortalama", "mean", "mch", "konsantrasyon", "concentration", "idrar"] },
         { key: "mcv", name: "MCV (Ortalama Eritrosit Hacmi)", unit: "fL", inputId: "inputLabMcv", keywords: ["mcv", "ortalama eritrosit hacmi"], exclude: ["mchc"] },
-        { key: "crp", name: "CRP (C-Reaktif Protein)", unit: "mg/L", inputId: "inputLabCrp", keywords: ["c-reaktif protein", "c reaktif protein", "c-reactive protein", "crp (c-reaktif", "crp", "hs-crp"], exclude: [] }
+        { key: "crp", name: "CRP (C-Reaktif Protein)", unit: "mg/L", inputId: "inputLabCrp", keywords: ["c-reaktif protein", "c reaktif protein", "c-reactive protein", "crp (c-reaktif", "crp", "hs-crp"], exclude: [] },
+        { key: "rbcFolate", name: "Eritrosit Folatı", unit: "ng/mL", inputId: "inputLabRbcFolate", keywords: ["eritrosit folat", "rbc folat", "red cell folate", "red blood cell folate", "alyuvar folat"], exclude: [] },
+        { key: "hcy", name: "Homosistein", unit: "µmol/L", inputId: "inputLabHcy", keywords: ["homosistein", "homocysteine", "homosisteyin"], exclude: [] }
       ];
 
       temporarilyParsedPdfDate = extractPdfReportDate(lines);

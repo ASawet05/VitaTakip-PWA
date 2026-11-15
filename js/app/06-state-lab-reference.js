@@ -13,7 +13,7 @@ let currentAuthMode = "login";
       medications: [],
       medTaken: null,
       hydration: { current: 0, target: 2450 },
-      labValues: { d3: null, b12: null, ferritin: null, mg: null, ca: null, zinc: null, creatinine: null, folate: null, alt: null, hb: null, mcv: null, crp: null },
+      labValues: { d3: null, b12: null, ferritin: null, mg: null, ca: null, zinc: null, creatinine: null, folate: null, alt: null, hb: null, mcv: null, crp: null, rbcFolate: null, hcy: null },
       labReferences: {},
       labHistory: [],
       selectedSymptoms: new Set(),
@@ -40,7 +40,7 @@ let currentAuthMode = "login";
     const ALL_VITA_LAB_KEYS = [
       "d3", "b12", "ferritin", "iron", "tsat", "crp", "mg", "hba1c",
       "alt", "creatinine", "ca", "rbc", "hgb", "hb", "hct", "mcv",
-      "folate", "zinc", "tsh", "ft4"
+      "folate", "zinc", "tsh", "ft4", "rbcFolate", "hcy"
     ];
 
     function safeStructuredClone(value) {
@@ -167,13 +167,15 @@ let currentAuthMode = "login";
       ferritin: { name: "Ferritin", value: "15–150 ng/mL", maleValue: "15–200 ng/mL", unit: "ng/mL" },
       mg: { name: "Magnezyum", value: "1,8–2,3 mg/dL", unit: "mg/dL" },
       ca: { name: "Kalsiyum", value: "8,6–10,2 mg/dL", unit: "mg/dL" },
-      zinc: { name: "Çinko", value: "70–120 µg/dL", unit: "µg/dL" },
+      zinc: { name: "Çinko", value: "70–120 µg/dL", maleValue: "74–120 µg/dL", unit: "µg/dL" },
       creatinine: { name: "Kreatinin", value: "0,5–1,1 mg/dL", maleValue: "0,7–1,3 mg/dL", unit: "mg/dL" },
       folate: { name: "Folat", value: "4,0–20,0 ng/mL", unit: "ng/mL" },
       alt: { name: "ALT", value: "7–35 U/L", maleValue: "7–45 U/L", unit: "U/L" },
       hb: { name: "Hemoglobin", value: "12,0–16,0 g/dL", maleValue: "13,0–17,5 g/dL", unit: "g/dL" },
       mcv: { name: "MCV", value: "80–100 fL", unit: "fL" },
-      crp: { name: "CRP", value: "0–5 mg/L", unit: "mg/L" }
+      crp: { name: "CRP", value: "0–5 mg/L", unit: "mg/L" },
+      rbcFolate: { name: "Eritrosit folatı", value: "≥140 ng/mL", unit: "ng/mL" },
+      hcy: { name: "Homosistein", value: "5–15 µmol/L", unit: "µmol/L" }
     };
 
     function getVitaAppLabReference(key, gender = state.user?.gender || "K") {
@@ -249,7 +251,7 @@ let currentAuthMode = "login";
       const clean = String(value || "").trim();
       if (clean) state.labReferences[key] = clean;
       else delete state.labReferences[key];
-      const inputMap = { d3: "inputLabD3", b12: "inputLabB12", ferritin: "inputLabFerritin", mg: "inputLabMg", ca: "inputLabCalcium", zinc: "inputLabZinc", creatinine: "inputLabCreatinine", folate: "inputLabFolate", alt: "inputLabAlt", hb: "inputLabHb", mcv: "inputLabMcv", crp: "inputLabCrp" };
+      const inputMap = { d3: "inputLabD3", b12: "inputLabB12", ferritin: "inputLabFerritin", mg: "inputLabMg", ca: "inputLabCalcium", zinc: "inputLabZinc", creatinine: "inputLabCreatinine", folate: "inputLabFolate", alt: "inputLabAlt", hb: "inputLabHb", mcv: "inputLabMcv", crp: "inputLabCrp", rbcFolate: "inputLabRbcFolate", hcy: "inputLabHcy" };
       if (inputMap[key]) updateVitaLabLiveFeedback(inputMap[key], key);
       if (typeof saveLabDraft === "function") saveLabDraft();
     }
@@ -405,7 +407,7 @@ let currentAuthMode = "login";
       state.supplementReviews = {};
       invalidateClinicalAnalysisCache({ clearDOM: true });
 
-      const labInputs = ["inputLabD3", "inputLabB12", "inputLabFerritin", "inputLabMg", "inputLabCalcium", "inputLabZinc", "inputLabCreatinine", "inputLabFolate", "inputLabAlt", "inputLabHb", "inputLabMcv", "inputLabCrp", "inputLabRef-d3", "inputLabRef-b12", "inputLabRef-ferritin", "inputLabRef-mg", "inputLabRef-ca", "inputLabRef-zinc", "inputLabRef-creatinine", "inputLabRef-folate", "inputLabRef-alt", "inputLabRef-hb", "inputLabRef-mcv", "inputLabRef-crp"];
+      const labInputs = ["inputLabD3", "inputLabB12", "inputLabFerritin", "inputLabMg", "inputLabCalcium", "inputLabZinc", "inputLabCreatinine", "inputLabFolate", "inputLabAlt", "inputLabHb", "inputLabMcv", "inputLabCrp", "inputLabRbcFolate", "inputLabHcy", "inputLabRef-rbcFolate", "inputLabRef-hcy", "inputLabRef-d3", "inputLabRef-b12", "inputLabRef-ferritin", "inputLabRef-mg", "inputLabRef-ca", "inputLabRef-zinc", "inputLabRef-creatinine", "inputLabRef-folate", "inputLabRef-alt", "inputLabRef-hb", "inputLabRef-mcv", "inputLabRef-crp"];
       labInputs.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = "";
@@ -649,7 +651,7 @@ let currentAuthMode = "login";
       const prefixes = [
         "vitatakip_user_", "vitatakip_supplements_", "vitatakip_medications_", "vitatakip_med_taken_", "vitatakip_hydration_", "vitatakip_labs_",
         "vitatakip_labreferences_", "vitatakip_labhistory_", "vitatakip_symptoms_", "vitatakip_resolved_symptoms_",
-        "vitatakip_reviews_", "vitatakip_cdss_", "vitatakip_notes_", "vitatakip_lastActiveDate_",
+        "vitatakip_reviews_", "vitatakip_cdss_", "vitatakip_notes_", "vitatakip_lastActiveDate_", "vitatakip_recheck_",
         "vitatakip_labdraft_", "vitatakip_profiledraft_", "vitatakip_anamnesis_category_",
         "vitatakip_extended_updated_", "vitatakip_extended_snapshot_", "vitatakip_pdfscan_", "vitatakip_pdf_scanlog_"
       ];

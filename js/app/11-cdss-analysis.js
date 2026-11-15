@@ -185,7 +185,9 @@ function getRecentHistoricalLabsSummary(maxRecords = 3) {
     { key: "folate", label: "Folat", unit: "ng/mL" },
     { key: "zinc", label: "Çinko", unit: "µg/dL" },
     { key: "alt", label: "ALT", unit: "U/L" },
-    { key: "crp", label: "CRP", unit: "mg/L" }
+    { key: "crp", label: "CRP", unit: "mg/L" },
+    { key: "rbcFolate", label: "Eritrosit folatı", unit: "ng/mL" },
+    { key: "hcy", label: "Homosistein", unit: "µmol/L" }
   ];
   const archivedLatestValues = {};
   const archivedValueDates = {};
@@ -435,7 +437,7 @@ function checkArchivedLabExists() {
     const n = Number(String(val).trim().replace(",", "."));
     return Number.isFinite(n) && n > 0;
   };
-  const metricKeys = ["d3", "b12", "ferritin", "mg", "ca", "zinc", "creatinine", "folate", "alt", "hb", "mcv", "crp"];
+  const metricKeys = ["d3", "b12", "ferritin", "mg", "ca", "zinc", "creatinine", "folate", "alt", "hb", "mcv", "crp", "rbcFolate", "hcy"];
   const recordHasAnyMetric = rec => rec && typeof rec === "object" && metricKeys.some(k => isValidNum(rec[k]));
 
   if (typeof state !== "undefined" && Array.isArray(state.labHistory) && state.labHistory.some(recordHasAnyMetric)) {
@@ -868,7 +870,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!state.labValues || typeof state.labValues !== "object") {
         state.labValues = typeof createEmptyLabValuesState === "function"
           ? createEmptyLabValuesState()
-          : { d3: null, b12: null, ferritin: null, mg: null, ca: null, zinc: null, creatinine: null, folate: null, alt: null, hb: null, mcv: null, crp: null };
+          : { d3: null, b12: null, ferritin: null, mg: null, ca: null, zinc: null, creatinine: null, folate: null, alt: null, hb: null, mcv: null, crp: null, rbcFolate: null, hcy: null };
       }
       if (!(state.selectedSymptoms instanceof Set)) {
         state.selectedSymptoms = new Set(Array.isArray(state.selectedSymptoms) ? state.selectedSymptoms : (Array.isArray(state.selectedSymptomsArray) ? state.selectedSymptomsArray : []));
@@ -913,7 +915,9 @@ document.addEventListener("DOMContentLoaded", () => {
         alt: safeNum(rawLabs.alt ?? state.labValues?.alt),
         hb: safeNum(rawLabs.hb ?? state.labValues?.hb),
         mcv: safeNum(rawLabs.mcv ?? state.labValues?.mcv),
-        crp: safeNum(rawLabs.crp ?? state.labValues?.crp)
+        crp: safeNum(rawLabs.crp ?? state.labValues?.crp),
+        rbcFolate: safeNum(rawLabs.rbcFolate ?? state.labValues?.rbcFolate),
+        hcy: safeNum(rawLabs.hcy ?? state.labValues?.hcy)
       };
 
       const enteredCurrentKeys = Object.keys(currentFormLabs).filter(key => currentFormLabs[key] !== null);
@@ -934,11 +938,13 @@ document.addEventListener("DOMContentLoaded", () => {
         alt: currentFormLabs.alt ?? safeNum(archVals.alt),
         hb: currentFormLabs.hb ?? safeNum(archVals.hb),
         mcv: currentFormLabs.mcv ?? safeNum(archVals.mcv),
-        crp: currentFormLabs.crp ?? safeNum(archVals.crp)
+        crp: currentFormLabs.crp ?? safeNum(archVals.crp),
+        rbcFolate: currentFormLabs.rbcFolate ?? safeNum(archVals.rbcFolate),
+        hcy: currentFormLabs.hcy ?? safeNum(archVals.hcy)
       };
 
       const enteredLabKeys = Object.keys(labs).filter(key => labs[key] !== null && Number.isFinite(labs[key]));
-      const d3 = labs.d3, b12 = labs.b12, ferritin = labs.ferritin, mg = labs.mg, ca = labs.ca, zinc = labs.zinc, creatinine = labs.creatinine, folate = labs.folate, alt = labs.alt, hb = labs.hb, mcv = labs.mcv, crp = labs.crp;
+      const d3 = labs.d3, b12 = labs.b12, ferritin = labs.ferritin, mg = labs.mg, ca = labs.ca, zinc = labs.zinc, creatinine = labs.creatinine, folate = labs.folate, alt = labs.alt, hb = labs.hb, mcv = labs.mcv, crp = labs.crp, rbcFolate = labs.rbcFolate, hcy = labs.hcy;
 
       const findings = [];
       const lifestyleKnown = [p.dietPattern, p.fishPerWeek, p.redMeatPerWeek, p.sunExposureDaily].some(v => v && v !== "unspecified");
@@ -964,6 +970,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const hbEvalResult = evalKey('hb', hb);
       const mcvEvalResult = evalKey('mcv', mcv);
       const crpEvalResult = evalKey('crp', crp);
+      const rbcFolEvalResult = evalKey('rbcFolate', rbcFolate);
+      const hcyEvalResult = evalKey('hcy', hcy);
 
       const egfrResult = (age >= 18 && creatinine !== null && Number.isFinite(creatinine) && creatinine > 0)
         ? calculateCKDEPI_eGFR(creatinine, age, gender)
@@ -976,13 +984,14 @@ document.addEventListener("DOMContentLoaded", () => {
         return !isVitaLabReferenceCompatible(key, ref) || !parseVitaLabReferenceRange(ref);
       });
       if (missingLabReferences.length) {
-        const labLabels = { d3: "D3", b12: "B12", ferritin: "Ferritin", mg: "Magnezyum", ca: "Kalsiyum", zinc: "Çinko", creatinine: "Kreatinin", folate: "Folat", alt: "ALT", hb: "Hemoglobin", mcv: "MCV", crp: "CRP" };
+        const labLabels = { d3: "D3", b12: "B12", ferritin: "Ferritin", mg: "Magnezyum", ca: "Kalsiyum", zinc: "Çinko", creatinine: "Kreatinin", folate: "Folat", alt: "ALT", hb: "Hemoglobin", mcv: "MCV", crp: "CRP", rbcFolate: "Eritrosit folatı", hcy: "Homosistein" };
         findings.push({ title: "Referans aralığı kaydı yok", detail: `Laboratuvar aralığı girilmeyen veya birimi doğrulanamayan ölçümler (${missingLabReferences.length}): ${missingLabReferences.map(key => labLabels[key] || key).join(", ")}. Bunlar için genel aralık kullanıldı; takviye adayı yalnızca laboratuvar referansının altında olan veya kaynaklı klinik eşiği karşılayan değerlerde oluşur.` });
       }
       const inRefParameters = [];
       [["D vitamini", "d3", d3, d3EvalResult, "ng/mL"], ["B12", "b12", b12, b12EvalResult, "pg/mL"], ["Ferritin", "ferritin", ferritin, ferEvalResult, "ng/mL"], ["Magnezyum", "mg", mg, mgEvalResult, "mg/dL"],
         ["Kalsiyum", "ca", ca, caEvalResult, "mg/dL"], ["Çinko", "zinc", zinc, znEvalResult, "µg/dL"], ["Folat", "folate", folate, folEvalResult, "ng/mL"],
-        ["Hemoglobin", "hb", hb, hbEvalResult, "g/dL"], ["MCV", "mcv", mcv, mcvEvalResult, "fL"], ["CRP", "crp", crp, crpEvalResult, "mg/L"]].forEach(([label, key, value, ev, unit]) => {
+        ["Hemoglobin", "hb", hb, hbEvalResult, "g/dL"], ["MCV", "mcv", mcv, mcvEvalResult, "fL"], ["CRP", "crp", crp, crpEvalResult, "mg/L"],
+        ["Eritrosit folatı", "rbcFolate", rbcFolate, rbcFolEvalResult, "ng/mL"], ["Homosistein", "hcy", hcy, hcyEvalResult, "µmol/L"]].forEach(([label, key, value, ev, unit]) => {
         if (value === null || value === undefined || !ev || !ev.status) return;
         const note = ev.notes && ev.notes.length ? ` ${ev.notes.join(" ")}` : "";
         if (ev.status === "urgent") contraindications.push({ title: `⚠️ ${label}: acil klinik değerlendirme gerekli`, detail: `${label} ${value}: ${ev.message}` });

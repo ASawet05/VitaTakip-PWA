@@ -4,7 +4,7 @@
     tongue: {
       file: './img/symptoms/tongue.jpg',
       title: 'Dilde yanma, kızarıklık ve pürüzsüzleşme (Glossit) · Görsel örnek',
-      text: 'Dil yüzeyindeki papillaların silinmesiyle dilin parlak kırmızı, düz ve hassas görünmesi (atrofik glossit) B12 vitamini, folat veya demir eksikliğiyle ilişkili olabilir. Görsel yalnızca bilgilendirme amaçlıdır; kesin tanı için hekim muayenesi ve kan tahlili gerekir.',
+      text: 'Dil yüzeyindeki papillaların silinmesiyle dilin parlak kırmızı, düz ve hassas görünmesi (atrofik glossit) B12 vitamini, folat veya demir eksikliğiyle ilişkili olabilir. Kesin tanı için hekim muayenesi ve kan tahlili gerekir.',
       alt: 'Parlak kırmızı ve pürüzsüz dil yüzeyi (glossit) klinik görsel örneği'
     },
     mouth: {

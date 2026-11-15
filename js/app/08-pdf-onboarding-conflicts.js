@@ -7,7 +7,7 @@ function applyParsedPdfValues() {
       }
       state.labValues = typeof createEmptyLabValuesState === "function"
         ? createEmptyLabValuesState()
-        : { d3: null, b12: null, ferritin: null, iron: null, tsat: null, mg: null, ca: null, zinc: null, creatinine: null, folate: null, alt: null, hb: null, hgb: null, rbc: null, hct: null, mcv: null, crp: null, hba1c: null, tsh: null, ft4: null };
+        : { d3: null, b12: null, ferritin: null, iron: null, tsat: null, mg: null, ca: null, zinc: null, creatinine: null, folate: null, alt: null, hb: null, hgb: null, rbc: null, hct: null, mcv: null, crp: null, rbcFolate: null, hcy: null, hba1c: null, tsh: null, ft4: null };
       state.labReferences = typeof createEmptyLabReferencesState === "function" ? createEmptyLabReferencesState() : {};
       if (typeof VITATAKIP_LAB_DRAFT_FIELDS !== "undefined" && Array.isArray(VITATAKIP_LAB_DRAFT_FIELDS)) {
         VITATAKIP_LAB_DRAFT_FIELDS.forEach(([id]) => {
@@ -98,8 +98,8 @@ function applyParsedPdfValues() {
           primaryMessage: "Bu ilaç vücuttaki B12 Vitamini (Kobalamin) ve Folat depolarını tüketebilir / bağırsak emilimini engelleyebilir, ilgili kan tahlilinizi kontrol edin.",
           mechanism: "Metformin, terminal ileumda kalsiyum bağımlı İntrensek Faktör–B12 kompleksinin hücre zarından emilimini baskılar. Uzun süreli kullanımda periferik nöropati (el-ayak uyuşması) ve megaloblastik anemi riskine karşı yıllık B12 ve Folat tahlili önerilir.",
           labKeys: [
-            { key: "b12", label: "Vitamin B12", unit: "pg/mL", optimalHint: "> 300 pg/mL" },
-            { key: "folate", label: "Folat (B9)", unit: "ng/mL", optimalHint: "> 6 ng/mL" }
+            { key: "b12", label: "Vitamin B12", unit: "pg/mL" },
+            { key: "folate", label: "Folat (B9)", unit: "ng/mL" }
           ],
           recommendedSupplementNote: "Metilkobalamin (Dilaltı B12) veya aktif Metilfolat formu hekim kontrolünde değerlendirilebilir."
         },
@@ -110,10 +110,10 @@ function applyParsedPdfValues() {
           primaryMessage: "Bu ilaç vücuttaki Magnezyum, B12 Vitamini ve Kalsiyum (ayrıca Demir) emilimini azaltarak depoları tüketebilir, ilgili kan tahlilinizi kontrol edin.",
           mechanism: "Proton pompa inhibitörleri (PPI) gastrik asit salgısını baskılar; besinlerdeki protein bağlı B12'nin ayrışmasını, ferrik demirin (Fe³⁺) emilebilir ferröz forma (Fe²⁺) dönüşmesini ve iyonize Kalsiyum/Magnezyum emilimini düşürür.",
           labKeys: [
-            { key: "mg", label: "Magnezyum (Mg)", unit: "mg/dL", optimalHint: "1.9 – 2.5 mg/dL" },
-            { key: "b12", label: "Vitamin B12", unit: "pg/mL", optimalHint: "> 300 pg/mL" },
-            { key: "ca", label: "Kalsiyum (Ca)", unit: "mg/dL", optimalHint: "8.8 – 10.2 mg/dL" },
-            { key: "ferritin", label: "Ferritin (Demir Deposu)", unit: "ng/mL", optimalHint: "> 30 ng/mL" }
+            { key: "mg", label: "Magnezyum (Mg)", unit: "mg/dL" },
+            { key: "b12", label: "Vitamin B12", unit: "pg/mL" },
+            { key: "ca", label: "Kalsiyum (Ca)", unit: "mg/dL" },
+            { key: "ferritin", label: "Ferritin (Demir Deposu)", unit: "ng/mL" }
           ],
           recommendedSupplementNote: "Mide asidinden bağımsız emilebilen Magnezyum Bisglisinat/Sitrat ve Kalsiyum Sitrat gibi formlar hekim veya eczacı onayıyla değerlendirilebilir."
         },
@@ -124,8 +124,8 @@ function applyParsedPdfValues() {
           primaryMessage: "Bu ilaç vücuttaki Koenzim Q10 (CoQ10) endojen sentezini baskılayabilir ve hücresel enerji/kas dengesini etkileyebilir, ilgili kan tahlilinizi kontrol edin.",
           mechanism: "Statinler HMG-CoA redüktaz enzimini inhibe ederken mevalonat yolağını bloke eder; bu yolak kolesterolün yanı sıra mitokondriyal elektron taşıma zincirinin temel kofaktörü olan Koenzim Q10 (Ubiquinone) sentezinden de sorumludur. Kas ağrısı/yorgunluk (miyalji) gelişirse D vitamini ve ALT/CK ile birlikte değerlendirilmelidir.",
           labKeys: [
-            { key: "d3", label: "25-OH Vitamin D3", unit: "ng/mL", optimalHint: "30 – 60 ng/mL" },
-            { key: "alt", label: "ALT (Karaciğer Enzimi)", unit: "U/L", optimalHint: "< 40 U/L" }
+            { key: "d3", label: "25-OH Vitamin D3", unit: "ng/mL" },
+            { key: "alt", label: "ALT (Karaciğer Enzimi)", unit: "U/L" }
           ],
           recommendedSupplementNote: "Koenzim Q10 (Ubiquinol/Ubiquinone) ve D3 vitamini düzeyi kas semptomları açısından hekimle değerlendirilebilir."
         },
@@ -136,9 +136,9 @@ function applyParsedPdfValues() {
           primaryMessage: "Bu ilaç vücuttaki Potasyum, Magnezyum ve Çinko minerallerinin böbreklerden atılımını artırarak tüketebilir, ilgili kan tahlilinizi kontrol edin.",
           mechanism: "Loop ve tiyazid grubu diüretikler renal tübüllerden sodyum ve su atılımını artırırken beraberinde Magnezyum (Mg²⁺), Potasyum (K⁺), Çinko (Zn²⁺) ve B1 vitamini (Tiamin) kaybına yol açabilir.",
           labKeys: [
-            { key: "mg", label: "Magnezyum (Mg)", unit: "mg/dL", optimalHint: "1.9 – 2.5 mg/dL" },
-            { key: "zinc", label: "Çinko (Zn)", unit: "µg/dL", optimalHint: "70 – 120 µg/dL" },
-            { key: "creatinine", label: "Kreatinin (Böbrek)", unit: "mg/dL", optimalHint: "0.6 – 1.2 mg/dL" }
+            { key: "mg", label: "Magnezyum (Mg)", unit: "mg/dL" },
+            { key: "zinc", label: "Çinko (Zn)", unit: "µg/dL" },
+            { key: "creatinine", label: "Kreatinin (Böbrek)", unit: "mg/dL" }
           ],
           recommendedSupplementNote: "Elektrolit (Potasyum, Magnezyum), Çinko ve eGFR/Kreatinin tahlilleri düzenli olarak hekim kontrolünde izlenmelidir."
         },
@@ -149,8 +149,8 @@ function applyParsedPdfValues() {
           primaryMessage: "Bu ilaç vücuttaki Çinko (Zn) mineralini tüketebilir (idrarla çinko atılımını artırabilir), ilgili kan tahlilinizi kontrol edin.",
           mechanism: "ACE inhibitörleri (özellikle sülfhidril/karboksil grubu taşıyanlar) ve bazı ARB'ler çinko iyonları ile kompleks oluşturarak üriner çinko ekskresyonunu (hiperzinküri) artırabilir; tat duyusu azalması, saç dökülmesi ve bağışıklık zayıflaması açısından serum Çinko düzeyi izlenmelidir.",
           labKeys: [
-            { key: "zinc", label: "Çinko (Zn)", unit: "µg/dL", optimalHint: "70 – 120 µg/dL" },
-            { key: "creatinine", label: "Kreatinin (eGFR)", unit: "mg/dL", optimalHint: "0.6 – 1.2 mg/dL" }
+            { key: "zinc", label: "Çinko (Zn)", unit: "µg/dL" },
+            { key: "creatinine", label: "Kreatinin (eGFR)", unit: "mg/dL" }
           ],
           recommendedSupplementNote: "Serum Çinko tahlili düşükse Çinko Pikolinat/Bisglisinat formu hekiminizle değerlendirilebilir."
         }
@@ -1153,7 +1153,7 @@ function applyParsedPdfValues() {
           <div class="p-2 rounded-xl bg-white border border-amber-200 flex items-center justify-between gap-2 text-[11px]">
             <div>
               <strong class="text-navy-900 font-bold">${escapeHtmlText(lk.label)}</strong>
-              <span class="block text-[9.5px] text-slate-500">Hedef/Referans: ${escapeHtmlText(lk.optimalHint)}</span>
+              <span class="block text-[9.5px] text-slate-500">Referans: ${escapeHtmlText(typeof getVitaAppLabReference === "function" ? getVitaAppLabReference(lk.key) : "")}</span>
             </div>
             <span class="px-2 py-0.5 rounded-lg font-mono font-black text-[10.5px] ${hasVal ? 'bg-teal-50 text-teal-900 border border-teal-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}">
               ${hasVal ? `${escapeHtmlText(val)} ${escapeHtmlText(lk.unit)}` : 'Tahlil Girilmedi — Kontrol Edin'}

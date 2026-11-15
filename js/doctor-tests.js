@@ -7,17 +7,18 @@
 
   var LAB_NAMES = {
     d3: "25-OH Vitamin D", b12: "Vitamin B12", ferritin: "Ferritin", mg: "Magnezyum", ca: "Kalsiyum", zinc: "Çinko",
-    creatinine: "Kreatinin", folate: "Folat", alt: "ALT", hb: "Hemoglobin", mcv: "MCV", crp: "CRP"
+    creatinine: "Kreatinin", folate: "Folat", alt: "ALT", hb: "Hemoglobin", mcv: "MCV", crp: "CRP", rbcFolate: "Eritrosit folatı", hcy: "Homosistein"
   };
   var LAB_UNITS = {
     d3: "ng/mL", b12: "pg/mL", ferritin: "ng/mL", mg: "mg/dL", ca: "mg/dL", zinc: "µg/dL",
-    creatinine: "mg/dL", folate: "ng/mL", alt: "U/L", hb: "g/dL", mcv: "fL", crp: "mg/L"
+    creatinine: "mg/dL", folate: "ng/mL", alt: "U/L", hb: "g/dL", mcv: "fL", crp: "mg/L", rbcFolate: "ng/mL", hcy: "µmol/L"
   };
   /* Bir testin hangi girilmiş tahlille zaten karşılandığını anlamak için */
   var COVERED_BY = {
     d3: /25.?oh|vitamin d|d vitamini/i, b12: /b12/i, ferritin: /ferritin/i, mg: /magnezyum/i, ca: /kalsiyum/i,
     zinc: /çinko|cinko/i, creatinine: /kreatinin|egfr/i, folate: /folat/i, alt: /\balt\b/i,
-    hb: /hemogram|hemoglobin|tam kan/i, mcv: /hemogram|mcv|tam kan/i, crp: /\bcrp\b/i
+    hb: /hemogram|hemoglobin|tam kan/i, mcv: /hemogram|mcv|tam kan/i, crp: /\bcrp\b/i,
+    rbcFolate: /eritrosit folat|rbc folat/i, hcy: /homosistein/i
   };
 
   /* Tahlil sonucuna göre hekimle konuşulabilecek ek incelemeler (low / high) */
@@ -30,7 +31,13 @@
       low: { tests: ["Metilmalonik asit (MMA)", "Homosistein", "Folat", "Hemogram ve periferik yayma"], why: "B12 eksikliğinin doğrulanması ve etkilerinin değerlendirilmesi için." }
     },
     folate: {
-      low: { tests: ["Vitamin B12", "Homosistein", "Hemogram ve periferik yayma"], why: "Folat ve B12 eksikliği birlikte görülebilir." }
+      low: { tests: ["Vitamin B12", "Eritrosit folatı", "Homosistein", "Hemogram ve periferik yayma"], why: "Folat ve B12 eksikliği birlikte görülebilir; eritrosit folatı uzun dönem durumu gösterir." }
+    },
+    rbcFolate: {
+      low: { tests: ["Vitamin B12", "Hemogram (MCV)", "Homosistein"], why: "Düşük eritrosit folatında B12 eksikliği dışlanmadan yüksek doz folik asit başlanmaz." }
+    },
+    hcy: {
+      high: { tests: ["Vitamin B12 ve metilmalonik asit (MMA)", "Folat", "Kreatinin / eGFR", "TSH"], why: "Homosistein; B12/folat eksikliği, böbrek işlevi, tiroid ve bazı ilaçlardan etkilenir." }
     },
     d3: {
       low: { tests: ["Kalsiyum, fosfor", "PTH", "ALP", "Magnezyum"], why: "D vitamini düşüklüğünde kemik-mineral dengesi birlikte değerlendirilir." },

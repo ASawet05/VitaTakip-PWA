@@ -14,13 +14,34 @@
       ODS_B12: { title: "NIH Office of Dietary Supplements — Vitamin B12 (Health Professional Fact Sheet)", url: "https://ods.od.nih.gov/factsheets/VitaminB12-HealthProfessional/", note: "Çoğu laboratuvar 200–250 pg/mL altını subnormal sayar; 150–399 pg/mL aralığında MMA ile doğrulama önerilir. B12 için tolere edilebilir üst alım sınırı (UL) belirlenmemiştir." },
       AAFP2025_B12: { title: "Am Fam Physician 2025 — Vitamin B12 Deficiency: Common Questions and Answers", url: "https://www.aafp.org/afp/2025/0900/vitamin-b12-deficiency", note: "Total B12 <180 pg/mL tanısaldır; 180–350 pg/mL sınırdadır ve MMA önerilir; iki ölçümde kalıcı >1000 pg/mL, solid tümör, hematolojik maligniteler ve kardiyovasküler ölüm riskiyle ilişkilendirilmiştir (ilişki, nedensellik değil)." },
       WHO2020_FERR: { title: "WHO 2020 — Guideline on use of ferritin concentrations to assess iron status", url: "https://www.ncbi.nlm.nih.gov/books/NBK569876/", note: "Sağlıklı yetişkinde ferritin <15 µg/L demir eksikliği; enfeksiyon/enflamasyonda <70 µg/L (koşullu öneri; CRP >5 mg/L); demir yüklenmesi riski: sağlıklılarda >150 (K) / >200 (E), sağlıksız bireylerde >500 µg/L." },
-      AGA2020_IDA: { title: "AGA 2020 — Gastrointestinal evaluation of iron deficiency anemia (ferritin <45 ng/mL)", url: "", note: "İkincil kaynaklardan aktarılan 45 ng/mL kesme değeri; birincil metin bu çalışmada açılıp doğrulanmadı." },
+      AGA2020_IDA: { title: "AGA 2020 — Clinical Practice Guidelines on the Gastrointestinal Evaluation of Iron Deficiency Anemia (Ko CW ve ark., Gastroenterology 2020;159:1085-94; PMID 32810434)", url: "https://doi.org/10.1053/j.gastro.2020.06.046", note: "Birincil kılavuz kaydı PubMed'de doğrulandı. Anemisi olan kişide demir eksikliğini tanılarken ferritin kesme değeri olarak 15 yerine 45 ng/mL önerilir (koşullu öneri)." },
       ODS_D: { title: "NIH Office of Dietary Supplements — Vitamin D (Health Professional Fact Sheet)", url: "https://ods.od.nih.gov/factsheets/VitaminD-HealthProfessional/", note: "25(OH)D <30 nmol/L (<12 ng/mL) eksiklik riski; 30–50 nmol/L (12–20 ng/mL) bazı kişilerde yetersiz; ≥50 nmol/L (≥20 ng/mL) çoğu kişide yeterli; >125 nmol/L (>50 ng/mL) olası yan etkiler; >375 nmol/L (>150 ng/mL) belirgin toksisite belirtileri." },
       ODS_MG: { title: "NIH Office of Dietary Supplements — Magnesium (Health Professional Fact Sheet)", url: "https://ods.od.nih.gov/factsheets/Magnesium-HealthProfessional/", note: "Normal serum magnezyum 0,75–0,95 mmol/L (1,82–2,31 mg/dL); hipomagnezemi <0,75 mmol/L; serum düzeyi vücut depolarıyla zayıf ilişkilidir; takviyeden gelen magnezyum için UL 350 mg/gün; uzun süreli PPI kullanımı hipomagnezemiye yol açabilir." },
       ADVNUTR_MG: { title: "Advances in Nutrition — Magnesium (semptomlar <0,5 mmol/L altında belirginleşir)", url: "https://advances.nutrition.org/article/S2161-8313(23)00153-9/fulltext", note: "Hipomagnezemi 0,5–0,7 mmol/L arasında çoğunlukla hafif veya belirtisizdir; <0,5 mmol/L altında belirtiler belirginleşir/şiddetlenir." },
       WHO2011_HB: { title: "WHO — Haemoglobin concentrations for the diagnosis of anaemia and assessment of severity (2011)", url: "https://www.who.int/publications/i/item/WHO-nMH-NHD-MNM-11.1", note: "Anemi: gebe olmayan kadın (≥15 yaş) Hb <12 g/dL, erkek (≥15 yaş) <13 g/dL, gebe <11 g/dL (deniz seviyesi)." },
+      ENDO2024_D: { title: "Endocrine Society 2024 — Vitamin D for the Prevention of Disease (Demay MB ve ark., J Clin Endocrinol Metab 2024;109:1907-47; PMID 38828931)", url: "https://doi.org/10.1210/clinem/dgae290", note: "75 yaş altı sağlıklı yetişkinde rutin 25(OH)D taraması ve önerilen günlük alımın (DRI) üzerinde ampirik takviye önerilmez; hastalık önleme için en uygun hedef 25(OH)D düzeyi tanımlanamamıştır. 1–18 yaş, 75 yaş üstü, gebelik ve yüksek riskli prediyabette ampirik takviye önerilir." },
+      IZINCG_ZN: { title: "IZiNCG — Use of serum zinc concentration as an indicator of population zinc status (Hess SY ve ark., Food Nutr Bull 2007;28:S403-29; PMID 17988005)", url: "https://doi.org/10.1177/15648265070283S303", note: "10 yaş ve üzeri, sabah aç karnına alınan örnekte alt sınır kadında 70, erkekte 74 µg/dL (tok sabah 66/70, öğleden sonra 59/61). Serum çinko bireysel düzeyde güvenilir bir gösterge değildir; enflamasyon ve düşük albümin değeri düşürür." },
+      BOND_FOL: { title: "BOND — Biomarkers of Nutrition for Development: Folate Review (Bailey LB ve ark., J Nutr 2015;145:1636S-80S; PMID 26451605)", url: "https://doi.org/10.3945/jn.114.206599", note: "Serum folat <3 ng/mL (6,8 nmol/L) eksiklik (makrositer anemi temelli), <4 ng/mL (10 nmol/L) homosistein temelli olası eksiklik eşiği olarak kullanılır. Serum folat son alımı yansıtır; uzun dönem durum için eritrosit folatı daha uygundur." },
+      COCHRANE2020_MG: { title: "Cochrane 2020 — Magnesium for skeletal muscle cramps (Garrison SR ve ark.; PMID 32956536)", url: "https://doi.org/10.1002/14651858.CD009402.pub3", note: "Yaşlı yetişkinlerde idiyopatik (çoğunlukla gece) kramplarda magnezyum takviyesi klinik olarak anlamlı koruma sağlamıyor (orta–yüksek kesinlik); gebelikte kanıt çelişkili." },
+      OMEGA3_HD: { title: "Omega-3 dozları ve kardiyovasküler sonuçlar — ağ meta-analizi (Lombardi M ve ark., Curr Atheroscler Rep 2020; PMID 32671519)", url: "https://doi.org/10.1007/s11883-020-00865-5", note: "Günde 1 g üzeri omega-3 kanama (IRR 1,49) ve atriyal fibrilasyon riskinde artışla ilişkili bulundu." },
+      CAL_HYPER: { title: "The diagnosis and management of hypercalcaemia (Minisola S ve ark., BMJ 2015;350:h2723; PMID 26037642)", url: "https://doi.org/10.1136/bmj.h2723", note: "Hiperkalsemi derecesi: hafif <12 mg/dL (3,0 mmol/L), orta 12–14 mg/dL, ağır ≥14 mg/dL (3,5 mmol/L). Ağır düzey hiperkalsemik kriz riski taşır (Cannon J ve ark., Surgery 2010; doi:10.1016/j.surg.2010.07.041)." },
+      CAL_HYPO: { title: "Diagnosis and management of hypocalcaemia (Cooper MS, Gittoes NJ. BMJ 2008;336:1298-302; PMID 18535072)", url: "https://doi.org/10.1136/bmj.39582.589433.BE", note: "Albüminle düzeltilmiş kalsiyum <1,9 mmol/L (≈7,6 mg/dL) ağır hipokalsemi olarak acil değerlendirme gerektirir. Total kalsiyum düşük albüminde yalancı düşük görünür." },
+      MCV_AAFP: { title: "Evaluation of macrocytosis (Kaferle J, Strzoda CE. Am Fam Physician 2009;79:203-8; PMID 19202968) · Evaluation of microcytosis (Van Vranken M. Am Fam Physician 2010;82:1117-22; PMID 21121557)", url: "https://pubmed.ncbi.nlm.nih.gov/19202968/", note: "Yetişkinde MCV <80 fL mikrositoz (en sık demir eksikliği, talasemi taşıyıcılığı; ilk test ferritin), >100 fL makrositoz (alkol, B12/folat eksikliği, ilaçlar; tiroid ve karaciğer)." },
+      WHO2015_RBCFOL: { title: "WHO 2015 — Optimal serum and red blood cell folate concentrations in women of reproductive age (Cordero AM ve ark., MMWR 2015;64:421-3; PMID 25905896)", url: "https://pubmed.ncbi.nlm.nih.gov/25905896/", note: "Doğurganlık çağındaki kadınlarda nöral tüp defektini en çok azaltan düzey eritrosit folatı >400 ng/mL (906 nmol/L). Bu eşik YALNIZCA toplum düzeyinde kullanılır; bireysel riski tahmin etmez." },
+      RBCFOL_CUT: { title: "Eritrosit folatı eksiklik eşiği <305 nmol/L (≈140 ng/mL) — makrositer anemi temelli (BOND/WHO ölçütü; Wong E ve ark., Matern Child Health J 2022; PMID 34637065)", url: "https://doi.org/10.1007/s10995-021-03257-6", note: "Eritrosit folatı uzun dönem (yaklaşık 3–4 ay) folat durumunu yansıtır; serum folattan farklı olarak son günlerdeki alımdan az etkilenir." },
+      REFSUM_HCY: { title: "Facts and recommendations about total homocysteine determinations: an expert opinion (Refsum H ve ark., Clin Chem 2004;50:3-32; PMID 14709635)", url: "https://doi.org/10.1373/clinchem.2003.021634", note: "Yetişkinde plazma total homosistein için yaygın üst referans ≈15 µmol/L. Homosistein B12/folat eksikliğinin işlevsel göstergesidir; böbrek işlevi, tiroid, ilaçlar ve örnek işleme (kan hemen santrifüj edilmeli) sonucu etkiler." },
       UNVERIFIED: { title: "Kaynağı doğrulanmadı", url: "", note: "Bu değer genel/tipik bir laboratuvar aralığıdır; kesin klinik eşik olarak sunulmaz. Laboratuvarınızın aralığı esas alınmalıdır." }
     };
+
+    /* Kaynak doğrulama düzeyi (bilgi penceresinde gösterilir). "pubmed": sayısal eşik PubMed özetinde/tam metninde okundu;
+       "pubmed-kayit": kaynak kaydı PubMed'de doğrulandı, sayısal eşik özette yer almıyor; "web": resmî kurum sayfası. */
+    const VITA_LAB_THRESHOLDS_VERSION = "Kasım 2026";
+    const VITA_LAB_SOURCE_CHECK = {
+      ODS_B12: "web", AAFP2025_B12: "web", WHO2020_FERR: "web", AGA2020_IDA: "pubmed", ODS_D: "web", ODS_MG: "web", ADVNUTR_MG: "web",
+      WHO2011_HB: "web", ENDO2024_D: "pubmed", IZINCG_ZN: "pubmed", BOND_FOL: "pubmed", COCHRANE2020_MG: "pubmed", OMEGA3_HD: "pubmed",
+      CAL_HYPER: "pubmed", CAL_HYPO: "pubmed-kayit", MCV_AAFP: "pubmed", WHO2015_RBCFOL: "pubmed", RBCFOL_CUT: "pubmed", REFSUM_HCY: "pubmed-kayit", UNVERIFIED: "yok"
+    };
+    Object.keys(VITA_LAB_SOURCE_CHECK).forEach(k => { if (VITA_LAB_SOURCES[k]) VITA_LAB_SOURCES[k].check = VITA_LAB_SOURCE_CHECK[k]; });
 
     const VITA_LAB_STATUS_TEXT = {
       in_ref: "Referans aralığında",
@@ -38,8 +59,8 @@
           typical: { min: 200, max: 900, source: "ODS_B12", verified: false, note: "Alt sınır NIH ODS'ye göre subnormal sınırıdır; üst sınır tipik değerdir." },
           sources: ["ODS_B12", "AAFP2025_B12"] },
         d3: { label: "25-OH D vitamini", unit: "ng/mL", units: { "ng/ml": 1, "nmol/l": 0.4 }, plausible: [3, 200],
-          typical: { min: 20, max: 50, source: "ODS_D", verified: true, note: "NIH ODS: ≥20 ng/mL çoğu kişide yeterli, >50 ng/mL olası yan etkiler." },
-          sources: ["ODS_D"] },
+          typical: { min: 20, max: 50, source: "ODS_D", verified: true, note: "NIH ODS: ≥20 ng/mL çoğu kişide yeterli, >50 ng/mL olası yan etkiler. Endocrine Society 2024: hastalık önleme için ideal hedef düzey tanımlanmadı; 30 ng/mL hedefi kanıta dayanmıyor." },
+          sources: ["ODS_D", "ENDO2024_D"] },
         ferritin: { label: "Ferritin", unit: "ng/mL", units: { "ng/ml": 1, "ug/l": 1, "pmol/l": 0.445 }, plausible: [1, 5000],
           typical: { min: 15, max: 150, maxMale: 200, source: "WHO2020_FERR", verified: true, note: "Alt: sağlıklı yetişkinde eksiklik eşiği (15); üst: demir yüklenmesi riski eşiği (K 150 / E 200)." },
           sources: ["WHO2020_FERR", "AGA2020_IDA"] },
@@ -47,23 +68,29 @@
           typical: { min: 1.82, max: 2.31, source: "ODS_MG", verified: true, note: "NIH ODS: 0,75–0,95 mmol/L." },
           sources: ["ODS_MG", "ADVNUTR_MG"] },
         ca: { label: "Kalsiyum (total)", unit: "mg/dL", units: { "mg/dl": 1, "mmol/l": 4.008 }, plausible: [5.0, 16.0],
-          typical: { min: 8.6, max: 10.2, source: "UNVERIFIED", verified: false, note: "Tipik laboratuvar aralığı; total kalsiyum albümine bağlıdır." },
-          sources: ["UNVERIFIED"] },
+          typical: { min: 8.6, max: 10.2, source: "UNVERIFIED", verified: false, note: "Tipik laboratuvar aralığı; total kalsiyum albümine bağlıdır. Klinik eşikler (≥12 / ≥14 / <7,6 mg/dL) kaynaklıdır." },
+          sources: ["CAL_HYPER", "CAL_HYPO"] },
         zinc: { label: "Çinko", unit: "µg/dL", units: { "ug/dl": 1, "umol/l": 6.54 }, plausible: [10, 400],
-          typical: { min: 70, max: 120, source: "UNVERIFIED", verified: false, note: "Tipik laboratuvar aralığı; serum çinko enflamasyondan ve albümin düzeyinden etkilenir." },
-          sources: ["UNVERIFIED"] },
+          typical: { min: 70, minMale: 74, max: 120, source: "IZINCG_ZN", verified: true, note: "Alt sınır IZiNCG (sabah, aç karnına: K 70 / E 74 µg/dL); üst sınır tipik laboratuvar değeridir. Serum çinko enflamasyon ve düşük albüminle düşer." },
+          sources: ["IZINCG_ZN"] },
         folate: { label: "Folat", unit: "ng/mL", units: { "ng/ml": 1, "nmol/l": 0.4413 }, plausible: [0.3, 60],
-          typical: { min: 4, max: 20, source: "UNVERIFIED", verified: false, note: "Tipik laboratuvar aralığı; yönteme göre belirgin değişir." },
-          sources: ["UNVERIFIED"] },
+          typical: { min: 4, max: 20, source: "BOND_FOL", verified: true, note: "Alt sınır WHO/BOND homosistein temelli eşiktir (<4 ng/mL); üst sınır tipik laboratuvar değeridir ve yönteme göre değişir." },
+          sources: ["BOND_FOL"] },
         hb: { label: "Hemoglobin", unit: "g/dL", units: { "g/dl": 1, "g/l": 0.1 }, plausible: [3, 25],
           typical: { min: 12, max: 16, minMale: 13, maxMale: 17.5, source: "WHO2011_HB", verified: true, note: "Alt sınır WHO anemi ölçütü (K <12, E <13 g/dL; gebelikte farklıdır). Üst sınır (K 16 / E 17,5) genel laboratuvar aralığıdır; ekrandaki aralıkla aynıdır." },
           sources: ["WHO2011_HB"] },
         mcv: { label: "MCV", unit: "fL", units: { "fl": 1 }, plausible: [40, 150],
-          typical: { min: 80, max: 100, source: "UNVERIFIED", verified: false, note: "Yetişkinlerde yaygın tipik aralık; laboratuvara göre değişir." },
-          sources: ["UNVERIFIED"] },
+          typical: { min: 80, max: 100, source: "MCV_AAFP", verified: true, note: "Yetişkinde <80 fL mikrositoz, >100 fL makrositoz (AFP 2009/2010)." },
+          sources: ["MCV_AAFP"] },
         crp: { label: "CRP", unit: "mg/L", units: { "mg/l": 1, "mg/dl": 10 }, plausible: [0, 500],
           typical: { min: 0, max: 5, source: "WHO2020_FERR", verified: true, note: "WHO ferritin kılavuzu enflamasyon için CRP >5 mg/L eşiğini kullanır." },
-          sources: ["WHO2020_FERR"] }
+          sources: ["WHO2020_FERR"] },
+        rbcFolate: { label: "Eritrosit folatı", unit: "ng/mL", units: { "ng/ml": 1, "nmol/l": 0.4413 }, plausible: [20, 3000],
+          typical: { min: 140, source: "RBCFOL_CUT", verified: true, note: "Alt sınır makrositer anemi temelli eksiklik eşiğidir (<305 nmol/L ≈ 140 ng/mL); üst sınır yoktur." },
+          sources: ["RBCFOL_CUT", "BOND_FOL", "WHO2015_RBCFOL"] },
+        hcy: { label: "Homosistein", unit: "µmol/L", units: { "umol/l": 1 }, plausible: [1, 400],
+          typical: { min: 5, max: 15, source: "REFSUM_HCY", verified: false, note: "Yaygın yetişkin referansı (≈5–15 µmol/L); sayısal sınır kaynak özetinde yer almıyor, laboratuvarınızın aralığı esastır." },
+          sources: ["REFSUM_HCY"] }
       };
 
       const num = v => {
@@ -134,6 +161,18 @@
           if (mmol > 0.95) return { level: "high_review", sources: ["ODS_MG"], text: "Magnezyum NIH ODS normal aralığının (0,95 mmol/L, 2,31 mg/dL) üzerinde. Magnezyum içeren takviye/antiasit ve böbrek işlevi gözden geçirilmelidir." };
           return { level: "adequate", sources: ["ODS_MG"], text: "" };
         },
+        zinc(v, ctx) {
+          const lim = ctx.gender === "E" ? 74 : 70;
+          if (v < lim) return { level: "borderline", sources: ["IZINCG_ZN"], text: `Çinko ${lim} µg/dL altında: IZiNCG alt sınırının (sabah, aç karnına) altında. Serum çinko bireysel düzeyde güvenilir değildir; enflamasyon (CRP), düşük albümin, örnek saati ve açlık durumu sonucu düşürebilir. Tek başına takviye gerekçesi değildir, hekimle değerlendirin.` };
+          if (v > 150) return { level: "high_review", sources: ["UNVERIFIED"], text: "Serum çinko 150 µg/dL üzerinde: uzun süreli yüksek doz çinko bakır emilimini bozarak bakır eksikliği ve anemiye yol açabilir. Çinko içeren takviyeleri hekimle gözden geçirin." };
+          return { level: "adequate", sources: ["IZINCG_ZN"], text: "" };
+        },
+        folate(v) {
+          if (v < 3) return { level: "low_likely", sources: ["BOND_FOL"], text: "Serum folat 3 ng/mL (6,8 nmol/L) altında: eksiklik olası. Hemogram (MCV), B12 ve beslenme hekimle değerlendirilmelidir; B12 eksikliği dışlanmadan yüksek doz folik asit başlanmamalıdır." };
+          if (v < 4) return { level: "borderline", sources: ["BOND_FOL"], text: "Serum folat 3–4 ng/mL arasında: sınırda (homosistein temelli eşik <4 ng/mL). Serum folat son günlerdeki alımı yansıtır; gerekirse eritrosit folatı ve homosistein ile doğrulanabilir." };
+          if (v > 20) return { level: "high_review", sources: ["UNVERIFIED"], text: "Serum folat 20 ng/mL üzerinde: yüksek folat eşlik eden B12 eksikliğinin kan bulgularını gizleyebilir. B12 düzeyi ve kullandığınız takviyeler hekimle değerlendirilmelidir." };
+          return { level: "adequate", sources: ["BOND_FOL"], text: "" };
+        },
         hb(v, ctx) {
           if (ctx.pregnancy) {
             /* WHO 2011: gebelikte anemi <11 g/dL (ağır <7). CDC: 2. trimesterde sınır 10,5 g/dL. */
@@ -152,21 +191,30 @@
           return { level: "adequate", sources: ["WHO2011_HB"], text: "" };
         },
         ca(v) {
-          if (v > 11.5) return { level: "urgent", side: "high", sources: ["UNVERIFIED"], text: "Total kalsiyum 11,5 mg/dL üzerinde: belirgin hiperkalsemi riski. D vitamini ve kalsiyum takviyelerini kesinlikle kullanmayın; PTH, albümin, fosfor ve böbrek fonksiyonları için gecikmeden dahiliye/endokrinoloji değerlendirmesi gerekir." };
-          if (v < 7.5) return { level: "urgent", side: "low", sources: ["UNVERIFIED"], text: "Total kalsiyum 7,5 mg/dL altında: ciddi hipokalsemi / nöromüsküler tetani riski (albümin düzeltmesi gerekir). Gecikmeden hekim değerlendirmesi isteyin." };
-          if (v > 10.2) return { level: "high_review", sources: ["UNVERIFIED"], text: "Total kalsiyum 10,2 mg/dL üzerinde (hiperkalsemi eğilimi). D vitamini veya kalsiyum takviyesi başlanmamalı; albümin ile düzeltilmiş kalsiyum ve paratiroid hormonu (PTH) hekimce değerlendirilmelidir." };
-          if (v < 8.6) return { level: "low_likely", sources: ["UNVERIFIED"], text: "Total kalsiyum 8,6 mg/dL altında. Total kalsiyum serum albümin düzeyine bağlıdır (albümin düşüklüğünde yalancı düşük görünebilir); 25(OH)D, magnezyum, albümin ve PTH ile birlikte değerlendirilmelidir." };
-          return { level: "adequate", sources: ["UNVERIFIED"], text: "" };
+          /* Minisola 2015 (BMJ): hafif <12, orta 12–14, ağır ≥14 mg/dL. Cooper 2008 (BMJ): ağır hipokalsemi <1,9 mmol/L (≈7,6 mg/dL). */
+          if (v >= 14) return { level: "urgent", side: "high", sources: ["CAL_HYPER"], text: "Total kalsiyum 14 mg/dL (3,5 mmol/L) veya üzerinde: ağır hiperkalsemi, hiperkalsemik kriz riski. Bugün acil servis veya hekim değerlendirmesi gerekir; D vitamini ve kalsiyum takviyelerini kullanmayın." };
+          if (v >= 12) return { level: "urgent", side: "high", sources: ["CAL_HYPER"], text: "Total kalsiyum 12 mg/dL (3,0 mmol/L) veya üzerinde: orta derecede hiperkalsemi. D vitamini ve kalsiyum takviyelerini kullanmayın; PTH, albümin, fosfor ve böbrek fonksiyonları için gecikmeden hekim değerlendirmesi gerekir." };
+          if (v < 7.6) return { level: "urgent", side: "low", sources: ["CAL_HYPO"], text: "Total kalsiyum 7,6 mg/dL (1,9 mmol/L) altında: ağır hipokalsemi olasılığı (albüminle düzeltme gerekir). Kas krampı, uyuşma veya kasılma varsa acil; yoksa gecikmeden hekim değerlendirmesi isteyin." };
+          if (v > 10.2) return { level: "high_review", sources: ["CAL_HYPER"], text: "Total kalsiyum 10,2–12 mg/dL arasında: hafif hiperkalsemi eğilimi. D vitamini veya kalsiyum takviyesi başlanmamalı; albüminle düzeltilmiş kalsiyum ve paratiroid hormonu (PTH) hekimce değerlendirilmelidir." };
+          if (v < 8.6) return { level: "low_likely", sources: ["CAL_HYPO"], text: "Total kalsiyum 8,6 mg/dL altında. Total kalsiyum serum albümin düzeyine bağlıdır (albümin düşüklüğünde yalancı düşük görünebilir); 25(OH)D, magnezyum, albümin ve PTH ile birlikte değerlendirilmelidir." };
+          return { level: "adequate", sources: ["CAL_HYPER"], text: "" };
         },
-        zinc(v) {
-          if (v < 70) return { level: "low_likely", sources: ["UNVERIFIED"], text: "Serum çinko 70 µg/dL altında: eksiklik olası. Açlık durumu, albümin düzeyi ve akut faz yanıtı (CRP) çinkoyu düşürebilir; uzun süreli yüksek doz (>40 mg/gün) çinko kullanımı bakır emilimini bozabileceğinden hekim kontrolünde planlanmalıdır." };
-          if (v > 150) return { level: "high_review", sources: ["UNVERIFIED"], text: "Serum çinko 150 µg/dL üzerinde: aşırı çinko alımı bağırsaktan bakır (Cu) emilimini bloke ederek bakır eksikliği ve sideroblastik anemiye yol açabilir. Çinko içeren takviyeleri hekimle gözden geçirin." };
-          return { level: "adequate", sources: ["UNVERIFIED"], text: "" };
+        mcv(v) {
+          if (v < 80) return { level: "borderline", sources: ["MCV_AAFP"], text: "MCV 80 fL altında (mikrositoz): en sık nedenleri demir eksikliği ve talasemi taşıyıcılığıdır. İlk değerlendirme ferritin ile yapılır; tek başına demir takviyesi gerekçesi değildir." };
+          if (v > 100) return { level: "high_review", sources: ["MCV_AAFP"], text: "MCV 100 fL üzerinde (makrositoz): alkol, B12 veya folat eksikliği, bazı ilaçlar, tiroid ve karaciğer nedenleri hekimle araştırılmalıdır." };
+          return { level: "adequate", sources: ["MCV_AAFP"], text: "" };
         },
-        folate(v) {
-          if (v < 4.0) return { level: "low_likely", sources: ["UNVERIFIED"], text: "Serum folat 4,0 ng/mL altında: folat eksikliği ile uyumlu. Tedaviye başlamadan önce mutlaka B12 düzeyi kontrol edilmelidir; tek başına folat verilmesi B12 eksikliğinin hematolojik bulgularını maskelerken nörolojik hasarı ilerletebilir." };
-          if (v > 20.0) return { level: "high_review", sources: ["UNVERIFIED"], text: "Serum folat 20,0 ng/mL üzerinde. Yüksek folat düzeyi eşlik eden B12 eksikliğini gizleyebileceğinden B12 vitamini ve kullandığınız takviyeler hekimle değerlendirilmelidir." };
-          return { level: "adequate", sources: ["UNVERIFIED"], text: "" };
+        rbcFolate(v, ctx) {
+          if (v < 140) return { level: "low_likely", sources: ["RBCFOL_CUT", "BOND_FOL"], text: "Eritrosit folatı 140 ng/mL (305 nmol/L) altında: uzun dönem folat eksikliği olası. B12 eksikliği dışlanmadan yüksek doz folik asit başlanmamalıdır; hemogram ve B12 ile hekim değerlendirmesi önerilir." };
+          const reproductiveFemale = ctx.gender !== "E" && Number(ctx.age) >= 15 && Number(ctx.age) <= 49;
+          if (reproductiveFemale && v < 400) return { level: "adequate", sources: ["WHO2015_RBCFOL"], text: "Eksiklik eşiğinin üzerinde. Bilgi: WHO, doğurganlık çağındaki kadınlarda nöral tüp defektini önlemek için toplum düzeyinde >400 ng/mL hedefler; bu eşik bireysel riski tahmin etmez. Gebelik planlayan kadınlara günlük 400 µg folik asit önerilir; hekiminizle konuşun." };
+          return { level: "adequate", sources: ["RBCFOL_CUT"], text: "" };
+        },
+        hcy(v) {
+          if (v > 100) return { level: "urgent", side: "high", sources: ["REFSUM_HCY"], text: "Homosistein 100 µmol/L üzerinde: çok yüksek (ağır). Kalıtsal metabolizma bozukluğu veya ağır B12/folat eksikliği açısından gecikmeden hekim değerlendirmesi gerekir." };
+          if (v > 30) return { level: "high_review", sources: ["REFSUM_HCY"], text: "Homosistein 30 µmol/L üzerinde: belirgin yüksek. B12 (ve metilmalonik asit), folat, böbrek işlevi ve tiroid hekimle değerlendirilmelidir." };
+          if (v > 15) return { level: "high_review", sources: ["REFSUM_HCY"], text: "Homosistein yaygın üst referansın (≈15 µmol/L) üzerinde: B12/folat eksikliği, böbrek işlevi, tiroid, bazı ilaçlar ve örnek işleme sonucu etkileyebilir. Tek başına takviye gerekçesi değildir." };
+          return { level: "adequate", sources: ["REFSUM_HCY"], text: "" };
         },
         crp(v) {
           if (v > 50) return { level: "urgent", side: "high", sources: ["UNVERIFIED"], text: "CRP 50 mg/L üzerinde: belirgin akut bakteriyel enfeksiyon veya ciddi sistemik enflamasyon olasılığı. Ateş, titreme, nefes darlığı veya odak belirtileriyle birlikte gecikmeden hekime başvurun; aktif enfeksiyon sırasında demir takviyesi kullanımı hekime danışılmalıdır." };
@@ -289,7 +337,7 @@
       }
 
       const handles = key => Boolean(PARAMS[key]);
-      return { PARAMS, parseReference, evaluate, evaluateForEngine, handles, STATUS_TEXT: VITA_LAB_STATUS_TEXT, SOURCES: VITA_LAB_SOURCES };
+      return { PARAMS, parseReference, evaluate, evaluateForEngine, handles, STATUS_TEXT: VITA_LAB_STATUS_TEXT, SOURCES: VITA_LAB_SOURCES, VERSION: VITA_LAB_THRESHOLDS_VERSION };
     })();
     window.VitaLabEvidence = VitaLabEvidence;
 
@@ -367,5 +415,18 @@
       t("Eski motor yüksek B12'yi artık toksik saymaz", KDSSRuleEngine.evaluate("b12", 2000, "K", "").isToxic === false);
       t("Eski motor kreatinin/ALT güvenlik süzgecini korur", KDSSRuleEngine.evaluate("alt", 90, "K", "").isToxic === true);
       t("Kaynak kayıtlarında doğrulanmamış eşik işaretli", VITA_LAB_SOURCES.UNVERIFIED.title.includes("doğrulanmadı"));
+      t("Folat 2,5 ng/mL eksiklik olası (BOND <3)", ev("folate", 2.5).clinical.level === "low_likely");
+      t("Folat 3,5 ng/mL sınırda (homosistein temelli <4)", ev("folate", 3.5).clinical.level === "borderline");
+      t("Çinko 72 µg/dL erkekte sınırda, kadında yeterli (IZiNCG 74/70)", ev("zinc", 72, { gender: "E" }).clinical.level === "borderline" && ev("zinc", 72, { gender: "K" }).clinical.level === "adequate");
+      t("Çinko sınırda değeri takviye adayı üretmez", eng("zinc", 65).isLow === false && ev("zinc", 65).clinical.level === "borderline");
+      t("AGA ve Endocrine Society 2024 kaynakları PubMed DOI ile kayıtlı", /doi\.org/.test(VITA_LAB_SOURCES.AGA2020_IDA.url) && /dgae290/.test(VITA_LAB_SOURCES.ENDO2024_D.url));
+      t("Kalsiyum 14 mg/dL ağır hiperkalsemi (acil), 12 orta (acil), 11 hafif (inceleme)", ev("ca", 14).clinical.level === "urgent" && ev("ca", 12).clinical.level === "urgent" && ev("ca", 11).clinical.level === "high_review");
+      t("Kalsiyum 7,5 mg/dL ağır hipokalsemi (Cooper 2008, <7,6)", ev("ca", 7.5).clinical.level === "urgent" && ev("ca", 7.7).clinical.level === "low_likely");
+      t("MCV 76 fL mikrositoz sınırda, takviye adayı değil; 104 fL makrositoz", ev("mcv", 76).clinical.level === "borderline" && eng("mcv", 76).isLow === false && ev("mcv", 104).clinical.level === "high_review");
+      t("Eritrosit folatı 120 ng/mL eksiklik olası; 600 ng/mL yeterli", ev("rbcFolate", 120).clinical.level === "low_likely" && ev("rbcFolate", 600).clinical.level === "adequate");
+      t("Eritrosit folatı 300 ng/mL (30 yaş kadın): WHO 400 eşiği yalnızca bilgi, eksiklik sayılmaz", ev("rbcFolate", 300, { gender: "K", age: 30 }).clinical.level === "adequate" && /toplum düzeyinde/.test(ev("rbcFolate", 300, { gender: "K", age: 30 }).clinical.text));
+      t("Eritrosit folatı nmol/L referansı dönüştürülür (305 nmol/L ≈ 134,6 ng/mL)", (r => r.compatible && r.converted && Math.abs(r.min - 134.6) < 0.5)(VitaLabEvidence.parseReference("rbcFolate", "305-2000 nmol/L")));
+      t("Homosistein 18 µmol/L inceleme, 120 µmol/L acil, 10 yeterli", ev("hcy", 18).clinical.level === "high_review" && ev("hcy", 120).clinical.level === "urgent" && ev("hcy", 10).clinical.level === "adequate");
+      t("Her kaynağın doğrulama düzeyi ve eşik sürümü tanımlı", Object.values(VITA_LAB_SOURCES).every(s => s.check) && VitaLabEvidence.VERSION === VITA_LAB_THRESHOLDS_VERSION);
       return R;
     };

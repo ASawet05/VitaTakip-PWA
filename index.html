@@ -19,16 +19,18 @@
 <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
 <meta content="VitaTakip" name="apple-mobile-web-app-title"/>
 <meta content="#0f172a" name="theme-color"/>
+<meta content="light" name="color-scheme"/>
+<script>/* Tema: sayfa çizilmeden uygulanır (beyaz parlama olmasın). Ayrıntı: js/tema.js */(function(){try{var t=localStorage.getItem("vitatakip_theme")||"light";if(t==="dark"||(t==="system"&&window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.setAttribute("data-theme","dark");}}catch(e){}})();</script>
 <!-- Tailwind utilities are bundled locally to avoid blocking first render. -->
 <!-- Google Fonts: Inter -->
 <!-- Uses Inter when already available; otherwise falls back immediately to the system UI font. -->
 <!-- Font Awesome 6 CDN -->
 <!-- build:css -->
-<link rel="stylesheet" href="./css/app.css?v=67f00fc1e7">
-<script defer src="./js/app.1.js?v=67f00fc1e7"></script>
-<script defer src="./js/app.2.js?v=67f00fc1e7"></script>
-<script defer src="./js/app.3.js?v=67f00fc1e7"></script>
-<script defer src="./js/app.4.js?v=67f00fc1e7"></script>
+<link rel="stylesheet" href="./css/app.css?v=ec890dc44b">
+<script defer src="./js/app.1.js?v=ec890dc44b"></script>
+<script defer src="./js/app.2.js?v=ec890dc44b"></script>
+<script defer src="./js/app.3.js?v=ec890dc44b"></script>
+<script defer src="./js/app.4.js?v=ec890dc44b"></script>
 <!-- /build:css -->
 <!-- Chart.js loads only if a trend chart is needed. -->
 <!-- PDF.js loads only when a user selects a PDF for analysis. -->
@@ -389,9 +391,6 @@
 <button class="vcard-add px-3.5 py-1.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white border border-teal-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm" id="btnOpenAddSupplementModal" onclick="if(window.SoundEffects) SoundEffects.playClick(); openAddSupplementModal()" type="button">
 <i class="fa-solid fa-plus text-teal-200"></i> <span>Takviye Ekle</span>
 </button>
-<button aria-hidden="true" class="hidden px-3.5 py-1.5 rounded-xl text-xs font-bold bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-300 transition items-center gap-1.5 cursor-pointer shadow-sm" id="btnHomeScanSupplementBarcode" onclick="if(window.SoundEffects) SoundEffects.playClick(); openAddSupplementModal()" style="display:none !important" title="Kamerayla barkod okutarak veya kutu fotoğrafı yükleyerek yalnızca vitamin ve gıda takviyesi ekle" type="button">
-<i class="fa-solid fa-barcode text-sky-700"></i> <span>Barkod ile Takviye Ekle</span>
-</button>
 </div>
 </div>
 <!-- Günlük Protokol İçi Canlı İlaç-Besin Etkileşim Uyarısı (Yalnızca Çakışma Varsa Görünür) -->
@@ -509,7 +508,7 @@
 <div class="flex flex-wrap items-center gap-2">
 <button class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-teal-600 to-medTeal-600 hover:from-teal-700 hover:to-medTeal-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-sm" onclick="if(window.SoundEffects) SoundEffects.playClick(); openENabizModal()" type="button">
 <i class="fa-solid fa-file-pdf text-amber-300"></i>
-<span>📄 e-Nabız Tahlil PDF'i Yükle</span>
+<span>e-Nabız Tahlil PDF'i Yükle</span>
 </button>
 <div class="flex items-center gap-1.5 bg-teal-50 px-2.5 py-1 rounded-xl border border-teal-200">
 <label class="text-[11px] font-bold text-teal-950 flex items-center gap-1">
@@ -638,6 +637,23 @@
 </div>
 <button type="button" class="mt-1 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-semibold text-sky-800 hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-300" aria-label="mcv tahlil referans bilgisi" onclick="showLabReferenceGuide('mcv')"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i><span>Referans bilgisi</span></button>
 <details class="mt-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5" data-legacy-lab-range-editor><summary class="cursor-pointer list-none text-[10px] font-semibold text-slate-500 flex items-center justify-between gap-2"><span>Laboratuvar aralığını ekle (isteğe bağlı)</span><i class="fa-solid fa-chevron-down text-[9px]" aria-hidden="true"></i></summary><label class="mt-2 block text-[10px] font-semibold text-slate-600" for="inputLabRef-mcv">Rapordaki referans aralığı (birimiyle)</label><input autocomplete="off" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" id="inputLabRef-mcv" maxlength="100" oninput="handleLabReferenceChange('mcv', this.value)" placeholder="Örn. raporda yazan aralık" type="text"/></details>
+</div>
+<!-- 13-14. Ek testler (isteğe bağlı): folat/B12 sonucu sınırdayken kesinleştirmeye yardımcı -->
+<div class="bg-slate-50 p-3 rounded-xl border border-slate-200" id="labCardRbcFolate">
+<label class="text-[11px] font-bold text-slate-700 block truncate" title="Eritrosit (RBC) folatı — uzun dönem folat durumu">Eritrosit Folatı <span class="font-semibold text-slate-500">(isteğe bağlı)</span></label>
+<div class="relative mt-1">
+<input class="w-full bg-white text-xs font-bold rounded-lg px-2.5 py-1.5 border border-slate-300 focus:outline-none focus:border-teal-500" id="inputLabRbcFolate" placeholder="Örn: 420" type="text" inputmode="decimal" autocomplete="off"/>
+<span class="absolute right-2 top-1.5 text-[10px] text-slate-400 font-semibold">ng/mL</span>
+</div>
+<details class="mt-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5" data-legacy-lab-range-editor><summary class="cursor-pointer list-none text-[10px] font-semibold text-slate-500 flex items-center justify-between gap-2"><span>Laboratuvar aralığını ekle (isteğe bağlı)</span><i class="fa-solid fa-chevron-down text-[9px]" aria-hidden="true"></i></summary><label class="mt-2 block text-[10px] font-semibold text-slate-600" for="inputLabRef-rbcFolate">Rapordaki referans aralığı</label><input autocomplete="off" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" id="inputLabRef-rbcFolate" maxlength="100" oninput="handleLabReferenceChange('rbcFolate', this.value)" placeholder="Örn. raporda yazan aralık" type="text"/></details>
+</div>
+<div class="bg-slate-50 p-3 rounded-xl border border-slate-200" id="labCardHcy">
+<label class="text-[11px] font-bold text-slate-700 block truncate" title="Plazma total homosistein — B12/folat eksikliğinin işlevsel göstergesi">Homosistein <span class="font-semibold text-slate-500">(isteğe bağlı)</span></label>
+<div class="relative mt-1">
+<input class="w-full bg-white text-xs font-bold rounded-lg px-2.5 py-1.5 border border-slate-300 focus:outline-none focus:border-teal-500" id="inputLabHcy" placeholder="Örn: 11" type="text" inputmode="decimal" autocomplete="off"/>
+<span class="absolute right-2 top-1.5 text-[10px] text-slate-400 font-semibold">µmol/L</span>
+</div>
+<details class="mt-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5" data-legacy-lab-range-editor><summary class="cursor-pointer list-none text-[10px] font-semibold text-slate-500 flex items-center justify-between gap-2"><span>Laboratuvar aralığını ekle (isteğe bağlı)</span><i class="fa-solid fa-chevron-down text-[9px]" aria-hidden="true"></i></summary><label class="mt-2 block text-[10px] font-semibold text-slate-600" for="inputLabRef-hcy">Rapordaki referans aralığı</label><input autocomplete="off" class="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" id="inputLabRef-hcy" maxlength="100" oninput="handleLabReferenceChange('hcy', this.value)" placeholder="Örn. raporda yazan aralık" type="text"/></details>
 </div>
 </div>
 <!-- Tahlil Kaydet & Sesli Okuma Barı -->
@@ -1259,6 +1275,9 @@
 <button class="hidden px-3.5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs transition flex items-center gap-2 cursor-pointer shadow-sm" id="btnPrintFridgeReport" aria-hidden="true" tabindex="-1" onclick="if(window.SoundEffects) SoundEffects.playClick(); printFridgeSchedule()" type="button">
 <i class="fa-solid fa-calendar-days"></i><span>Buzdolabı Çizelgesi</span>
 </button>
+<button class="px-4 py-2.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 font-bold text-xs transition flex items-center gap-2 cursor-pointer shadow-sm" id="btnShareSummaryCard" type="button" data-vpk="open">
+<i class="fa-solid fa-share-nodes" aria-hidden="true"></i><span>Paylaşım kartı</span>
+</button>
 <button class="px-5 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 text-white font-bold text-xs shadow transition flex items-center justify-center gap-2 cursor-pointer" id="btnPrintDoctorReport" onclick="if(window.SoundEffects) SoundEffects.playClick(); printDoctorReport()" type="button">
 <i class="fa-solid fa-print"></i>
 <span>Raporu Yazdır / PDF İndir</span>
@@ -1602,7 +1621,7 @@ Bu belge, hastanın VitaTakip sistemine beyan ettiği demografik veriler, seçil
 </div>
 </div>
 <div class="pt-2 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-500" id="reportPrintFooterMeta">
-<span>VitaTakip Klinik Ön Değerlendirme Özeti — Tıbbi tanı ve reçete yerine geçmez.</span>
+<span>VitaTakip Klinik Ön Değerlendirme Özeti · <span id="reportThresholdVersion">Eşikler: PubMed doğrulamalı</span> <button type="button" class="vkb-link no-print" data-vt-src="all">Kaynak listesi</button></span>
 <span id="reportFooterDateAndPage">Rapor Tarihi: — | Sayfa: 1 / 1 (Kısa Doktor Raporu)</span>
 </div>
 </div>
@@ -1621,6 +1640,19 @@ Bu belge, hastanın VitaTakip sistemine beyan ettiği demografik veriler, seçil
 <div>
 <h2 class="text-sm sm:text-base font-black text-white">Ayarlar</h2>
 </div>
+</div>
+</div>
+
+<!-- Görünüm: açık / koyu / sistem (js/tema.js; tercih bu cihazda saklanır) -->
+<div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3" id="settingsSectionTheme">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i></div>
+<div class="min-w-0"><h3 class="text-xs sm:text-sm font-black text-navy-900">Görünüm</h3><p class="text-[11px] text-slate-500">Koyu tema gece kullanımında gözü daha az yorar.</p></div>
+</div>
+<div class="vt-seg" role="group" aria-label="Tema seçimi">
+<button type="button" data-vt-theme="light" aria-pressed="true"><i class="fa-solid fa-sun" aria-hidden="true"></i> Açık</button>
+<button type="button" data-vt-theme="dark" aria-pressed="false"><i class="fa-solid fa-moon" aria-hidden="true"></i> Koyu</button>
+<button type="button" data-vt-theme="system" aria-pressed="false"><i class="fa-solid fa-mobile-screen" aria-hidden="true"></i> Sistem</button>
 </div>
 </div>
 
@@ -2005,7 +2037,6 @@ Verileri Sil
 <!-- Eski öğeler (kod uyumluluğu için duruyor, gizli) -->
 <div class="vsa-legacy" aria-hidden="true">
 <select id="addSupQuickDbSelect" tabindex="-1"><option value=""></option></select>
-<button id="btnAddSupLookupBarcode" tabindex="-1" onclick="handleAddSupBarcodeDecoded(document.getElementById('addSupBarcodeInput').value)" type="button">Sorgula</button>
 <button id="addSupModalCameraPermBadge" tabindex="-1" onclick="if(window.SoundEffects) SoundEffects.playClick(); handleModalCameraPermBadgeClick('addSupplementModal')" type="button"><span>Kamera İzni</span></button>
 <span id="addSupDbBadge"></span>
 </div>
@@ -2445,7 +2476,7 @@ Verileri Sil
 <ol class="vg-steps my-3" id="vitaGuideSteps"></ol>
 <div class="vg-tips">
   <div><i class="fa-solid fa-robot text-indigo-700"></i><span><strong>Vita AI:</strong> kısa sorular sorun. Ayarlar'dan Gemini API anahtarı ekler ve paylaşım onayı verirseniz Gemini, aksi hâlde cihazdaki yerel motor yanıtlar. Anahtarınız yalnızca bu tarayıcıda, kendi hesabınızda saklanır.</span></div>
-  <div><i class="fa-solid fa-shield-halved text-teal-700"></i><span><strong>Gizlilik:</strong> verileriniz yalnızca bu tarayıcıda tutulur; başka cihaza taşımak için Ayarlar &gt; "Yedek İndir"i kullanın. Uygulama tanı koymaz, karar için hekime danışın.</span></div>
+  <div><i class="fa-solid fa-shield-halved text-teal-700"></i><span><strong>Gizlilik:</strong> verileriniz yalnızca bu tarayıcıda tutulur; başka cihaza taşımak için Ayarlar &gt; "Yedek İndir"i kullanın.</span></div>
 </div>
 <div class="mt-4 flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
   <button type="button" onclick="if(window.SoundEffects) SoundEffects.playClick(); closeOnboardingModal()" class="min-h-10 rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200">Kapat</button>

@@ -72,7 +72,7 @@
 
       if (todayScheduled.length === 0) {
         checklistContainer.innerHTML = `
-          <div class="text-center py-3 px-3 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-xs text-slate-500">
+          <div class="vt-empty vt-empty--sup text-xs">
             <i class="fa-solid fa-pills text-amber-500 mr-1"></i> Henüz takviye yok. “Takviye Ekle” ile başlayın.
           </div>
         `;
@@ -1423,6 +1423,8 @@
       if (labs.hb !== null && labs.hb !== undefined) filledLabs.push(`Hb: ${labs.hb}`);
       if (labs.mcv !== null && labs.mcv !== undefined) filledLabs.push(`MCV: ${labs.mcv}`);
       if (labs.crp !== null && labs.crp !== undefined) filledLabs.push(`CRP: ${labs.crp}`);
+      if (labs.rbcFolate !== null && labs.rbcFolate !== undefined) filledLabs.push(`Eritrosit folatı: ${labs.rbcFolate}`);
+      if (labs.hcy !== null && labs.hcy !== undefined) filledLabs.push(`Homosistein: ${labs.hcy}`);
 
       if (filledLabs.length > 0) {
         if (labDateBadge) labDateBadge.textContent = latestSaved ? `Son Tahlil: ${latestSaved.date}` : "Güncel Kayıt";
@@ -1439,7 +1441,7 @@
       ["inputLabD3", "d3"], ["inputLabB12", "b12"], ["inputLabFerritin", "ferritin"],
       ["inputLabMg", "mg"], ["inputLabCalcium", "ca"], ["inputLabZinc", "zinc"],
       ["inputLabCreatinine", "creatinine"], ["inputLabFolate", "folate"], ["inputLabAlt", "alt"],
-      ["inputLabHb", "hb"], ["inputLabMcv", "mcv"], ["inputLabCrp", "crp"]
+      ["inputLabHb", "hb"], ["inputLabMcv", "mcv"], ["inputLabCrp", "crp"], ["inputLabRbcFolate", "rbcFolate"], ["inputLabHcy", "hcy"]
     ];
     // Kullanıcının elle boşalttığı tahlil alanları: boşaltılan alanın kayıttan da silinmesi için izlenir.
     const labFieldTouched = new Set();
@@ -1453,7 +1455,7 @@
       ["inputLabRef-d3", "d3"], ["inputLabRef-b12", "b12"], ["inputLabRef-ferritin", "ferritin"],
       ["inputLabRef-mg", "mg"], ["inputLabRef-ca", "ca"], ["inputLabRef-zinc", "zinc"],
       ["inputLabRef-creatinine", "creatinine"], ["inputLabRef-folate", "folate"], ["inputLabRef-alt", "alt"],
-      ["inputLabRef-hb", "hb"], ["inputLabRef-mcv", "mcv"], ["inputLabRef-crp", "crp"]
+      ["inputLabRef-hb", "hb"], ["inputLabRef-mcv", "mcv"], ["inputLabRef-crp", "crp"], ["inputLabRef-rbcFolate", "rbcFolate"], ["inputLabRef-hcy", "hcy"]
     ];
 
     function saveLabDraft() {
@@ -1543,7 +1545,9 @@
         alt: getParsedLabInput("inputLabAlt"),
         hb: getParsedLabInput("inputLabHb"),
         mcv: getParsedLabInput("inputLabMcv"),
-        crp: getParsedLabInput("inputLabCrp")
+        crp: getParsedLabInput("inputLabCrp"),
+        rbcFolate: getParsedLabInput("inputLabRbcFolate"),
+        hcy: getParsedLabInput("inputLabHcy")
       };
       if (Object.values(values).every(value => value === null)) {
         showToast("Boş Sonuç", "Lütfen en az bir tahlil değeri giriniz.", "warning");
@@ -1622,7 +1626,7 @@
       state.labHistory.sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0));
       state.labValues = typeof buildLabValuesFromRecord === "function"
         ? buildLabValuesFromRecord(state.labHistory[0] || cleanRecord)
-        : { d3: cleanRecord.d3, b12: cleanRecord.b12, ferritin: cleanRecord.ferritin, iron: cleanRecord.iron ?? null, tsat: cleanRecord.tsat ?? null, mg: cleanRecord.mg, ca: cleanRecord.ca, zinc: cleanRecord.zinc, creatinine: cleanRecord.creatinine, folate: cleanRecord.folate, alt: cleanRecord.alt, hb: cleanRecord.hb ?? null, hgb: cleanRecord.hb ?? null, mcv: cleanRecord.mcv ?? null, crp: cleanRecord.crp ?? null };
+        : { d3: cleanRecord.d3, b12: cleanRecord.b12, ferritin: cleanRecord.ferritin, iron: cleanRecord.iron ?? null, tsat: cleanRecord.tsat ?? null, mg: cleanRecord.mg, ca: cleanRecord.ca, zinc: cleanRecord.zinc, creatinine: cleanRecord.creatinine, folate: cleanRecord.folate, alt: cleanRecord.alt, hb: cleanRecord.hb ?? null, hgb: cleanRecord.hb ?? null, mcv: cleanRecord.mcv ?? null, crp: cleanRecord.crp ?? null, rbcFolate: cleanRecord.rbcFolate ?? null, hcy: cleanRecord.hcy ?? null };
       state.labReferences = typeof safeStructuredClone === "function"
         ? safeStructuredClone((state.labHistory[0] || cleanRecord).references || {})
         : { ...((state.labHistory[0] || cleanRecord).references || {}) };
@@ -1674,7 +1678,9 @@
         alt: getParsedLabInput("inputLabAlt"),
         hb: getParsedLabInput("inputLabHb"),
         mcv: getParsedLabInput("inputLabMcv"),
-        crp: getParsedLabInput("inputLabCrp")
+        crp: getParsedLabInput("inputLabCrp"),
+        rbcFolate: getParsedLabInput("inputLabRbcFolate"),
+        hcy: getParsedLabInput("inputLabHcy")
       };
       const hasAnyEnteredValue = Object.values(enteredValues).some(v => v !== null && v !== undefined && Number.isFinite(v));
 
@@ -1720,6 +1726,8 @@
           hb: pickLabValue("hb"),
           mcv: pickLabValue("mcv"),
           crp: pickLabValue("crp"),
+          rbcFolate: pickLabValue("rbcFolate"),
+          hcy: pickLabValue("hcy"),
           references: { ...(baseRecord?.references || {}), ...enteredRefs },
           applicationReferences: typeof getVitaAppLabReferenceMap === "function" ? getVitaAppLabReferenceMap(genderAtTest) : {},
           genderAtTest,
@@ -1728,7 +1736,7 @@
         };
 
         // Tüm değerleri boşalan kayıt arşivde tutulmaz (tam temizlik).
-        const recordIsEmpty = ["d3", "b12", "ferritin", "mg", "ca", "zinc", "creatinine", "folate", "alt", "hb", "mcv", "crp"]
+        const recordIsEmpty = ["d3", "b12", "ferritin", "mg", "ca", "zinc", "creatinine", "folate", "alt", "hb", "mcv", "crp", "rbcFolate", "hcy"]
           .every(k => mergedRecord[k] === null || mergedRecord[k] === undefined);
         if (recordIsEmpty) {
           if (existingIndex >= 0) state.labHistory.splice(existingIndex, 1);
@@ -1768,7 +1776,7 @@
         } else {
           state.labValues = typeof createEmptyLabValuesState === "function"
             ? createEmptyLabValuesState()
-            : { d3: null, b12: null, ferritin: null, iron: null, tsat: null, mg: null, ca: null, zinc: null, creatinine: null, folate: null, alt: null, hb: null, hgb: null, rbc: null, hct: null, mcv: null, crp: null, hba1c: null, tsh: null, ft4: null };
+            : { d3: null, b12: null, ferritin: null, iron: null, tsat: null, mg: null, ca: null, zinc: null, creatinine: null, folate: null, alt: null, hb: null, hgb: null, rbc: null, hct: null, mcv: null, crp: null, rbcFolate: null, hcy: null, hba1c: null, tsh: null, ft4: null };
           state.labReferences = typeof createEmptyLabReferencesState === "function" ? createEmptyLabReferencesState() : {};
         }
       }
@@ -1870,7 +1878,9 @@
       { key: "alt", label: "ALT", unit: "U/L" },
       { key: "hb", label: "Hemoglobin", unit: "g/dL" },
       { key: "mcv", label: "MCV", unit: "fL" },
-      { key: "crp", label: "CRP", unit: "mg/L" }
+      { key: "crp", label: "CRP", unit: "mg/L" },
+      { key: "rbcFolate", label: "Eritrosit folatı", unit: "ng/mL" },
+      { key: "hcy", label: "Homosistein", unit: "µmol/L" }
     ];
 
     function getLabHistoryMetric(record, metric) {
@@ -2085,7 +2095,7 @@
         const latest = state.labHistory[0];
         state.labValues = typeof buildLabValuesFromRecord === "function"
           ? buildLabValuesFromRecord(latest)
-          : { d3: latest.d3, b12: latest.b12, ferritin: latest.ferritin, iron: latest.iron ?? null, tsat: latest.tsat ?? null, mg: latest.mg, ca: latest.ca, zinc: latest.zinc, creatinine: latest.creatinine, folate: latest.folate, alt: latest.alt ?? null, hb: latest.hb ?? null, hgb: latest.hb ?? null, mcv: latest.mcv ?? null, crp: latest.crp ?? null };
+          : { d3: latest.d3, b12: latest.b12, ferritin: latest.ferritin, iron: latest.iron ?? null, tsat: latest.tsat ?? null, mg: latest.mg, ca: latest.ca, zinc: latest.zinc, creatinine: latest.creatinine, folate: latest.folate, alt: latest.alt ?? null, hb: latest.hb ?? null, hgb: latest.hb ?? null, mcv: latest.mcv ?? null, crp: latest.crp ?? null, rbcFolate: latest.rbcFolate ?? null, hcy: latest.hcy ?? null };
         state.labReferences = typeof safeStructuredClone === "function"
           ? safeStructuredClone(latest.references || {})
           : { ...(latest.references || {}) };
@@ -2096,7 +2106,7 @@
       } else {
         state.labValues = typeof createEmptyLabValuesState === "function"
           ? createEmptyLabValuesState()
-          : { d3: null, b12: null, ferritin: null, iron: null, tsat: null, mg: null, ca: null, zinc: null, creatinine: null, folate: null, alt: null, hb: null, hgb: null, rbc: null, hct: null, mcv: null, crp: null, hba1c: null, tsh: null, ft4: null };
+          : { d3: null, b12: null, ferritin: null, iron: null, tsat: null, mg: null, ca: null, zinc: null, creatinine: null, folate: null, alt: null, hb: null, hgb: null, rbc: null, hct: null, mcv: null, crp: null, rbcFolate: null, hcy: null, hba1c: null, tsh: null, ft4: null };
         state.labReferences = typeof createEmptyLabReferencesState === "function" ? createEmptyLabReferencesState() : {};
         try {
           if (activeUserId) {
@@ -2158,7 +2168,9 @@
         alt: { label: "ALT", unit: "U/L", color: "#be123c" },
         hb: { label: "Hemoglobin", unit: "g/dL", color: "#dc2626" },
         mcv: { label: "MCV", unit: "fL", color: "#9333ea" },
-        crp: { label: "CRP", unit: "mg/L", color: "#475569" }
+        crp: { label: "CRP", unit: "mg/L", color: "#475569" },
+        rbcFolate: { label: "Eritrosit folatı", unit: "ng/mL", color: "#15803d" },
+        hcy: { label: "Homosistein", unit: "µmol/L", color: "#a16207" }
       };
       const metricKey = metricMap[select?.value] ? select.value : "d3";
       const metric = metricMap[metricKey];
@@ -2263,7 +2275,9 @@
         { key: 'alt', name: 'ALT (Karaciğer Enzimi)', unit: 'U/L', inverseMarker: true },
         { key: 'hb', name: 'Hemoglobin', unit: 'g/dL' },
         { key: 'mcv', name: 'MCV', unit: 'fL' },
-        { key: 'crp', name: 'CRP', unit: 'mg/L', inverseMarker: true }
+        { key: 'crp', name: 'CRP', unit: 'mg/L', inverseMarker: true },
+        { key: 'rbcFolate', name: 'Eritrosit Folatı', unit: 'ng/mL' },
+        { key: 'hcy', name: 'Homosistein', unit: 'µmol/L', inverseMarker: true }
       ];
 
       const trendMessages = [];

@@ -501,7 +501,7 @@ function checkPendingSymptomReviews() {
       const allowed = {
         d3: ["ng/ml", "nmol/l"], b12: ["pg/ml", "ng/l", "pmol/l"], ferritin: ["ng/ml", "ug/l", "pmol/l"], mg: ["mg/dl", "mmol/l", "meq/l"],
         ca: ["mg/dl", "mmol/l"], zinc: ["ug/dl", "umol/l"], creatinine: ["mg/dl", "umol/l"], folate: ["ng/ml", "nmol/l"], alt: ["u/l", "iu/l"],
-        hb: ["g/dl", "g/l"], mcv: ["fl"], crp: ["mg/l", "mg/dl"]
+        hb: ["g/dl", "g/l"], mcv: ["fl"], crp: ["mg/l", "mg/dl"], rbcFolate: ["ng/ml", "nmol/l"], hcy: ["umol/l"]
       }[key] || [];
       if (detected) return allowed.includes(detected);
       // Birim yazılmamışsa fakat sayısal aralık parametrenin makul sınırları içindeyse uyumlu kabul et
@@ -510,7 +510,7 @@ function checkPendingSymptomReviews() {
       const plausible = {
         d3: [1, 250], b12: [20, 5000], ferritin: [1, 5000], mg: [0.3, 10],
         ca: [4, 20], zinc: [5, 500], creatinine: [0.1, 15], folate: [0.2, 100], alt: [0, 500],
-        hb: [3, 25], mcv: [40, 150], crp: [0, 500]
+        hb: [3, 25], mcv: [40, 150], crp: [0, 500], rbcFolate: [20, 3000], hcy: [1, 400]
       }[key];
       if (!plausible) return false;
       const [lo, hi] = plausible;
@@ -535,7 +535,8 @@ function checkPendingSymptomReviews() {
       ["inputLabD3", "d3"], ["inputLabB12", "b12"], ["inputLabFerritin", "ferritin"],
       ["inputLabMg", "mg"], ["inputLabCalcium", "ca"], ["inputLabZinc", "zinc"],
       ["inputLabCreatinine", "creatinine"], ["inputLabFolate", "folate"], ["inputLabAlt", "alt"],
-      ["inputLabHb", "hb"], ["inputLabMcv", "mcv"], ["inputLabCrp", "crp"]
+      ["inputLabHb", "hb"], ["inputLabMcv", "mcv"], ["inputLabCrp", "crp"],
+      ["inputLabRbcFolate", "rbcFolate"], ["inputLabHcy", "hcy"]
     ];
 
     /* Ölçülebilir (fizyolojik olarak mümkün) değer aralıkları. Referans aralığı DEĞİLDİR: yalnızca yazım/birim
@@ -545,7 +546,8 @@ function checkPendingSymptomReviews() {
       tsat: [1, 100, "%"], mg: [0.3, 10, "mg/dL"], ca: [3, 20, "mg/dL"], zinc: [10, 500, "µg/dL"],
       creatinine: [0.1, 25, "mg/dL"], folate: [0.3, 100, "ng/mL"], alt: [1, 10000, "U/L"], hb: [2, 25, "g/dL"],
       hgb: [2, 25, "g/dL"], hct: [5, 75, "%"], rbc: [0.5, 10, "milyon/µL"], mcv: [40, 150, "fL"],
-      crp: [0, 1000, "mg/L"], hba1c: [2, 25, "%"], tsh: [0.001, 500, "mIU/L"], ft4: [0.05, 15, "ng/dL"]
+      crp: [0, 1000, "mg/L"], hba1c: [2, 25, "%"], tsh: [0.001, 500, "mIU/L"], ft4: [0.05, 15, "ng/dL"],
+      rbcFolate: [20, 3000, "ng/mL"], hcy: [1, 400, "µmol/L"]
     };
     function isVitaLabValuePlausible(key, value) {
       const range = VITA_LAB_PLAUSIBLE_RANGES[key];

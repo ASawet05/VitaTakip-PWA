@@ -298,6 +298,8 @@ function getDoctorReportMode() {
         hb: resolveLabVal("hb"),
         mcv: resolveLabVal("mcv"),
         crp: resolveLabVal("crp"),
+        rbcFolate: resolveLabVal("rbcFolate"),
+        hcy: resolveLabVal("hcy"),
         creatinine: resolveLabVal("creatinine"),
         alt: resolveLabVal("alt"),
         ca: resolveLabVal("ca"),
@@ -331,10 +333,12 @@ function getDoctorReportMode() {
         { name: "Total Kalsiyum", val: labs.ca, ref: reportReference("ca"), key: "ca" },
         { name: "Serum Magnezyum", val: labs.mg, ref: reportReference("mg"), key: "mg" },
         { name: "Folat (B9 Vitamini)", val: labs.folate, ref: reportReference("folate"), key: "folate" },
-        { name: "Serum Çinko", val: labs.zinc, ref: reportReference("zinc"), key: "zinc" }
+        { name: "Serum Çinko", val: labs.zinc, ref: reportReference("zinc"), key: "zinc" },
+        { name: "Eritrosit Folatı", val: labs.rbcFolate, ref: reportReference("rbcFolate"), key: "rbcFolate" },
+        { name: "Homosistein", val: labs.hcy, ref: reportReference("hcy"), key: "hcy" }
       ];
 
-      const units = { d3: "ng/mL", b12: "pg/mL", ferritin: "ng/mL", mg: "mg/dL", ca: "mg/dL", zinc: "µg/dL", creatinine: "mg/dL", folate: "ng/mL", alt: "U/L", hb: "g/dL", mcv: "fL", crp: "mg/L" };
+      const units = { d3: "ng/mL", b12: "pg/mL", ferritin: "ng/mL", mg: "mg/dL", ca: "mg/dL", zinc: "µg/dL", creatinine: "mg/dL", folate: "ng/mL", alt: "U/L", hb: "g/dL", mcv: "fL", crp: "mg/L", rbcFolate: "ng/mL", hcy: "µmol/L" };
       const crpNum = parseLabNumericValue(labs.crp);
       const hbNum = parseLabNumericValue(labs.hb);
 
@@ -640,7 +644,9 @@ function getDoctorReportMode() {
             { name: "ALT (Karaciğer)", key: "alt", unit: "U/L" },
             { name: "Hemoglobin", key: "hb", unit: "g/dL" },
             { name: "MCV", key: "mcv", unit: "fL" },
-            { name: "CRP", key: "crp", unit: "mg/L" }
+            { name: "CRP", key: "crp", unit: "mg/L" },
+            { name: "Eritrosit folatı", key: "rbcFolate", unit: "ng/mL" },
+            { name: "Homosistein", key: "hcy", unit: "µmol/L" }
           ];
 
           const rowsHtml = tList.filter(t => recentLabRecords.some(r => r && r[t.key] !== null && r[t.key] !== undefined && r[t.key] !== "")).map(t => {
@@ -765,7 +771,9 @@ function getDoctorReportMode() {
         { key: "zinc", label: "Serum Çinko", unit: "µg/dL", v: zinc },
         { key: "creatinine", label: "Serum Kreatinin", unit: "mg/dL", v: creatinine },
         { key: "alt", label: "ALT (Karaciğer Enzimi)", unit: "U/L", v: alt },
-        { key: "crp", label: "CRP (Akut Faz Reaktanı)", unit: "mg/L", v: crp }
+        { key: "crp", label: "CRP (Akut Faz Reaktanı)", unit: "mg/L", v: crp },
+        { key: "rbcFolate", label: "Eritrosit Folatı", unit: "ng/mL", v: val("rbcFolate") },
+        { key: "hcy", label: "Homosistein", unit: "µmol/L", v: val("hcy") }
       ];
 
       const evaluatedLabs = [];
@@ -2337,7 +2345,7 @@ function getDoctorReportMode() {
           <div class="flex items-start space-x-2">
             <div class="w-6 h-6 rounded-full bg-teal-600 text-white flex items-center justify-center text-[10px] shrink-0 font-bold">AI</div>
             <div class="bg-white p-3 rounded-2xl rounded-tl-none border border-slate-200 shadow-xs text-slate-700 max-w-[88%]">
-              <p>Sohbet geçmişi temizlendi. Merhaba <strong>${escapeHtmlText(p.name || "Kullanıcı")}</strong>! Sorunuz için yalnızca ilgili kayıtları, dış AI paylaşımını ayrıca onaylamanız halinde kullanırım. Açıklamalarım ön bilgilendirme amaçlıdır; hekim muayenesi veya önerisinin yerine geçmez.</p>
+              <p>Sohbet geçmişi temizlendi. Merhaba <strong>${escapeHtmlText(p.name || "Kullanıcı")}</strong>! Sorunuz için yalnızca ilgili kayıtları, dış AI paylaşımını ayrıca onaylamanız halinde kullanırım.</p>
             </div>
           </div>
         `;
@@ -2393,7 +2401,7 @@ function getDoctorReportMode() {
           ferritin: ["Ferritin", "ng/mL"], mg: ["Magnesium", "mg/dL"],
           ca: ["Calcium", "mg/dL"], zinc: ["Zinc", "µg/dL"],
           creatinine: ["Creatinine", "mg/dL"], folate: ["Folate", "ng/mL"],
-          alt: ["ALT", "U/L"], hb: ["Hemoglobin", "g/dL"], mcv: ["MCV", "fL"], crp: ["CRP", "mg/L"]
+          alt: ["ALT", "U/L"], hb: ["Hemoglobin", "g/dL"], mcv: ["MCV", "fL"], crp: ["CRP", "mg/L"], rbcFolate: ["Eritrosit folatı", "ng/mL"], hcy: ["Homosistein", "µmol/L"]
         };
         const labValues = state.labValues || {};
         const labReferences = state.labReferences || {};
@@ -2484,7 +2492,9 @@ function getDoctorReportMode() {
           { key: "alt", label: "ALT", unit: "U/L", terms: ["alt", "karaciğer", "karaciger"] },
           { key: "hb", label: "Hemoglobin", unit: "g/dL", terms: ["hemoglobin", "hgb", "hemogram", "kansızlık", "kansizlik", "anemi"] },
           { key: "mcv", label: "MCV", unit: "fL", terms: ["mcv", "hemogram"] },
-          { key: "crp", label: "CRP", unit: "mg/L", terms: ["crp", "c-reaktif", "enflamasyon", "iltihap"] }
+          { key: "crp", label: "CRP", unit: "mg/L", terms: ["crp", "c-reaktif", "enflamasyon", "iltihap"] },
+          { key: "rbcFolate", label: "Eritrosit folatı", unit: "ng/mL", terms: ["eritrosit folat", "rbc folat", "alyuvar folat"] },
+          { key: "hcy", label: "Homosistein", unit: "µmol/L", terms: ["homosistein", "homocysteine"] }
         ];
         const queryTokens = query.split(/[^a-z0-9]+/).filter(Boolean);
         const asksForLabs = includes("tahlil", "laboratuvar", "test sonucu", "sonuçlarım", "değerlerim", "kan tahlili");
@@ -2988,7 +2998,9 @@ YANIT BİÇİMİ (zorunlu): Sıradan bir kullanıcının anlayacağı sade dille
           { key: "alt", label: "ALT", unit: "U/L" },
           { key: "hb", label: "Hemoglobin", unit: "g/dL" },
           { key: "mcv", label: "MCV", unit: "fL" },
-          { key: "crp", label: "CRP", unit: "mg/L" }
+          { key: "crp", label: "CRP", unit: "mg/L" },
+          { key: "rbcFolate", label: "Eritrosit folatı", unit: "ng/mL" },
+          { key: "hcy", label: "Homosistein", unit: "µmol/L" }
         ];
         const presentLabs = labItems.filter(item => val(item.key) !== null);
         const evaluateLab = item => {
@@ -3141,7 +3153,7 @@ YANIT BİÇİMİ (zorunlu): Sıradan bir kullanıcının anlayacağı sade dille
           addTopic("dizziness", "Baş dönmesi", "Baş dönmesi tansiyon değişimi, sıvı kaybı, iç kulak, kan şekeri, kansızlık veya ilaçlarla ilişkili olabilir. Tek başına vitamin eksikliği belirlemez.", "Sürenin, ayağa kalkmakla ilişkinin, sıvı alımının ve ilaçların notunu tutun. Bayılma, göğüs ağrısı, yeni güçsüzlük veya konuşma bozukluğunda acil yardım alın.");
         }
         if (has("kramp", "kas seyrim", "kas seğir", "kasim kasil", "kas agrisi", "kas ağrısı")) {
-          addTopic("cramps", "Kas krampları", `${val("mg") !== null ? keyLab("mg") : "Magnezyum sonucu profilde kayıtlı değil."} Kramp egzersiz, sıvı durumu, bazı ilaçlar veya elektrolit değişimleriyle ilişkili olabilir; tek başına magnezyum eksikliğini kanıtlamaz.`, "Krampların zamanını, egzersiz/sıvı durumunu ve ilaçları gözden geçirin. Tekrarlıyorsa değerlendirme alın; böbrek işlevi bilinmeden elektrolit takviyesine başlamayın.");
+          addTopic("cramps", "Kas krampları", `${val("mg") !== null ? keyLab("mg") : "Magnezyum sonucu profilde kayıtlı değil."} Kramp egzersiz, sıvı durumu, bazı ilaçlar veya elektrolit değişimleriyle ilişkili olabilir; tek başına magnezyum eksikliğini kanıtlamaz. Cochrane 2020 incelemesine göre magnezyum takviyesi yaşlı yetişkinlerdeki gece kramplarını anlamlı biçimde azaltmıyor.`, "Krampların zamanını, egzersiz/sıvı durumunu ve ilaçları gözden geçirin. Tekrarlıyorsa değerlendirme alın; böbrek işlevi bilinmeden elektrolit takviyesine başlamayın.");
         }
         if (has("uyuyam", "uyku duzen", "uykusuz", "uykuya dalam", "uykum", "uyku kalitesi")) {
           addTopic("sleep", "Uyku", "Uyku sorunu stres, düzensiz saatler, kafein, ağrı, uyku apnesi veya ilaçlarla ilişkili olabilir; tek başına magnezyum eksikliği göstermez.", "Uyku ve kafein saatlerini bir hafta kaydedin, sabit uyanma saati deneyin. Sorun sürüyorsa veya gündüz işlevini etkiliyorsa değerlendirme alın; takviyeyi uyku ilacı gibi kullanmayın.");

@@ -1,6 +1,6 @@
 
 (function(){
- const labDefs=[['d3','Vitamin D3','inputLabRef-d3'],['b12','Vitamin B12','inputLabRef-b12'],['ferritin','Ferritin','inputLabRef-ferritin'],['mg','Magnezyum','inputLabRef-mg'],['ca','Kalsiyum','inputLabRef-ca'],['zinc','Çinko','inputLabRef-zinc'],['creatinine','Kreatinin','inputLabRef-creatinine'],['folate','Folat','inputLabRef-folate'],['alt','ALT','inputLabRef-alt'],['hb','Hemoglobin','inputLabRef-hb'],['mcv','MCV','inputLabRef-mcv'],['crp','CRP','inputLabRef-crp']];
+ const labDefs=[['d3','Vitamin D3','inputLabRef-d3'],['b12','Vitamin B12','inputLabRef-b12'],['ferritin','Ferritin','inputLabRef-ferritin'],['mg','Magnezyum','inputLabRef-mg'],['ca','Kalsiyum','inputLabRef-ca'],['zinc','Çinko','inputLabRef-zinc'],['creatinine','Kreatinin','inputLabRef-creatinine'],['folate','Folat','inputLabRef-folate'],['alt','ALT','inputLabRef-alt'],['hb','Hemoglobin','inputLabRef-hb'],['mcv','MCV','inputLabRef-mcv'],['crp','CRP','inputLabRef-crp'],['rbcFolate','Eritrosit folatı','inputLabRef-rbcFolate'],['hcy','Homosistein','inputLabRef-hcy']];
  function init(){
   const labs=document.getElementById('view-labs');
   if(labs && !document.getElementById('vitaLabRangesModal')){

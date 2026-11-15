@@ -37,5 +37,6 @@ Gerçek Chrome ile (puppeteer-core) uygulamayı açıp kullanıcı gibi dener.
 | `acilis-hizi.mjs` | Açılış ekranının kapanma süresi, istek sayısı ve boyut (yavaş 4G + 4× yavaş işlemci; ilk ve tekrar ziyaret) |
 | `sifre.mjs` | Yerel hesap şifresi: PBKDF2 + kullanıcı başına tuz, Türkçe karakter çakışması yok, eski kayıtların girişte taşınması, hesap silme onayında "sil"/"SİL" |
 | `fotograf-barkod.mjs` | Fotoğraftan barkod okuma (BarcodeDetector yokken ZXing), 0 ile başlayan EAN-13/UPC-A eşleşmesi, kamera izni olmadan galeriden fotoğraf, barkodsuz fotoğrafta ürün uydurmama, anahtarsızken Gemini onayı sorulmaması ve yapay zekâ düğmelerinin "anahtar gerekli" işareti |
+| `v3-ozellikler.mjs` | V3: açık/koyu/sistem tema (yazdırmada her zaman açık), tahlil kartlarında (i) kaynak penceresi ve eşik sürümü, eritrosit folatı + homosistein alanları, kaynaklı kalsiyum/MCV eşikleri, kontrol ölçümü hatırlatması (yerel + .ics; dosyada sonuç değeri yok), cihazda üretilen paylaşım kartı (PNG); dış istek yok |
 
 Çalıştırma: `node smoke.mjs` (her biri bağımsızdır).
