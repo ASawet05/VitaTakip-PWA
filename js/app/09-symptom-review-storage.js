@@ -864,6 +864,7 @@ function checkPendingSymptomReviews() {
         document.getElementById("modalInputWeight").value = state.user.weight || 68;
         document.getElementById("modalInputActivity").value = state.user.activity || "sedentary";
         const pregSel = document.getElementById("modalPregnancyStatus"); if (pregSel) pregSel.value = state.user.gender === "E" ? "" : (state.user.pregnancyStage || (state.user.pregnancyLactation ? "lactation" : ""));
+        syncVitaPregnancyFieldForGender();
         const lifestyleValues = [["modalDietPattern", state.user.dietPattern || "unspecified"], ["modalFishPerWeek", state.user.fishPerWeek || "unspecified"], ["modalRedMeatPerWeek", state.user.redMeatPerWeek || "unspecified"], ["modalSunExposure", state.user.sunExposureDaily || "unspecified"]];
         lifestyleValues.forEach(([id, value]) => { const el = document.getElementById(id); if (el) el.value = value; });
 
@@ -1060,6 +1061,19 @@ function checkPendingSymptomReviews() {
     /* Profil (yaş, cinsiyet, boy, kilo) kullanıcı tarafından kaydedildi mi? Kaydedilmediyse varsayılan değerler
        (28 yaş, kadın, 168 cm, 68 kg) analizde gerçekmiş gibi kullanılmamalıdır. Bayrağı olmayan eski kayıtlarda
        değerler varsayılanlardan farklıysa profil tamamlanmış kabul edilir. */
+    /* Biyolojik cinsiyet "Erkek" ise Gebelik / emzirme alanı gizlenir ve değeri sıfırlanır (kurulum ve profil düzenleme). */
+    function syncVitaPregnancyFieldForGender() {
+      const g = document.getElementById("modalInputGender"), box = document.getElementById("modalPregnancyBox"), sel = document.getElementById("modalPregnancyStatus");
+      if (!g || !box) return;
+      const male = g.value === "E";
+      box.hidden = male;
+      box.classList.toggle("hidden", male);
+      box.setAttribute("aria-hidden", male ? "true" : "false");
+      if (male && sel) sel.value = "";
+    }
+    window.syncVitaPregnancyFieldForGender = syncVitaPregnancyFieldForGender;
+    document.addEventListener("change", e => { if (e.target && e.target.id === "modalInputGender") syncVitaPregnancyFieldForGender(); });
+
     function isVitaProfileComplete() {
       const u = typeof state !== "undefined" ? state.user : null;
       if (!u) return false;

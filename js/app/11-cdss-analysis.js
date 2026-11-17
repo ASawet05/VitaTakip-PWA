@@ -952,7 +952,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const dietLabel = ({ omnivore: "karışık beslenme", vegetarian: "vejetaryen", vegan: "vegan" })[p.dietPattern] || "belirtilmemiş beslenme biçimi";
         const fishLabel = ({ "0": "balık tüketimi yok", "1": "haftada 1 kez balık", "2-3": "haftada 2–3 kez balık", "4+": "haftada 4+ kez balık" })[p.fishPerWeek] || "balık sıklığı belirtilmemiş";
         const meatLabel = ({ "0": "kırmızı et tüketimi yok", "1": "haftada 1 kez kırmızı et", "2-3": "haftada 2–3 kez kırmızı et", "4+": "haftada 4+ kez kırmızı et" })[p.redMeatPerWeek] || "kırmızı et sıklığı belirtilmemiş";
-        const sunLabel = ({ lt10: "günde 10 dakikadan az", "10-20": "günde 10–20 dakika", "20-30": "günde 20–30 dakika", gt30: "günde 30 dakikadan fazla" })[p.sunExposureDaily] || "güneşlenme süresi belirtilmemiş";
+        const sunLabel = ({ lt10: "günde 10 dakikadan az güneşlenme", "10-20": "günde 10–20 dakika güneşlenme", "20-30": "günde 20–30 dakika güneşlenme", gt30: "günde 30 dakikadan fazla güneşlenme" })[p.sunExposureDaily] || "güneşlenme süresi belirtilmemiş";
         findings.push({ title: "Yaşam tarzı ve beslenme", detail: `${dietLabel}; ${fishLabel}; ${meatLabel}; ${sunLabel}.` });
       }
       const contraindications = [];

@@ -83,6 +83,32 @@
     return '<div class="vds-ring vds-ring--' + tone + '" id="' + id + '" style="--p:' + (p === null ? 0 : p) + '" role="img" aria-label="' + esc(label) + ': ' + (p === null ? "veri yok" : p + "%") + '">' +
       '<div class="vds-ring-in"><b>' + (p === null ? "—" : p + "%") + '</b><small>' + esc(label) + '</small></div></div>';
   }
+  /* VitaSkor ağırlıkları renderDailyTab ile aynıdır: bugün takviye varsa %70 uyum + %30 su; yoksa yalnızca su (%100). */
+  function vitaNoteText() {
+    var n = typeof window.vitaTodaySupplementTotal === "number" ? window.vitaTodaySupplementTotal : null;
+    return n === 0 ? "Yalnızca su hedefi (%100)" : "Takviye uyumu (%70) + su hedefi (%30)";
+  }
+  /* Halka yerinde güncellenir: --p CSS'te @property ile akıcı geçer, ortadaki yüzde sayarak ilerler (Ring Steps). */
+  function updateRing(el, pct, label) {
+    var p = typeof pct === "number" ? Math.max(0, Math.min(100, pct)) : null;
+    var b = el.querySelector(".vds-ring-in b");
+    var from = parseInt(el.dataset.p || "0", 10) || 0, to = p === null ? 0 : p;
+    el.dataset.p = String(to);
+    el.style.setProperty("--p", to);
+    el.setAttribute("aria-label", label + ": " + (p === null ? "veri yok" : p + "%"));
+    if (!b) return;
+    if (p === null) { b.textContent = "—"; return; }
+    var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce || from === to) { b.textContent = to + "%"; return; }
+    var t0 = performance.now(), dur = 850;
+    cancelAnimationFrame(el._raf);
+    var step = function (now) {
+      var k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      b.textContent = Math.round(from + (to - from) * e) + "%";
+      if (k < 1) el._raf = requestAnimationFrame(step);
+    };
+    el._raf = requestAnimationFrame(step);
+  }
   function medStats() {
     var rows = typeof getTodayVitaMedicationDoses === "function" ? getTodayVitaMedicationDoses() : [];
     var block = function (r) { var b = typeof vitaBlockFromClock === "function" ? vitaBlockFromClock(r.dose) : "Sabah"; return b === "Gece" ? "Akşam" : b; };
@@ -95,10 +121,11 @@
     if (!sum.built) return;
     // Vitamin: VitaSkor halkası (değeri renderDailyTab hesaplar)
     var vs = parseInt(String(($("dashVitaSkor") || {}).textContent || "0"), 10) || 0;
-    var vr = $("vdsVitaRing"); if (vr) vr.outerHTML = ring(vs, "vdsVitaRing", "VitaSkor · Uyum", "vita");
+    var vr = $("vdsVitaRing"); if (vr) updateRing(vr, vs, "VitaSkor · Uyum");
+    var vn = $("vdsVitaNote"); if (vn) vn.textContent = vitaNoteText();
     // İlaç: bağımsız İlaç Skoru
     var m = medStats();
-    var mr = $("vdsMedRing"); if (mr) mr.outerHTML = ring(m.pct, "vdsMedRing", "İlaç Skoru", "med");
+    var mr = $("vdsMedRing"); if (mr) updateRing(mr, m.pct, "İlaç Skoru");
     var info = $("vdsMedInfo");
     if (info) info.textContent = !m.rows.length ? "Bugün planlı ilaç dozu yok (gerektiğinde kullanılanlar sayılmaz)." : m.done + " / " + m.rows.length + " doz alındı";
     [["Sabah", "vdsMedMorning"], ["Öğle", "vdsMedNoon"], ["Akşam", "vdsMedEvening"]].forEach(function (p) {
@@ -138,7 +165,7 @@
     var track = document.createElement("div"); track.className = "vds-track"; track.id = "vdsTrack";
     var vit = document.createElement("div"); vit.className = "vds-pane"; vit.id = "vdsPaneVitamin"; vit.setAttribute("role", "tabpanel");
     grid.parentNode.insertBefore(viewport, grid);
-    vit.innerHTML = '<div class="vds-ringrow">' + ring(0, "vdsVitaRing", "VitaSkor · Uyum", "vita") + '<p class="vds-ringnote">Takviye uyumu (%70) + su hedefi (%30)</p></div>';
+    vit.innerHTML = '<div class="vds-ringrow">' + ring(0, "vdsVitaRing", "VitaSkor · Uyum", "vita") + '<p class="vds-ringnote" id="vdsVitaNote">' + vitaNoteText() + '</p></div>';
     vit.appendChild(grid);
     var med = document.createElement("div"); med.className = "vds-pane"; med.id = "vdsPaneMed"; med.setAttribute("role", "tabpanel");
     var card = function (label, id, tone, icon) {

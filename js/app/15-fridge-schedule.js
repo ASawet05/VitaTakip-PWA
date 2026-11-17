@@ -153,17 +153,15 @@ function renderFridgeScheduleSheet() {
           const rawRef = String(refs[spec.key] || state.labReferences?.[spec.key] || "").trim();
           const defaultRef = typeof getVitaLabDefaultReferenceText === "function" ? getVitaLabDefaultReferenceText(spec.key) : "";
           const refText = rawRef || defaultRef || "Belirtilmedi";
-          const evalStatus = typeof evaluateLabValueAgainstReference === "function"
-            ? evaluateLabValueAgainstReference(spec.key, val, rawRef)
-            : { status: "unknown" };
-          let statusHtml = '<span style="color:#475569;font-weight:700">Değerlendirildi</span>';
-          if (evalStatus.status === "normal") {
-            statusHtml = '<span style="background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;padding:2px 6px;border-radius:999px;font-weight:800;font-size:10px">Normal Aralığında</span>';
-          } else if (evalStatus.status === "low") {
-            statusHtml = '<span style="background:#fff1f2;color:#be123c;border:1px solid #fecdd3;padding:2px 6px;border-radius:999px;font-weight:800;font-size:10px">Düşük / Sınır Altı</span>';
-          } else if (evalStatus.status === "high") {
-            statusHtml = '<span style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;padding:2px 6px;border-radius:999px;font-weight:800;font-size:10px">Yüksek / Sınır Üstü</span>';
-          }
+          // Durum, Geçmiş Tahlillerim kartıyla AYNI karşılaştırmadan gelir (birim dönüşümlü: ör. Hb g/L ↔ g/dL).
+          const gender = rec.genderAtTest || user.gender || "K";
+          const cmpRef = rawRef || (rec.applicationReferences && rec.applicationReferences[spec.key]) || (typeof getVitaAppLabReference === "function" ? getVitaAppLabReference(spec.key, gender) : defaultRef);
+          const dir = typeof vitaLabValueDirection === "function" ? vitaLabValueDirection(spec.key, val, cmpRef) : null;
+          const pill = (bg, fg, bd, txt) => `<span style="background:${bg};color:${fg};border:1px solid ${bd};padding:2px 8px;border-radius:999px;font-weight:800;font-size:10px">${txt}</span>`;
+          const statusHtml = dir === "normal" ? pill("#ecfdf5", "#047857", "#a7f3d0", "Normal")
+            : dir === "low" ? pill("#fff1f2", "#be123c", "#fecdd3", "Düşük")
+            : dir === "high" ? pill("#fffbeb", "#b45309", "#fde68a", "Yüksek")
+            : '<span style="color:#64748b;font-weight:700">Aralık yok</span>';
           rows.push(`
             <tr style="border-bottom:1px solid #f1f5f9">
               <td style="padding:5px 8px;font-weight:800;color:#0f172a">${escapeHtmlText(spec.label)}</td>
@@ -175,8 +173,8 @@ function renderFridgeScheduleSheet() {
         });
         if (!rows.length) return "";
         return `
-          <div class="lab-print-record-card" style="margin-top:12px;border:1.5px solid #cbd5e1;border-radius:12px;overflow:hidden;page-break-inside:avoid">
-            <div style="background:#0f172a;color:#fff;padding:7px 12px;display:flex;justify-content:space-between;align-items:center">
+          <div class="lab-print-record-card" data-lab-card style="margin-top:12px;border:1.5px solid #cbd5e1;border-radius:12px;overflow:hidden;break-inside:avoid;page-break-inside:avoid">
+            <div class="lab-print-record-head" style="background:#0f172a;color:#fff;padding:7px 12px;display:flex;justify-content:space-between;align-items:center">
               <strong style="font-size:12px">Tahlil Tarihi: ${recDate}</strong>
               <span style="font-size:10px;color:#5eead4;font-weight:700">${idx === 0 ? "En Güncel Kayıt" : `Arşiv Kaydı #${recordsDesc.length - idx}`}</span>
             </div>
@@ -199,7 +197,7 @@ function renderFridgeScheduleSheet() {
         <div style="border-bottom:2px solid #0f172a;padding-bottom:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
           <div>
             <div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:#0f766e">VitaTakip Pro • Klinik Laboratuvar Arşivi</div>
-            <h1 style="font-size:20px;font-weight:900;color:#0f172a;margin:4px 0 2px">Kan Tahlili Geçmişi ve Boylamsal Takip Raporu</h1>
+            <h1 style="font-size:20px;font-weight:900;color:#0f172a;margin:4px 0 2px">Tahlil Geçmişi ve Boylamsal Takip Raporu</h1>
             <p style="font-size:11px;color:#475569;margin:0">Hekim muayenesi ve laboratuvar izlemi için kronolojik hasta tahlil özeti</p>
           </div>
           <div style="text-align:right;font-size:10px;color:#334155">

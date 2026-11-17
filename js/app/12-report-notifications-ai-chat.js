@@ -220,7 +220,7 @@ function getDoctorReportMode() {
         levothyroxine: "Tiroid ilacı (Levotiroksin)"
       };
       const chronicTextParts = [
-        ...(Array.isArray(p.chronic) ? p.chronic.map(item => chronicLabels[item] || item) : []),
+        ...(Array.isArray(p.chronic) ? p.chronic.map(item => chronicLabels[item] || (typeof getVitaChronicLabel === "function" ? getVitaChronicLabel(item) : item)) : []),
         ...(Array.isArray(p.medications) ? p.medications : [])
       ].filter((v, idx, arr) => v && arr.indexOf(v) === idx);
       document.getElementById("repPatientChronic").textContent = chronicTextParts.length
@@ -2208,8 +2208,24 @@ function getDoctorReportMode() {
           ERROR: "bg-rose-500/15 text-rose-200 border-rose-400/40"
         };
         badge.dataset.state = status;
+        if (status === "LIVE") badge.dataset.verified = "1";
         badge.textContent = labels[status] || labels.UNVERIFIED;
         badge.className = `rounded-full border px-2 py-0.5 text-[9px] font-bold ${colors[status] || colors.UNVERIFIED}`;
+      }
+
+      /* Üst rozet, veri paylaşım onayı ve anahtar durumuyla anında eşitlenir (ilk mesajı beklemeden).
+         Onay yoksa "Yerel bilgi modu"; anahtar yoksa "yapılandırılmadı"; onay geri gelince son doğrulanmış duruma döner. */
+      function syncRuntimeStatusFromConsent() {
+        const badge = document.getElementById("ai-runtime-status");
+        if (!badge) return;
+        const cur = badge.dataset.state;
+        if (cur === "LOADING" && activeRequest && !activeRequest.settled) return;
+        const hasKey = Boolean(getGeminiApiKey());
+        const consent = Boolean(document.getElementById("aiHealthDataConsent")?.checked);
+        if (!hasKey) setRuntimeStatus("CONFIGURATION_REQUIRED");
+        else if (!consent) setRuntimeStatus("LOCAL");
+        else if (typeof navigator !== "undefined" && navigator.onLine === false) setRuntimeStatus("OFFLINE");
+        else if (["LOCAL", "CONFIGURATION_REQUIRED", "OFFLINE", "LOADING"].includes(cur)) setRuntimeStatus(badge.dataset.verified === "1" ? "LIVE" : "UNVERIFIED");
       }
 
       function toggle(forceState) {
@@ -2219,6 +2235,7 @@ function getDoctorReportMode() {
 
         isOpen = typeof forceState === "boolean" ? forceState : !isOpen;
         if (isOpen) {
+          syncRuntimeStatusFromConsent();
           box.classList.remove("hidden");
           const input = document.getElementById("ai-user-input");
           if (input) setTimeout(() => input.focus(), 100);
@@ -2842,6 +2859,7 @@ ${context.length ? context.join("\n") : "Bu soruyla ilgili kişisel sağlık kay
         const checkbox = document.getElementById("aiHealthDataConsent");
         if (checkbox) checkbox.checked = saved;
         updateConsentUI(saved);
+        syncRuntimeStatusFromConsent();
         return saved;
       }
 
@@ -2850,6 +2868,7 @@ ${context.length ? context.join("\n") : "Bu soruyla ilgili kişisel sağlık kay
         persistConsent(Boolean(checked));
         consentPanelExpanded = false;
         updateConsentUI(Boolean(checked));
+        syncRuntimeStatusFromConsent();
         if (!checked) {
           if (activeRequest && !activeRequest.settled) revokeConsent();
           else showToast("Paylaşım onayı kaldırıldı", "Yeni sorular yerel yanıt motoruyla cevaplanacak.", "info");
@@ -3371,7 +3390,7 @@ YANIT BİÇİMİ (zorunlu): Sıradan bir kullanıcının anlayacağı sade dille
         toggle, clearChat, resetSession, sendPreset, handleSubmit, callGeminiAPI, callSelectedAI, toggleVoiceInput, stopVoiceInput, analyzeMedicationImage,
         handleConsentChange, initializeConsent, syncConsentFromStorage, toggleConsentPanel, closeConsentPanel, revokeConsent, useLocalFallback, openConsentSettings,
         toggleMessageSpeech, stopMessageSpeech, openDoctorQuestions, closeDoctorQuestions, copyDoctorQuestions, addDoctorQuestionsToChat,
-        setRuntimeStatus,
+        setRuntimeStatus, syncRuntimeStatusFromConsent,
         previewLocalReply: generateFallbackClinicalReply,
         getModelConfig: () => ({ primary: VITA_GEMINI_PREFERRED_MODELS[0], fallback: VITA_GEMINI_PREFERRED_MODELS[1], lastWorking: safeLocalStorageGetItem("vita_gemini_model_ok") || "" })
       };

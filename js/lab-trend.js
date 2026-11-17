@@ -95,7 +95,8 @@
   var STATUS_TXT = { low: "Düşük", high: "Yüksek", ok: "Normal" };
 
   function chart(s) {
-    var W = 340, H = 232, L = 44, R = 14, T = 16, B = 44;
+    /* T: üst boşluk — birim etiketi (sol üst köşe) en üstteki eksen sayısıyla çakışmaz */
+    var W = 340, H = 244, L = 44, R = 14, T = 28, B = 44;
     var sc = scale(s), n = s.pts.length;
     var X = function (i) { return n === 1 ? (L + W - R) / 2 : L + (W - L - R) * i / (n - 1); };
     var Y = function (v) { return T + (H - T - B) * (1 - (v - sc.min) / (sc.max - sc.min)); };
@@ -111,7 +112,7 @@
       g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y.toFixed(1) + '" y2="' + y.toFixed(1) + '" stroke="#e2e8f0" stroke-width="1"/>' +
         '<text x="' + (L - 5) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="end" font-size="9.5" fill="#64748b">' + fmtD(t, sc.dec) + '</text>';
     });
-    g += '<text x="' + (L - 5) + '" y="' + (T - 5) + '" text-anchor="end" font-size="9" font-weight="700" fill="#475569">' + esc(s.meta.unit) + '</text>';
+    g += '<text class="lt-unit" x="' + (L - 5) + '" y="11" text-anchor="end" font-size="9" font-weight="700" fill="#475569">' + esc(s.meta.unit) + '</text>';
     /* referans sınır çizgileri */
     if (s.range) {
       [s.range[0], s.range[1]].forEach(function (v) {

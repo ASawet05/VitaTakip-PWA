@@ -35,6 +35,16 @@
       .no-print {
         display: none !important;
       }
+      /* Bildirimler (toast) ve yüzen arayüz katmanları PDF/yazdırma çıktısına basılmaz */
+      #toastNotification, .toast, [role="status"].fixed, .vita-toast, #vitaRecheckHome, .vkb-overlay, #vitaSourceModal, #vitaShareCardModal,
+      .vt-sidebar, .vt-sidebar-scrim, .vt-bnav, .vt-dial, .vt-cmd, #vita-ai-widget, #vitaAiFab, .vita-mobile-nav, .vms-strip {
+        display: none !important;
+      }
+      /* Tahlil geçmişi PDF: her tahlil bloğu bölünmeden yeni sayfaya geçer; başlık sayfa sonunda yalnız kalmaz */
+      .lab-print-record-card { break-inside: avoid; page-break-inside: avoid; }
+      .lab-print-record-head { break-after: avoid; page-break-after: avoid; }
+      .lab-print-record-card thead { display: table-header-group; }
+      .lab-print-record-card tr { break-inside: avoid; page-break-inside: avoid; }
       #view-home,
 #view-labs,
 #view-neyim,

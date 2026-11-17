@@ -60,6 +60,7 @@
       document.getElementById("dashEveningCount").textContent = `${eveningItems.filter(i => i.taken).length}/${eveningItems.length}`;
 
       const total = todaySupplements.length;
+      window.vitaTodaySupplementTotal = total;   // Günlük özet halkası açıklaması (ana-sekmeler.js) aynı ağırlığı gösterir
       const taken = todaySupplements.filter(i => i.taken).length;
       const vitaScore = total > 0 ? Math.round((taken / total) * 70 + Math.min(1, state.hydration.current / state.hydration.target) * 30) : Math.round(Math.min(1, state.hydration.current / state.hydration.target) * 100);
 
@@ -1401,7 +1402,7 @@
       if (profSum) {
         profSum.innerHTML = `
           <p><strong>Biyolojik Durum:</strong> ${escapeHtmlText(p.age)} Yaş, ${escapeHtmlText(p.weight)} kg (VKİ: ${escapeHtmlText(p.bmi)})</p>
-          <p><strong>Kayıtlı İlaçlar / Kronik:</strong> ${escapeHtmlText(p.chronic && p.chronic.length ? p.chronic.join(', ') : 'Bilinen yok')}</p>
+          <p><strong>Kayıtlı İlaçlar / Kronik:</strong> ${escapeHtmlText(p.chronic && p.chronic.length ? p.chronic.map(c => (typeof getVitaChronicLabel === 'function' ? getVitaChronicLabel(c) : c)).join(', ') : 'Bilinen yok')}</p>
         `;
       }
 
@@ -1845,8 +1846,47 @@
       return null;
     }
 
+    /* Laboratuvar referansını alanın kanonik birimine çevirir (Klinik Analiz ile aynı kaynak: VitaLabEvidence.parseReference).
+       Ör. Hb "132 - 173 g/L" → 13,2–17,3 g/dL. Birim yazmayan referansta, makul ölçüm aralığına giren TEK birim çarpanı seçilir. */
+    function vitaRangeInCanonicalUnit(key, reference) {
+      const E = window.VitaLabEvidence;
+      if (!key || !E || !E.handles(key)) return null;
+      const parsed = E.parseReference(key, reference);
+      if (!parsed) return null;
+      if (parsed.compatible) return { min: parsed.min, max: parsed.max };
+      const raw = String(reference || "").replace(/,/g, ".");
+      const r = raw.match(/(-?\d+(?:\.\d+)?)\s*[-–—]\s*(-?\d+(?:\.\d+)?)/);
+      if (!r) return null;
+      const P = E.PARAMS[key], [lo, hi] = P.plausible, a = Number(r[1]), b = Number(r[2]);
+      const fits = f => a * f >= lo * 0.5 && b * f <= hi * 1.5 && b * f >= lo;
+      const factors = [...new Set(Object.values(P.units))].filter(fits);
+      if (factors.length === 1) return { min: a * factors[0], max: b * factors[0] };
+      return null;
+    }
+    window.vitaRangeInCanonicalUnit = vitaRangeInCanonicalUnit;
+
+    /* Tek doğru kaynak: Geçmiş Tahlillerim kartı, "Referans dışı" süzgeci ve tahlil geçmişi PDF'i aynı karşılaştırmayı kullanır. */
+    function vitaLabValueDirection(key, value, reference) {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return null;
+      const canon = vitaRangeInCanonicalUnit(key, reference);
+      let range = canon;
+      if (!range) {
+        if (key && !isVitaLabReferenceCompatible(key, reference)) return null;
+        const pr = parseLabReferenceRange(reference);
+        if (!pr) return null;
+        range = pr.comparator === "lt" ? { min: -Infinity, max: pr.max } : pr.comparator === "gt" ? { min: pr.min, max: Infinity } : { min: pr.min, max: pr.max };
+      }
+      if (num < range.min) return "low";
+      if (num > range.max) return "high";
+      return "normal";
+    }
+    window.vitaLabValueDirection = vitaLabValueDirection;
+
     function getProvidedLabRangeStatus(value, reference, key) {
       if (value === null || value === undefined || value === "" || !Number.isFinite(Number(value))) return null;
+      const canon = vitaRangeInCanonicalUnit(key, reference);
+      if (canon) { const n = Number(value); return n < canon.min || n > canon.max ? "outside" : "within"; }
       if (key && !isVitaLabReferenceCompatible(key, reference)) return null;
       const range = parseLabReferenceRange(reference);
       if (!range) return null;

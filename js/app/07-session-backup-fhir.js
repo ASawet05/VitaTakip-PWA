@@ -919,7 +919,9 @@ function checkMidnightReset(userId) {
         : null;
       const displayEgfr = calcEgfr ? calcEgfr.egfr : temporarilyParsedPdfEgfr;
       if (displayEgfr !== null && displayEgfr !== undefined) {
-        const stageText = calcEgfr ? `${calcEgfr.stage} — ${calcEgfr.label}` : "PDF'den okunan eGFR";
+        // calculateCKDEPI_eGFR evre açıklamasını "desc" (eşdeğeri "stageName") alanında döndürür; "label" alanı yoktur.
+        const stageDesc = calcEgfr ? (calcEgfr.desc || calcEgfr.stageName || "") : "";
+        const stageText = calcEgfr ? `${calcEgfr.stage}${stageDesc ? ` — ${stageDesc}` : ""}` : "PDF'den okunan eGFR";
         egfrBannerHtml = `
           <div class="p-3 rounded-xl bg-sky-50 border border-sky-200 text-xs flex items-center justify-between gap-2">
             <div>

@@ -55,6 +55,29 @@ function openAppDrawer() {
       }
     });
 
+    /* Kronik durum / ilaç sınıfı kodlarının (profil > modal_chronic) Türkçe etiketleri — ekranda ham kod gösterilmez. */
+    const VITA_CHRONIC_LABELS = {
+      kidney: "Kronik Böbrek Hastalığı / Düşük GFR",
+      hypertension: "Hipertansiyon",
+      blood_thinner: "Kan Sulandırıcı İlaç",
+      diabetes: "Diyabet / İnsülin Direnci",
+      ppi: "Mide Koruyucu (PPI)",
+      metformin: "Metformin",
+      diuretic: "Tansiyon Diüretiği",
+      levothyroxine: "Tiroid İlacı (Levotiroksin)",
+      antibiotic: "Antibiyotik",
+      bisphosphonate: "Kemik Erimesi İlacı (Bifosfonat)",
+      statin: "Kolesterol İlacı (Statin)",
+      ace_arb: "Tansiyon İlacı (ACE / ARB)"
+    };
+    function getVitaChronicLabel(code) {
+      const c = String(code || "");
+      if (VITA_CHRONIC_LABELS[c]) return VITA_CHRONIC_LABELS[c];
+      const q = (window.VITA_CLINICAL_DRUG_NUTRIENT_DB && VITA_CLINICAL_DRUG_NUTRIENT_DB.quickMedicationClasses || []).find(x => x.code === c);
+      return q ? q.label : c;
+    }
+    window.getVitaChronicLabel = getVitaChronicLabel;
+
     function renderSettingsView() {
       if (typeof recalculateUserBmi === "function") {
         recalculateUserBmi();
@@ -84,9 +107,11 @@ function openAppDrawer() {
         const chronicArr = Array.isArray(p.chronic) ? p.chronic : [];
         const medsArr = Array.isArray(p.medications) ? p.medications : [];
         const total = chronicArr.length + medsArr.length;
+        const labelOf = typeof getVitaChronicLabel === "function" ? getVitaChronicLabel : (x => x);
         medsSummaryEl.textContent = total > 0
-          ? `${total} aktif kayıt (${[...medsArr, ...chronicArr].slice(0, 3).join(", ")})`
+          ? `${total} aktif kayıt (${[...medsArr, ...chronicArr.map(labelOf)].slice(0, 3).join(", ")})`
           : "Kayıtlı ilaç yok";
+        medsSummaryEl.title = [...medsArr, ...chronicArr.map(labelOf)].join(", ");
       }
       if (dataSummaryEl && typeof state !== "undefined") {
         const supCount = Array.isArray(state.supplements) ? state.supplements.length : 0;

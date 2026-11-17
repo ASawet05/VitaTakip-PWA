@@ -335,7 +335,8 @@ html[data-theme="dark"] .vkb-ok{background:rgba(20,184,166,.18);color:#5eead4}ht
 html[data-theme="dark"] .vita-mobile-nav{background:rgba(15,23,42,.92)!important}
 html[data-theme="dark"] .vita-mobile-nav button[aria-current="page"]{background:linear-gradient(180deg,rgba(20,184,166,.22),rgba(20,184,166,.10));color:#5eead4}
 html[data-theme="dark"] img.vt-keep-light,html[data-theme="dark"] .vpk-prev img{filter:none}
-html[data-theme="dark"] #vitaSimpleHost button.vs-btn{color:#042f2e}
+html[data-theme="dark"] #vitaSimpleHost button.vs-btn:not(.vs-btn-ghost){color:#042f2e}
+html[data-theme="dark"] .vds-badge{color:#042f2e!important}
 `;
 for (const [wrap, list] of groups) {
   const ws = wrap ? wrap.split('|') : [];

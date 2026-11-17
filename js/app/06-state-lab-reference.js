@@ -793,6 +793,17 @@ let currentAuthMode = "login";
       }
     }
 
+    /* "Hesabı Unut": hatırlanan hesap ve kalıcı oturum bilgisini temizler (sağlık verileri silinmez). */
+    function forgetRememberedAccount() {
+      safeLocalStorageRemoveItem("vitatakip_remembered_user_id");
+      safeLocalStorageRemoveItem("vitatakip_remembered_fullname");
+      if (!activeUserId) safeLocalStorageRemoveItem("vitatakip_active_session_id");
+      document.getElementById("authRememberedQuickLoginBox")?.classList.add("hidden");
+      const nameInput = document.getElementById("authInputFullName");
+      if (nameInput) nameInput.value = "";
+      setAuthFeedback("Hatırlanan hesap bu cihazdan unutuldu. Verileriniz silinmedi; ad ve şifrenizle giriş yapabilirsiniz.", false);
+    }
+    window.forgetRememberedAccount = forgetRememberedAccount;
     window.isRememberMeEnabled = isRememberMeEnabled;
     window.syncRememberMeButtonUI = syncRememberMeButtonUI;
     window.toggleRememberMeOption = toggleRememberMeOption;

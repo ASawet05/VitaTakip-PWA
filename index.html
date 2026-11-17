@@ -26,11 +26,11 @@
 <!-- Uses Inter when already available; otherwise falls back immediately to the system UI font. -->
 <!-- Font Awesome 6 CDN -->
 <!-- build:css -->
-<link rel="stylesheet" href="./css/app.css?v=ec890dc44b">
-<script defer src="./js/app.1.js?v=ec890dc44b"></script>
-<script defer src="./js/app.2.js?v=ec890dc44b"></script>
-<script defer src="./js/app.3.js?v=ec890dc44b"></script>
-<script defer src="./js/app.4.js?v=ec890dc44b"></script>
+<link rel="stylesheet" href="./css/app.css?v=df1e51db47">
+<script defer src="./js/app.1.js?v=df1e51db47"></script>
+<script defer src="./js/app.2.js?v=df1e51db47"></script>
+<script defer src="./js/app.3.js?v=df1e51db47"></script>
+<script defer src="./js/app.4.js?v=df1e51db47"></script>
 <!-- /build:css -->
 <!-- Chart.js loads only if a trend chart is needed. -->
 <!-- PDF.js loads only when a user selects a PDF for analysis. -->
@@ -2395,6 +2395,7 @@ Verileri Sil
 <i class="fa-solid fa-bolt"></i>
 <span>Hızlı Giriş</span>
 </button>
+<button type="button" class="vta-forget" id="authForgetRememberedBtn" onclick="forgetRememberedAccount()" aria-label="Hesabı unut: hatırlanan hesabı bu cihazdan kaldır" title="Hesabı Unut"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
 </div>
 
 <form id="authForm" novalidate="" onsubmit="return submitAuthForm(event)">

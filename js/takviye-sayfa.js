@@ -242,7 +242,10 @@
     var strength = String(($("manualSupDose") || {}).value || "").trim();
     var hunger = String(($("manualSupHungerNote") || {}).value || "").trim();
     var dayLabel = typeof getSupplementScheduleDaysLabel === "function" ? getSupplementScheduleDaysLabel({ scheduleDays: plan.days }) : "";
-    p.textContent = ["Günde " + daily + " " + unit + (strength ? " (" + strength + ")" : ""), plan.vakits.map(function (v) { return v.vakit + " " + v.clock; }).join(", ") || "vakit seçilmedi", plan.days.length ? dayLabel : "gün seçilmedi", hunger].filter(Boolean).join(" · ");
+    // Her vakit/saat yalnızca bir kez yazılır; açlık notu bir saat ifadesini tekrarlıyorsa özete eklenmez.
+    var slots = []; plan.vakits.forEach(function (v) { var s = v.vakit + " " + v.clock; if (slots.indexOf(s) < 0) slots.push(s); });
+    if (hunger && slots.some(function (s) { return hunger.indexOf(s) >= 0 || hunger.indexOf(s.split(" ")[1]) >= 0; })) hunger = "";
+    p.textContent = ["Günde " + daily + " " + unit + (strength ? " (" + strength + ")" : ""), slots.join(", ") || "vakit seçilmedi", plan.days.length ? dayLabel : "gün seçilmedi", hunger].filter(Boolean).join(" · ");
   }
   function renderAdvice() {
     var box = $("vspAdvice"); if (!box) return;

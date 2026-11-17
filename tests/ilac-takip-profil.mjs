@@ -18,9 +18,9 @@ await sleep(600);
 const menu = await p.evaluate(() => {
   const sec = document.getElementById('drawerSectionMedsSupps');
   const titles = Array.from(document.querySelectorAll('#appDrawer nav [class*="uppercase"], nav .uppercase')).map(e => e.innerText.trim());
-  return { title: sec?.querySelector('.uppercase')?.textContent.trim(), btns: Array.from(sec?.querySelectorAll('button') || []).map(x => x.innerText.trim()), afterReport: !!sec && document.getElementById('drawer-nav-view-report').compareDocumentPosition(sec) === Node.DOCUMENT_POSITION_FOLLOWING, beforeSettings: !!sec && (sec.compareDocumentPosition(document.getElementById('drawer-nav-view-settings')) & Node.DOCUMENT_POSITION_FOLLOWING) > 0 };
+  return { title: sec?.closest('.vt-grp')?.querySelector('.vt-grp-t')?.textContent.trim(), btns: Array.from(sec?.querySelectorAll('button') || []).map(x => x.innerText.trim()), afterReport: !!sec && document.getElementById('drawer-nav-view-report').compareDocumentPosition(sec) === Node.DOCUMENT_POSITION_FOLLOWING, beforeSettings: !!sec && (sec.compareDocumentPosition(document.getElementById('drawer-nav-view-settings')) & Node.DOCUMENT_POSITION_FOLLOWING) > 0 };
 });
-log('Sol menüde Sağlık Modülleri altında "İLAÇLAR & TAKVİYELER": + Takviye Ekle, + İlaç Ekle', menu.title === 'İlaçlar & Takviyeler' && menu.btns.join('|') === '+ Takviye Ekle|+ İlaç Ekle' && menu.afterReport && menu.beforeSettings, JSON.stringify(menu));
+log('Sol menüde (V4 akordeon) "Takviyeler & İlaçlar" grubu: + Takviye Ekle, + İlaç Ekle', menu.title === 'Takviyeler & İlaçlar' && menu.btns.join('|') === '+ Takviye Ekle|+ İlaç Ekle' && menu.afterReport && menu.beforeSettings, JSON.stringify(menu));
 await p.evaluate(() => { openAppDrawer(); document.getElementById('drawer-add-supplement').click(); }); await sleep(400);
 const m1 = await p.evaluate(() => ({ sup: !document.getElementById('addSupplementModal').classList.contains('hidden'), title: document.getElementById('vsaTitle').innerText }));
 await p.evaluate(() => { closeAddSupplementModal(); openAppDrawer(); document.getElementById('drawer-add-medication').click(); }); await sleep(400);

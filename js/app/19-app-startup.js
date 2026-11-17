@@ -45,11 +45,12 @@
       try {
         directSessionId = window.sessionStorage ? window.sessionStorage.getItem("vitatakip_active_session_id") : null;
       } catch (_) {}
+      /* Otomatik giriş YALNIZCA geçerli bir aktif oturum anahtarı varsa yapılır. "Hatırlanan hesap" kaydı
+         (vitatakip_remembered_user_id) yalnızca giriş ekranındaki Hızlı Giriş kartı içindir; kullanıcı bilerek
+         çıkış yaptıysa (aktif oturum silindi) uygulama yeniden açıldığında giriş ekranında beklenir. */
       const savedSessionId =
         directSessionId ||
-        (rememberMeActive
-          ? (safeLocalStorageGetItem("vitatakip_active_session_id") || safeLocalStorageGetItem("vitatakip_remembered_user_id"))
-          : null);
+        (rememberMeActive ? safeLocalStorageGetItem("vitatakip_active_session_id") : null);
       const savedUsers = getUsersDb().filter(u => u && u.id !== "usr_guest_local");
 
       if (savedSessionId && savedSessionId !== "usr_guest_local" && savedUsers.some(user => user.id === savedSessionId)) {

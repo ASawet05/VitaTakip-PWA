@@ -11,7 +11,7 @@ const prep = () => p.evaluate(() => { try { closeProfileModal(); } catch (_) {} 
 await prep();
 
 /* 1) Tema */
-await p.evaluate(() => document.querySelector('[data-vt-theme="dark"]').click()); await sleep(200);
+await p.evaluate(() => document.getElementById('vtThemeToggleSettings').click()); await sleep(900);
 const t1 = await p.evaluate(() => ({ attr: document.documentElement.getAttribute('data-theme'), meta: document.querySelector('meta[name="color-scheme"]').content, bg: getComputedStyle(document.body).backgroundColor, store: localStorage.getItem('vitatakip_theme') }));
 log('Koyu tema: html[data-theme=dark], color-scheme dark, koyu zemin, tercih kaydı', t1.attr === 'dark' && t1.meta === 'dark' && /rgb\(2, 6, 23\)/.test(t1.bg) && t1.store === 'dark', JSON.stringify(t1));
 await p.reload({ waitUntil: 'networkidle0' }); await sleep(1200); await prep();
@@ -21,13 +21,13 @@ const printBg = await p.evaluate(() => getComputedStyle(document.body).backgroun
 await p.emulateMediaType('screen');
 log('Yazdırmada koyu tema uygulanmaz (zemin beyaz/açık)', /255, 255, 255|248, 250, 252|rgba\(0, 0, 0, 0\)/.test(printBg), printBg);
 await p.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
-await p.evaluate(() => document.querySelector('[data-vt-theme="system"]').click()); await sleep(150);
+await p.evaluate(() => { const c = document.getElementById('vtThemeSystem'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sleep(900);
 const sysDark = await p.evaluate(() => document.documentElement.getAttribute('data-theme'));
 await p.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }]); await sleep(200);
 const sysLight = await p.evaluate(() => document.documentElement.getAttribute('data-theme'));
 log('Sistem modu cihaz temasını izler (koyu → açık)', sysDark === 'dark' && sysLight === null, `${sysDark} → ${sysLight}`);
-await p.evaluate(() => document.querySelector('[data-vt-theme="light"]').click()); await sleep(150);
-log('Açık tema varsayılan görünüme döner', await p.evaluate(() => !document.documentElement.hasAttribute('data-theme') && document.querySelector('[data-vt-theme="light"]').getAttribute('aria-pressed') === 'true'));
+await p.evaluate(() => { const c = document.getElementById('vtThemeSystem'); c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); if (VitaTheme.isDark()) document.getElementById('vtThemeToggleSettings').click(); }); await sleep(900);
+log('Açık tema varsayılan görünüme döner', await p.evaluate(() => !document.documentElement.hasAttribute('data-theme') && document.getElementById('vtThemeToggleSettings').getAttribute('aria-checked') === 'false' && localStorage.getItem('vitatakip_theme') === 'light'));
 
 /* 2) Kaynak penceresi + eşik sürümü */
 await p.evaluate(() => navigateToView('view-labs')); await sleep(500);
