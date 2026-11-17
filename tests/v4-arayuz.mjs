@@ -1,12 +1,12 @@
-// V4: 11 cihaz-testi hatasının gerileme testleri + yeni arayüz (kavisli cam yan menü, gündüz/gece anahtarı,
-// yüzen alt gezinme, hızlı eylem menüsü, komut araması, adım çubuğu, halka ve sıvı anahtar). Dış istek olmamalı.
+// V4: 11 cihaz-testi hatasının gerileme testleri + orijinal sade arayüz düzeni (üst bar, 3 katmanlı sol menü,
+// sabit 5 sekmeli alt bar + bilgi şeridi + tek VitaAI düğmesi, Ana Sayfa tek akış). Dış istek olmamalı.
 import { boot, sleep } from './lib.mjs';
 const { b, p, errs } = await boot();
 p.on('dialog', d => d.accept());
 const ext = []; p.on('request', r => { if (!/^(http:\/\/localhost|data:|blob:)/.test(r.url())) ext.push(r.url()); });
 let ok = 0, fail = 0;
 const log = (n, c, x = '') => { c ? ok++ : fail++; console.log(`${c ? 'OK  ' : 'FAIL'} ${n}${x !== '' ? ' -> ' + (typeof x === 'string' ? x : JSON.stringify(x)) : ''}`); };
-const prep = () => p.evaluate(() => { try { closeProfileModal(); } catch (_) {} try { localStorage.setItem('vitatakip_spotlight_seen_' + activeUserId, '1'); document.getElementById('vitaSpotlightLayer')?.classList.add('hidden'); } catch (_) {} });
+const prep = () => p.evaluate(() => { try { closeProfileModal(); } catch (_) {} try { localStorage.setItem('vitatakip_spotlight_seen_' + activeUserId, 'true'); document.getElementById('vitaSpotlightLayer')?.classList.add('hidden'); } catch (_) {} });
 await prep();
 
 /* ---------- Bölüm 1–3: hata gerilemeleri ---------- */
@@ -46,8 +46,8 @@ const r4 = await p.evaluate(async () => {
 log('#4 Onay kaldırılınca ve asistan açılınca rozet anında "Yerel bilgi modu"', r4.afterChange === 'Yerel bilgi modu' && r4.onOpen === 'Yerel bilgi modu', r4);
 
 await p.evaluate(() => showToast('Doktora Özet Raporu Hazırlandı', 'test', 'success')); await p.emulateMediaType('print');
-const r5 = await p.evaluate(() => ['toastNotification', 'vtSpeedDial', 'appDrawer'].map(id => { const e = document.getElementById(id); return e ? getComputedStyle(e).display : 'yok'; }).concat(getComputedStyle(document.querySelector('.vita-mobile-nav')).display));
-log('#5 Yazdırmada toast ve yüzen katmanlar (hızlı menü, yan menü, alt gezinme) gizli', r5.every(d => d === 'none' || d === 'yok'), r5);
+const r5 = await p.evaluate(() => ['toastNotification', 'appDrawer', 'vita-ai-widget'].map(id => { const e = document.getElementById(id); return e ? getComputedStyle(e).display : 'yok'; }).concat(getComputedStyle(document.querySelector('.vita-mobile-nav')).display));
+log('#5 Yazdırmada toast, yan menü, VitaAI ve alt gezinme gizli', r5.every(d => d === 'none' || d === 'yok'), r5);
 const r6b = await p.evaluate(() => { renderLabHistoryPrintSheet(); const c = document.querySelector('#vitaLabHistoryPrintSheet [data-lab-card]'); const cs = getComputedStyle(c); return { bi: cs.breakInside, head: getComputedStyle(c.querySelector('.lab-print-record-head')).breakAfter }; });
 await p.emulateMediaType('screen');
 const r6 = await p.evaluate(() => { const t = document.getElementById('vitaLabHistoryPrintSheet').innerText; return { eval: /Değerlendirildi/.test(t), high: /Yüksek/.test(t), low: /Düşük/.test(t), normal: /Normal/.test(t), title: t.split('\n').some(l => l.trim() === 'Tahlil Geçmişi ve Boylamsal Takip Raporu') }; });
@@ -76,79 +76,54 @@ const r11 = await p.evaluate(async () => {
 });
 log('#11 Grafik birim etiketi en üst eksen sayısıyla çakışmaz; rapor cümlesi "güneşlenme" ile biter', r11.gap > 2 && /10–20 dakika güneşlenme\.$/.test(r11.detail), r11);
 
-/* ---------- Bölüm 4: arayüz ---------- */
+/* ---------- Bölüm 4: orijinal sade arayüz düzeni (V4 yüzen katmanları kaldırıldı) ---------- */
 await p.setViewport({ width: 390, height: 844, deviceScaleFactor: 1, hasTouch: true }); await sleep(300);
-await p.evaluate(() => navigateToView('view-home'));
-const s1 = await p.evaluate(() => ({ groups: [...document.querySelectorAll('#appDrawer .vt-grp .vt-grp-t')].map(e => e.textContent), foot: [...document.querySelectorAll('#appDrawer .vt-sb-foot > button')].map(b => b.id), profile: !!document.querySelector('#vtSbProfile #drawerUserName'), ids: ['drawer-nav-view-home', 'drawer-nav-vita-oyunlar', 'drawer-add-supplement', 'drawer-nav-egfr-calculator'].every(id => document.getElementById(id)) }));
-log('Yan menü: profil kartı, 6 akordeon grup (Genel Bakış … VitaAI & NeyimVar?), altta Ayarlar + Güvenli Çıkış; eski id\'ler korunur', s1.groups.slice(0, 5).join('|') === 'Genel Bakış|Tahlillerim & Trend|Klinik Analiz & Raporlar|Takviyeler & İlaçlar|VitaAI & NeyimVar?' && s1.foot.length === 2 && s1.profile && s1.ids, s1);
-const burger = await p.$('.vt-burger');
-await burger.click(); await sleep(650);
-const s2 = await p.evaluate(() => ({ exp: document.querySelector('.vt-burger').getAttribute('aria-expanded'), open: document.getElementById('appDrawer').classList.contains('vt-open'), x: Math.round(document.getElementById('appDrawer').getBoundingClientRect().left), blur: getComputedStyle(document.getElementById('drawerBackdrop')).backdropFilter }));
-await p.keyboard.press('Escape'); await sleep(650);
-const s2b = await p.evaluate(() => ({ exp: document.querySelector('.vt-burger').getAttribute('aria-expanded'), right: Math.round(document.getElementById('appDrawer').getBoundingClientRect().right) }));
-log('Mobil: ☰ → × (aria-expanded), cam çekmece soldan açılır, arka plan bulanık; Esc ile kapanır', s2.exp === 'true' && s2.open && s2.x === 0 && /blur/.test(s2.blur) && s2b.exp === 'false' && s2b.right <= 0, { s2, s2b });
-await p.evaluate(() => { openAppDrawer(); document.querySelector('.vt-grp[data-grp="klinik"] .vt-grp-h').click(); });
-const s3 = await p.evaluate(() => document.querySelector('.vt-grp[data-grp="klinik"]').classList.contains('is-open'));
-await p.evaluate(() => document.getElementById('drawer-nav-view-report').click()); await sleep(500);
-const s3b = await p.evaluate(() => ({ view: !document.getElementById('view-report').classList.contains('hidden'), closed: !document.getElementById('appDrawer').classList.contains('vt-open') }));
-log('Akordeon grup açılır; menü öğesine tıklayınca sayfa açılır ve çekmece kapanır', s3 && s3b.view && s3b.closed, s3b);
-
-const s4 = await p.evaluate(() => { const nav = document.querySelector('nav.vita-mobile-nav'); const btns = [...nav.querySelectorAll('[data-bnav]')]; return { n: btns.length, labels: btns.map(x => x.textContent.trim()), floating: getComputedStyle(nav.querySelector('.vt-bnav-pill')).backdropFilter }; });
-await p.evaluate(() => document.getElementById('mobile-nav-view-labs').click()); await sleep(650);
-const s4b = await p.evaluate(() => { const on = document.querySelector('.vt-bnav [data-bnav].is-on'), ind = document.querySelector('.vt-bnav-ind'); const label = on.querySelector('span'); const off = document.querySelector('.vt-bnav [data-bnav="home"] span'); return { on: on.dataset.bnav, labelW: label.getBoundingClientRect().width, offW: off.getBoundingClientRect().width, indX: Math.round(ind.getBoundingClientRect().left), onX: Math.round(on.getBoundingClientRect().left), view: !document.getElementById('view-labs').classList.contains('hidden') }; });
-log('Yüzen cam alt gezinme: 5 sekme (Ana Sayfa, Tahliller, Analiz, Takviyeler, VitaAI); kapsül etkin sekmeye kayar, yalnız etkin etiket açılır', s4.n === 5 && s4.labels.join('|') === 'Ana Sayfa|Tahliller|Analiz|Takviyeler|VitaAI' && /blur/.test(s4.floating) && s4b.on === 'labs' && s4b.view && s4b.labelW > 20 && s4b.offW < 1 && Math.abs(s4b.indX - s4b.onX) <= 1, { s4, s4b });
-await p.evaluate(() => document.getElementById('mobile-nav-vitaai').click()); await sleep(300);
-const s5 = await p.evaluate(() => ({ chat: !document.getElementById('vita-ai-chatbox').classList.contains('hidden'), on: document.querySelector('.vt-bnav [data-bnav].is-on')?.dataset.bnav, dialHidden: getComputedStyle(document.getElementById('vtSpeedDial')).display === 'none' }));
-await p.evaluate(() => VitaAIChat.toggle(false)); await sleep(200);
-log('VitaAI sekmesi asistanı açar (sekme etkin); sohbet açıkken hızlı menü gizlenir', s5.chat && s5.on === 'ai' && s5.dialHidden, s5);
-
-const w0 = await p.evaluate(() => state.hydration.current);
-await p.evaluate(() => document.getElementById('vtDialBtn').click()); await sleep(450);
-const s6 = await p.evaluate(() => { const fab = document.getElementById('vitaAiFab').getBoundingClientRect(), dial = document.getElementById('vtDialBtn').getBoundingClientRect(); return { open: document.getElementById('vtSpeedDial').classList.contains('is-open'), exp: document.getElementById('vtDialBtn').getAttribute('aria-expanded'), acts: [...document.querySelectorAll('.vt-dial-act b')].map(x => x.textContent), overlap: !(dial.right <= fab.left || dial.left >= fab.right || dial.bottom <= fab.top || dial.top >= fab.bottom) }; });
-await p.evaluate(() => document.querySelector('.vt-dial-act[data-act="water"]').click()); await sleep(200);
-const w1 = await p.evaluate(() => state.hydration.current);
-log('Hızlı eylem (+): VitaAI düğmesini örtmez; 3 kısayol; +250 ml su ekler', s6.open && s6.exp === 'true' && s6.acts.length === 3 && !s6.overlap && w1 - w0 === 250, { s6, w0, w1 });
-await p.evaluate(() => { document.getElementById('vtDialBtn').click(); document.querySelector('.vt-dial-act[data-act="pdf"]').click(); }); await sleep(300);
-const s6b = await p.evaluate(() => { const m = document.getElementById('eNabizModal'); const open = m && getComputedStyle(m).display !== 'none'; try { closeENabizModal(); } catch (_) {} return { open, labs: !document.getElementById('view-labs').classList.contains('hidden') }; });
-log('Hızlı eylem: e-Nabız PDF yükle penceresi açılır', s6b.open && s6b.labs, s6b);
-
-// Komut araması (masaüstü)
-await p.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 }); await sleep(500);
-await p.keyboard.down('Control'); await p.keyboard.press('KeyK'); await p.keyboard.up('Control'); await sleep(150);
-const c0 = await p.evaluate(() => ({ focus: document.activeElement.id, groups: [...document.querySelectorAll('#globalSearchResults .vt-cmd-g')].map(g => g.textContent) }));
-await p.keyboard.type('fer'); await sleep(200);
-const c1 = await p.evaluate(() => [...document.querySelectorAll('#globalSearchResults .vt-cmd-g')].map(g => g.textContent));
-await p.keyboard.press('Escape'); await p.evaluate(() => document.activeElement.blur());
-await p.keyboard.press('/'); await sleep(100); await p.keyboard.type('ferritin'); await sleep(200);
-const c2 = await p.evaluate(() => ({ focus: document.activeElement.id, first: document.querySelector('#globalSearchResults .vt-cmd-i.is-sel b')?.textContent }));
-await p.keyboard.press('Enter'); await sleep(600);
-const c3 = await p.evaluate(() => ({ labs: !document.getElementById('view-labs').classList.contains('hidden'), focus: document.activeElement.id }));
-log('Komut araması: Ctrl+K ve "/" odaklar; boşken Hızlı İşlemler + Modüller; sonuçlar gruplu; Enter ile tahlil alanına gider', c0.focus === 'globalSearchInput' && c0.groups.join('|') === 'Modüller|Hızlı İşlemler' && c1.includes('Tahlil Parametreleri') && c2.focus === 'globalSearchInput' && /Ferritin/.test(c2.first) && c3.labs && c3.focus === 'inputLabFerritin', { c0, c1, c2, c3 });
-
-// Masaüstü ray
-const d1 = await p.evaluate(async () => { VitaUiV4.setRail(true); await new Promise(r => setTimeout(r, 650)); const a = { rail: document.body.classList.contains('vt-has-rail'), w: Math.round(document.getElementById('appDrawer').getBoundingClientRect().width), pad: getComputedStyle(document.body).paddingLeft, burger: getComputedStyle(document.querySelector('.vt-burger')).display, bnav: getComputedStyle(document.querySelector('nav.vita-mobile-nav')).display };
-  document.getElementById('vtSbPin').click(); await new Promise(r => setTimeout(r, 650));
-  closeAppDrawer(); const b = { w: Math.round(document.getElementById('appDrawer').getBoundingClientRect().width), pad: getComputedStyle(document.body).paddingLeft, labelHidden: getComputedStyle(document.querySelector('.vt-grp-t')).display === 'none', saved: localStorage.getItem('vt_rail_open') };
-  return { a, b }; });
-log('Masaüstü: sabit cam ray (genişletilmiş 284 px ↔ daraltılmış 76 px yalnız ikonlar), içerik kayar; ☰ ve alt gezinme gizli', d1.a.rail && d1.a.w === 284 && d1.a.pad === '284px' && d1.a.burger === 'none' && d1.a.bnav === 'none' && d1.b.w === 76 && d1.b.pad === '76px' && d1.b.labelHidden && d1.b.saved === '0', d1);
-const o1 = await p.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: innerWidth }));
-log('Masaüstü 1440 px: yatay taşma yok', o1.sw === o1.iw, o1);
-
-// Gündüz / gece anahtarı
-const t1 = await p.evaluate(async () => { const btn = document.getElementById('vtThemeToggleHeader'); const vt = typeof document.startViewTransition === 'function'; btn.click(); const portal = document.documentElement.classList.contains('vt-portal'); await new Promise(r => setTimeout(r, 900)); const r = { vt, portal, dark: document.documentElement.getAttribute('data-theme'), checked: btn.getAttribute('aria-checked'), settings: document.getElementById('vtThemeToggleSettings').getAttribute('aria-checked'), portalEnd: document.documentElement.classList.contains('vt-portal') }; btn.click(); await new Promise(r => setTimeout(r, 900)); r.back = document.documentElement.getAttribute('data-theme'); return r; });
-log('Gündüz/gece anahtarı: tıklanan noktadan portal geçişi (View Transitions), iki anahtar eşitlenir, geri alınır', t1.dark === 'dark' && t1.checked === 'true' && t1.settings === 'true' && (!t1.vt || t1.portal) && !t1.portalEnd && t1.back === null, t1);
-
-// Adım çubukları, kademeli kartlar, halka, sıvı anahtar
-const g1 = await p.evaluate(async () => { navigateToView('view-neyim'); await new Promise(r => setTimeout(r, 300)); vitaAnamnesisStep(1); vitaAnamnesisStep(1); await new Promise(r => setTimeout(r, 300)); const segs = [...document.querySelectorAll('#anamnesisCategoryProgress .vt-seg-s')]; return { n: segs.length, done: segs.filter(s => s.classList.contains('is-done') && s.querySelector('.fa-check')).length, cur: segs.findIndex(s => s.classList.contains('is-cur')) }; });
-log('NeyimVar? 7 adımlı segment çubuğu: tamamlanan adımlar ✓, geçerli adım vurgulu', g1.n === 7 && g1.done === 2 && g1.cur === 2, g1);
-const g2 = await p.evaluate(async () => { openProfileModal(true); await new Promise(r => setTimeout(r, 250)); VitaProfileSteps.go(2); await new Promise(r => setTimeout(r, 150)); const r = [...document.querySelectorAll('#profileModal .vpst-tab')].map(t => t.classList.contains('vt-done')); closeProfileModal(); return r; });
-log('İlk kurulum / profil sihirbazı: geçilen adımlar ✓ olur', g2.join() === 'true,true,false', g2);
-const g3 = await p.evaluate(async () => { navigateToView('view-labs'); navigateToView('view-home'); await new Promise(r => setTimeout(r, 60)); const v = document.getElementById('view-home'); const anim = getComputedStyle(v.firstElementChild).animationName; return { st: v.classList.contains('vt-stagger'), anim, idx: [...v.children].filter(c => c.offsetParent !== null).slice(0, 3).map(c => c.style.getPropertyValue('--vt-i')) }; });
-log('Ana Sayfa kartları kademeli (staggered fade-up) yerleşir', g3.st && g3.anim === 'vtFadeUp' && g3.idx.join() === '0,1,2', g3);
-const g4 = await p.evaluate(async () => { toggleDailySummaryPanel && toggleDailySummaryPanel(); await new Promise(r => setTimeout(r, 100)); const ring = document.getElementById('vdsVitaRing'); const before = ring; state.supplements[0].taken = true; saveState(); renderDailyTab(); VitaSummaryTabs.render(); await new Promise(r => setTimeout(r, 120)); const mid = ring.querySelector('b').textContent; await new Promise(r => setTimeout(r, 900)); return { same: document.getElementById('vdsVitaRing') === before, mid, end: ring.querySelector('b').textContent, p: ring.style.getPropertyValue('--p'), tr: getComputedStyle(ring).transitionProperty }; });
-log('Günlük uyum halkası yerinde güncellenir, yüzde akıcı sayar (Ring Steps)', g4.same && /--p/.test(g4.tr) && g4.end === g4.p + '%' && g4.mid !== g4.end, g4);
-const g5 = await p.evaluate(() => ['aiHealthDataConsent', 'settingsCameraAppConsentCheckbox', 'vtThemeSystem'].map(id => { const e = document.getElementById(id); return e && e.classList.contains('vt-liquid') && getComputedStyle(e).appearance === 'none'; }));
-log('Ayarlar anahtarları sıvı dolum (Liquid Fill) stilinde', g5.every(Boolean), g5);
+await p.evaluate(() => { try { finishVitaSpotlightTour(true, { stay: true, quiet: true }); } catch (_) {} navigateToView('view-home'); }); await sleep(300);
+const u1 = await p.evaluate(() => {
+  const h = document.querySelector('body > header');
+  return { burger: !!h.querySelector('button[onclick="openAppDrawer()"] .fa-bars'), logo: !!h.querySelector('img[src*="icon-192"]'), search: !!h.querySelector('#globalSearchInput'), ring: !!h.querySelector('#btnHeaderDailySummary'), profile: !!h.querySelector('#headerProfileBtn, [onclick*="HeaderProfileMenu"]'),
+    noTheme: !h.querySelector('.vt-dn, #vtThemeToggleHeader, [data-vt-theme]'), noV4: !document.querySelector('.vt-sb, .vt-bnav, #vtSpeedDial, .vt-burger, .vt-kbd') };
+});
+log('Üst bar: ☰ + logo, ortada arama, sağda uyum halkası + profil; tema düğmesi ve V4 katmanları yok', Object.values(u1).every(Boolean), u1);
+const u1b = await p.evaluate(() => { navigateToView('view-settings'); return [...document.querySelectorAll('#settingsSectionTheme [data-vt-theme]')].map(b => b.textContent.trim()); });
+log('Tema seçimi yalnızca Ayarlar > Görünüm\'de (Açık / Koyu / Sistem)', u1b.length === 3 && /Açık/.test(u1b[0]) && /Koyu/.test(u1b[1]) && /Sistem/.test(u1b[2]), u1b);
+await p.evaluate(() => { navigateToView('view-home'); openAppDrawer(); }); await sleep(450);
+const u2 = await p.evaluate(() => {
+  const top = document.getElementById('drawerTopFixed'), mid = document.getElementById('drawerScrollArea'), bot = document.getElementById('drawerBottomFixed');
+  const txt = el => [...el.querySelectorAll('button, a, .uppercase')].filter(x => x.offsetParent).map(x => x.textContent.replace(/\s+/g, ' ').trim());
+  const t0 = top.getBoundingClientRect().top, b0 = bot.getBoundingClientRect().top;
+  mid.scrollTop = 9999;
+  const t1 = top.getBoundingClientRect().top, b1 = bot.getBoundingClientRect().top;
+  const fab = document.getElementById('vitaAiFab').getBoundingClientRect();
+  const hit = document.elementFromPoint(fab.left + fab.width / 2, fab.top + fab.height / 2);
+  return { topHasNotif: !!top.querySelector('#drawerQuickNotifToggleBtn'), topHasProfile: !!top.querySelector('#drawerUserName') && !!top.querySelector('#drawerBmiBadge'), mid: txt(mid), bot: txt(bot),
+    fixed: t0 === t1 && b0 === b1, botInView: bot.getBoundingClientRect().bottom <= innerHeight + 1, noAccordion: !document.querySelector('#appDrawer details, #appDrawer [aria-expanded]'), fabUnder: !!hit && (!!hit.closest('#appDrawer') || !!hit.closest('#drawerBackdrop')) };
+});
+const midExp = ['Sağlık Modülleri', 'Ana Sayfa & Günlük Protokol', 'Tahlillerim & e-Nabız PDF', 'NeyimVar? Belirti değerlendirmesi', 'Klinik Analiz Sonuçları', 'Doktora Götürülecek Rapor', 'İlaçlar & Takviyeler', '+ Takviye Ekle', '+ İlaç Ekle', 'Yönetim & Araçlar'];
+log('Sol menü üst sabit alan: bildirim durumu + profil kartı (VKİ, kg/cm)', u2.topHasNotif && u2.topHasProfile, u2);
+log('Sol menü orta alan düz liste, akordeon yok: Sağlık Modülleri → İlaçlar & Takviyeler → Yönetim & Araçlar (Ayarlar, eGFR, Vita Oyunlar)', u2.noAccordion && midExp.every((x, i) => u2.mid[i] && u2.mid[i].toLocaleLowerCase('tr') === x.toLocaleLowerCase('tr')) && /^Ayarlar.*Profil • AI • Yedek/.test(u2.mid[10]) && /eGFR/.test(u2.mid[11]) && /Vita Oyunlar/.test(u2.mid[12]), u2.mid);
+log('Sol menü alt sabit alan: Uygulama Bilgileri & Yardım (Kılavuz, Geri Bildirim, Gizlilik) + Güvenli Çıkış; kaydırınca yerinde kalır', /Uygulama Bilgileri/i.test(u2.bot[0]) && /Kılavuz/.test(u2.bot[1]) && /Geri Bildirim/.test(u2.bot[2]) && /Gizlilik/.test(u2.bot[3]) && /Güvenli Çıkış/.test(u2.bot[4]) && u2.fixed && u2.botInView, u2.bot);
+log('Yan menü açıkken VitaAI düğmesi menü/karartmanın altında kalır', u2.fabUnder, u2);
+await p.evaluate(() => closeAppDrawer()); await sleep(400);
+const u3 = await p.evaluate(() => {
+  const nav = document.querySelector('nav.vita-mobile-nav'), strip = document.querySelector('.vms-strip'), fab = document.getElementById('vitaAiFab');
+  const n = nav.getBoundingClientRect(), s = strip && strip.getBoundingClientRect(), f = fab.getBoundingClientRect();
+  return { labels: [...nav.querySelectorAll('button')].map(x => x.textContent.trim()), full: Math.round(n.width) === innerWidth && Math.round(n.bottom) === innerHeight, stripAbove: !!s && s.height > 0 && s.bottom <= n.top + 1, fabAbove: !!s && f.bottom <= s.top + 1 && f.right > innerWidth - 90, noDial: !document.getElementById('vtSpeedDial') };
+});
+log('Alt bar: tam genişlik sabit 5 sekme (Ana Sayfa, Tahliller, NeyimVar?, Klinik Analiz, Rapor); üstünde bilgi şeridi; şeridin üstünde sağda yalnız VitaAI', u3.labels.join('|') === 'Ana Sayfa|Tahliller|NeyimVar?|Klinik Analiz|Rapor' && u3.full && u3.stripAbove && u3.fabAbove && u3.noDial, u3);
+await p.evaluate(() => document.querySelector('.vms-strip').click()); await sleep(300);
+const u3b = await p.evaluate(() => { const m = [...document.querySelectorAll('[role="dialog"], .fixed')].find(e => e.offsetParent && /Sorumluluk Reddi/i.test(e.textContent)); return !!m; });
+log('Bilgi şeridi Tıbbi Sorumluluk Reddi penceresini açar', u3b);
+await p.keyboard.press('Escape'); await p.evaluate(() => document.querySelectorAll('.vms-close, [data-vms-close]').forEach(b => b.offsetParent && b.click())); await sleep(200);
+const u4 = await p.evaluate(() => {
+  navigateToView('view-home');
+  const order = [...document.querySelectorAll('#homeHeroCard, #homeHydrationCard, #homeCareTabs')].map(e => e.id).join('>');
+  return { order, tabs: [...document.querySelectorAll('#homeCareTabs .vhs-dot')].map(d => d.textContent.trim()), water: [...document.querySelectorAll('#homeHydrationCard button')].map(b => b.textContent.trim()).join(' '), hero: [...document.querySelectorAll('#homeHeroActions button')].map(b => b.textContent.trim()) };
+});
+log('Ana Sayfa tek akış: karşılama → Günlük Sıvı Hedefi (+250/+500) → tek kartta Takviyelerim | İlaçlarım', u4.order === 'homeHeroCard>homeHydrationCard>homeCareTabs' && u4.tabs.join('|') === 'Takviyelerim|İlaçlarım' && /\+250 ml/.test(u4.water) && /\+500 ml/.test(u4.water) && /Buzdolabı/.test(u4.hero[0]) && /Belirtilerimi/.test(u4.hero[1]), u4);
+await p.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 }); await sleep(400);
+const u5 = await p.evaluate(async () => { const d = document.getElementById('appDrawer').getBoundingClientRect(); openAppDrawer(); await new Promise(r => setTimeout(r, 400)); const o = document.getElementById('appDrawer').getBoundingClientRect(); closeAppDrawer(); return { hiddenAtStart: d.right <= 0, opens: Math.round(o.left) === 0, pad: getComputedStyle(document.body).paddingLeft, sw: document.documentElement.scrollWidth, iw: innerWidth }; });
+log('Masaüstü: sabit ray yok; menü ☰ ile soldan açılır, içerik kaymaz, taşma yok', u5.hiddenAtStart && u5.opens && u5.pad === '0px' && u5.sw === u5.iw, u5);
 
 // Telefon genişliklerinde taşma
 for (const w of [360, 430]) { await p.setViewport({ width: w, height: 800, deviceScaleFactor: 1, hasTouch: true }); await sleep(250); const o = await p.evaluate(() => { const r = []; for (const v of ['view-home', 'view-labs', 'view-settings']) { navigateToView(v); r.push(document.documentElement.scrollWidth); } return { sw: r, iw: innerWidth }; }); log(`${w} px: yatay taşma yok (Ana Sayfa, Tahliller, Ayarlar)`, o.sw.every(x => x === o.iw), o); }

@@ -644,3 +644,10 @@ main .border-2.border-rose-500, main .border-2.border-rose-400 {
   opacity: 1 !important;
 }
 
+
+/* ===== Sol menü (orijinal düzen) — 3 katman: üst sabit (bildirim + profil), orta kayan liste, alt sabit (Yardım + Güvenli Çıkış) ===== */
+#appDrawer { z-index: 70 !important; overflow: hidden; }          /* menü ve karartma, sağ alttaki VitaAI düğmesinin (z-50) ÜSTÜNDE */
+#drawerBackdrop { z-index: 65 !important; }
+#drawerTopFixed { flex: 0 0 auto; padding-bottom: .75rem; border-bottom: 1px solid rgba(30, 41, 59, .9); }
+#drawerScrollArea { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+#drawerBottomFixed { flex: 0 0 auto; margin-top: 0 !important; }

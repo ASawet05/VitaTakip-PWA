@@ -9,9 +9,9 @@ await p.evaluate(() => { try { closeProfileModal(); } catch (e) {} try { finishV
 await sleep(300);
 const link = await p.evaluate(() => {
   const a = document.getElementById('drawer-nav-vita-oyunlar'), egfr = document.getElementById('drawer-nav-egfr-calculator');
-  const sec = a.closest('.vt-grp');   // V4: akordeon grup
+  const sec = a.closest('.space-y-1');
   return { tag: a.tagName, href: a.href, target: a.target, rel: a.rel, text: a.innerText.trim(), icon: !!a.querySelector('.fa-brain'), afterEgfr: egfr.nextElementSibling === a,
-    section: sec.querySelector('.vt-grp-t').textContent.trim(), sameStyle: a.className === egfr.className && a.querySelector('i').className.replace('fa-brain', '') === egfr.querySelector('i').className.replace('fa-calculator', ''), visible: a.getBoundingClientRect().height > 0 };
+    section: sec.querySelector('.uppercase').textContent.trim(), sameStyle: a.className === egfr.className && a.querySelector('i').className.replace('fa-brain', '') === egfr.querySelector('i').className.replace('fa-calculator', ''), visible: a.getBoundingClientRect().height > 0 };
 });
 log('"Vita Oyunlar" Yönetim & Araçlar altında, eGFR Böbrek Hesaplayıcı\'nın hemen altında, aynı stil ve ikon yapısı', link.tag === 'A' && link.afterEgfr && link.section === 'Yönetim & Araçlar' && link.sameStyle && link.icon && link.visible && /Vita Oyunlar/.test(link.text), JSON.stringify(link));
 log('Hedef: https://asawet05.github.io/vita-oyunlar/ — target="_blank" rel="noopener noreferrer"', link.href === 'https://asawet05.github.io/vita-oyunlar/' && link.target === '_blank' && link.rel === 'noopener noreferrer', JSON.stringify(link));
